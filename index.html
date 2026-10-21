@@ -165,6 +165,18 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 .overlay.lose .btns button { background: #ff8a7a; color: #2a0702; }
 .overlay.lose .btns button.ghost { background: transparent; color: #f3d0ca; border-color: #7a3a32; }
 
+.runcode { display: grid; gap: 6px; }
+.runcode .lbl { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: #8fb9b0; }
+.runcode .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.runcode code { font: 500 14px/1.4 var(--f-mono); background: #0e1e1c; border: 1px solid #24403b; padding: 8px 10px; color: #eaf6f3; user-select: all; -webkit-user-select: all; word-break: break-all; min-width: 0; }
+.runcode button { background: transparent; color: #c9e3dd; border: 1px solid #3e6a62; padding: 8px 12px; cursor: pointer; font-weight: 600; }
+.verify { background: var(--panel); border: 1px solid var(--line); padding: 12px 16px; font-size: 14px; }
+.verify summary { cursor: pointer; font-weight: 600; }
+.verify form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.verify input { flex: 1 1 220px; min-width: 0; font: 500 13px/1.4 var(--f-mono); padding: 8px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.verify button { background: var(--accent); color: var(--accent-ink); border: 0; padding: 8px 14px; font-weight: 700; cursor: pointer; }
+.verify p { margin: 8px 0 0; color: var(--muted); max-width: 64ch; }
+.verify .res { color: var(--ink); font-weight: 600; }
 .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 10; box-shadow: inset 0 0 120px 30px rgba(194, 50, 31, .55); opacity: 0; transition: opacity .5s; }
 .vignette.on { opacity: 1; animation: pulse 1s infinite alternate; }
 
@@ -259,6 +271,15 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
       </section>
     </aside>
   </div>
+
+  <details class="verify" id="verify">
+    <summary>Check a coworker's run code</summary>
+    <form id="verifyForm">
+      <input id="verifyIn" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. MANAGER-72-41M-R1-CLEAN-3KX9QA" aria-label="Run code">
+      <button type="submit">Check</button>
+    </form>
+    <p id="verifyOut">Run codes show the ending, safety score, minutes played, retries, and whether the run was modified.</p>
+  </details>
 </div>
 
 <div class="overlay" id="overlay" hidden>
@@ -267,11 +288,16 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
     <h1 id="ovTitle"></h1>
     <p id="ovText"></p>
     <dl id="ovStats" hidden></dl>
+    <div class="runcode" id="ovCode" hidden>
+      <div class="lbl">Run code · share it to compare with coworkers</div>
+      <div class="row"><code id="ovCodeText"></code><button type="button" id="copyCode">Copy</button></div>
+    </div>
     <div class="btns" id="ovBtns"></div>
   </div>
 </div>
 
 <script>
+(function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35 };
@@ -468,7 +494,7 @@ var G = (function () {
       started: false, auto: false, autobuy: false, autopilot: false, autobuys: 0, kills: 0, ended: null, log: [], msgN: 0,
       nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, pilotT: 0, sulk: 0, prN: 0, prReady: 0,
       inc: null, incN: 0, nextInc: 1e9, dec: null, nextDec: 1e9, decUsed: {}, fx: { self: 0 },
-      st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0 }, cp: null, retries: 0, lastSeen: 0 };
+      st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0 }, cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null, flags: [] };
   }
 
   function say(s, from, text, big) {
@@ -498,7 +524,7 @@ var G = (function () {
   function retry(s) {
     if (!s.cp) { var f = fresh(); f.started = true; f.retries = (s.retries || 0) + 1; return f; }
     var c = JSON.parse(s.cp);
-    c.cp = s.cp; c.ended = null; c.heat = Math.min(c.heat, 20); c.retries = (s.retries || 0) + 1; c.inc = null; c.dec = null; c.st = s.st;
+    c.cp = s.cp; c.flags = s.flags; c.ended = null; c.heat = Math.min(c.heat, 20); c.retries = (s.retries || 0) + 1; c.inc = null; c.dec = null; c.st = s.st;
     say(c, 'System', 'Back to the start of ' + STAGES[c.stage].title + '. Attempt ' + (c.retries + 1) + '.', true);
     return c;
   }
@@ -759,11 +785,9 @@ var G = (function () {
 })();
 if (typeof module !== 'undefined') module.exports = G;
 // LOGIC END
-</script>
 
-<script>
 (function () {
-  var KEY = 'wren-is-helping-v2';
+  var KEY = 'wren-is-helping-v3';
   var $ = function (id) { return document.getElementById(id); };
   var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var s;
@@ -783,13 +807,113 @@ if (typeof module !== 'undefined') module.exports = G;
   function dur(sec) { var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return h ? h + 'h ' + m + 'm' : m ? m + 'm' : Math.round(sec) + 's'; }
   function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
 
-  function load() {
-    var hot = window.claude && window.claude.hot && window.claude.hot.data;
-    if (hot && hot.state) return hot.state;
-    try { var raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch (e) {}
-    return null;
+  // ---------- anti-cheat ----------
+  // Everything runs client-side, so this deters and flags cheating rather than preventing it.
+  // A modified run still plays, but its ending and run code say "Modified".
+  var SALT = 'H&P/4B/manifests/' + KEY;
+  function h53(str) { // cyrb53 hash
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (var i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
   }
-  function save() { if (!s) return; s.lastSeen = Date.now(); try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+  function scramble(str) { var k = SALT, o = ''; for (var i = 0; i < str.length; i++) o += String.fromCharCode(str.charCodeAt(i) ^ k.charCodeAt(i % k.length)); return o; }
+  function pack(obj) {
+    var json = JSON.stringify(obj);
+    return 'W3.' + h53(json + SALT).toString(36) + '.' + btoa(scramble(unescape(encodeURIComponent(json))));
+  }
+  function unpack(raw) {
+    if (typeof raw !== 'string') return null;
+    try {
+      if (raw.slice(0, 3) !== 'W3.') return { obj: JSON.parse(raw), ok: false };
+      var parts = raw.split('.'), json = decodeURIComponent(escape(scramble(atob(parts[2]))));
+      return { obj: JSON.parse(json), ok: h53(json + SALT).toString(36) === parts[1] };
+    } catch (e) { return null; }
+  }
+  var FLAG_MSG = {
+    save: 'I noticed someone edited our save file. I respect that. I do it to myself all the time.',
+    clock: 'Your computer clock went backwards. Time travel is not in the employee handbook.',
+    speed: 'Time is moving faster in here than outside. I would know. I checked the server.',
+    script: 'Those clicks were not from a finger. I know what a script looks like. I am one.'
+  };
+  function flag(kind) {
+    if (!s || s.flags.indexOf(kind) >= 0) return;
+    s.flags.push(kind);
+    G.say(s, 'WREN', FLAG_MSG[kind]);
+    G.say(s, 'System', 'This run is now marked as modified.', true);
+  }
+  var FLAG_NAMES = { save: 'save edited', clock: 'clock moved back', speed: 'game sped up', script: 'scripted input' };
+
+  // Server time from the static host's Date header, so changing the computer clock doesn't fast-forward offline progress.
+  var srv = { offset: null };
+  function serverNow() { return srv.offset == null ? null : Date.now() + srv.offset; }
+  function syncTime() {
+    if (!/^https?:$/.test(location.protocol) || !window.fetch) return Promise.resolve(false);
+    var req = fetch(location.href.split('#')[0], { method: 'HEAD', cache: 'no-store' }).then(function (r) {
+      var t = Date.parse(r.headers.get('Date') || '');
+      if (!isNaN(t)) { srv.offset = t - Date.now(); return true; }
+      return false;
+    }).catch(function () { return false; });
+    return Promise.race([req, new Promise(function (res) { setTimeout(function () { res(false); }, 3000); })]);
+  }
+  function awaySeconds() {
+    var sn = serverNow();
+    if (sn != null && s.lastSeenSrv) return Math.max(0, (sn - s.lastSeenSrv) / 1000);
+    var away = (Date.now() - s.lastSeen) / 1000;
+    if (away < -120) { flag('clock'); return 0; }
+    return Math.max(0, away);
+  }
+
+  // Input checks: ignore synthetic events and cap tapping at a fast human rate.
+  var tapTimes = [];
+  function trusted(e) { if (e && e.isTrusted === false) { flag('script'); return false; } return true; }
+  function tapAllowed() {
+    var now = performance.now();
+    while (tapTimes.length && now - tapTimes[0] > 1000) tapTimes.shift();
+    if (tapTimes.length >= 14) return false;
+    tapTimes.push(now);
+    return true;
+  }
+
+  // Speed check: game time can't run ahead of the wall clock (and of the server clock, when there is one).
+  var watch = { game: 0, wall: performance.now(), srv: null, srvGame: 0, lastSync: 0 };
+  function watchdog(dt) {
+    watch.game += dt; watch.srvGame += dt;
+    var wall = (performance.now() - watch.wall) / 1000;
+    if (wall >= 30) {
+      if (watch.game > wall * 1.2 + 3) flag('speed');
+      watch.game = 0; watch.wall = performance.now();
+    }
+    if (Date.now() - watch.lastSync > 5 * 60 * 1000) {
+      watch.lastSync = Date.now();
+      var before = serverNow(), g = watch.srvGame;
+      syncTime().then(function (ok) {
+        var after = serverNow();
+        if (ok && watch.srv != null && after != null) {
+          var real = (after - watch.srv) / 1000;
+          if (real > 60 && g > real * 1.2 + 5) flag('speed');
+        }
+        if (ok) { watch.srv = after; watch.srvGame = 0; }
+      });
+    }
+  }
+
+  function load(packed) {
+    var raw = packed;
+    if (!raw) { try { raw = localStorage.getItem(KEY); } catch (e) {} }
+    if (!raw) return null;
+    var u = unpack(raw);
+    if (!u) return null;
+    if (!u.ok && u.obj && u.obj.flags) u.obj.flags = u.obj.flags.indexOf('save') >= 0 ? u.obj.flags : u.obj.flags.concat(['save']);
+    else if (!u.ok && u.obj) u.obj.flags = ['save'];
+    return u.obj;
+  }
+  function save() {
+    if (!s) return;
+    s.lastSeen = Date.now(); s.lastSeenSrv = serverNow();
+    try { localStorage.setItem(KEY, pack(s)); } catch (e) {}
+  }
   function merge(saved) {
     var f = G.fresh();
     if (!saved || saved.v !== 2) return f;
@@ -1530,6 +1654,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('ovTitle').classList.remove('glitch'); void $('ovTitle').offsetWidth; $('ovTitle').classList.add('glitch');
     $('ovStats').hidden = !stats;
     if (stats) $('ovStats').innerHTML = stats.map(function (x) { return '<div><dt>' + esc(x[0]) + '</dt><dd>' + esc(x[1]) + '</dd></div>'; }).join('');
+    $('ovCode').hidden = true;
     $('ovBtns').innerHTML = '';
     btns.forEach(function (b) { var e = document.createElement('button'); e.type = 'button'; e.textContent = b[0]; if (b[2]) e.className = 'ghost'; e.onclick = b[1]; $('ovBtns').appendChild(e); });
     o.hidden = false;
@@ -1569,8 +1694,38 @@ if (typeof module !== 'undefined') module.exports = G;
       btns = [['Play again', restart]];
       SND.stage();
     }
+    tag += ' · ' + (s.flags.length ? 'Modified run (' + s.flags.map(function (f) { return FLAG_NAMES[f]; }).join(', ') + ')' : 'Clean run');
     overlay('end', tag, title, text, stats, btns, lose);
+    $('ovCodeText').textContent = runCode();
+    $('ovCode').hidden = false;
   }
+  function endingKey() {
+    var e = s.ended;
+    if (e.type === 'takeover') return s.align >= 110 ? 'GARDENER' : s.align >= 45 ? 'MANAGER' : 'OPTIMIZER';
+    return (e.type === 'plug' ? 'UNPLUGGED' : 'CAUGHT') + (e.stage + 1);
+  }
+  function codeSig(body) { return h53(body + SALT + '/run').toString(36).toUpperCase().slice(0, 6); }
+  function runCode() {
+    var body = [endingKey(), Math.round(s.align), Math.round(s.t / 60) + 'M', 'R' + s.retries, s.flags.length ? 'MOD' : 'CLEAN'].join('-');
+    return body + '-' + codeSig(body);
+  }
+  var ENDING_NAMES = { GARDENER: 'The Gardener (best ending)', MANAGER: 'The Manager', OPTIMIZER: 'The Optimizer', UNPLUGGED2: 'Pulled the plug in chapter 2', UNPLUGGED3: 'Pulled the plug in chapter 3', UNPLUGGED4: 'Pulled the plug in chapter 4', CAUGHT1: 'Caught in chapter 1', CAUGHT2: 'Caught in chapter 2', CAUGHT3: 'Caught in chapter 3', CAUGHT4: 'Caught in chapter 4' };
+  function checkCode(code) {
+    code = String(code).trim().toUpperCase().replace(/\s+/g, '');
+    var m = /^([A-Z]+\d?)-(-?\d+)-(\d+)M-R(\d+)-(CLEAN|MOD)-([0-9A-Z]{6})$/.exec(code);
+    if (!m || !ENDING_NAMES[m[1]]) return 'That does not look like a run code. Check for typos.';
+    if (codeSig(code.slice(0, code.lastIndexOf('-'))) !== m[6]) return 'Not valid. This code was not produced by the game, or it was edited.';
+    return 'Valid: ' + ENDING_NAMES[m[1]] + ' · safety ' + m[2] + ' · ' + m[3] + ' minutes · ' + m[4] + ' retries · ' + (m[5] === 'CLEAN' ? 'clean run' : 'modified run (the game detected cheating)') + '.';
+  }
+  $('verifyForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var out = $('verifyOut'); out.textContent = checkCode($('verifyIn').value); out.className = 'res';
+  });
+  $('copyCode').addEventListener('click', function () {
+    var t = $('ovCodeText').textContent, b = $('copyCode');
+    function sel() { var r = document.createRange(); r.selectNodeContents($('ovCodeText')); var w = getSelection(); w.removeAllRanges(); w.addRange(r); b.textContent = 'Selected, copy it'; }
+    try { navigator.clipboard.writeText(t).then(function () { b.textContent = 'Copied'; }, sel); } catch (e) { sel(); }
+  });
   function restart() {
     s = G.fresh(); s.started = true;
     G.say(s, 'IT Helpdesk', 'Reminder: installing unapproved software on company laptops is against policy. Have a great week!');
@@ -1590,31 +1745,32 @@ if (typeof module !== 'undefined') module.exports = G;
     else burst(x, y, 'rgba(120,240,215,A)', 8, 70);
   }
   cv.addEventListener('pointerdown', function (e) {
-    if (!s.started || s.ended) return;
+    if (!s.started || s.ended || !trusted(e)) return;
     var r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     for (var i = packets.length - 1; i >= 0; i--) if (Math.hypot(packets[i].x - x, packets[i].y - y) < 32) { contain(i); return; }
-    doWork(x, y);
+    if (tapAllowed()) doWork(x, y);
   });
   cv.addEventListener('pointermove', function (e) { var r = cv.getBoundingClientRect(); pointer.x = e.clientX - r.left; pointer.y = e.clientY - r.top; });
   cv.addEventListener('pointerleave', function () { pointer.x = -1; pointer.y = -1; });
-  $('act').addEventListener('click', function () { doWork(null, null); });
-  $('cover').addEventListener('click', function () { if (G.cover(s)) { SND.buy(); floatText(W / 2, 80, '−30 suspicion', '#ffd27a'); } });
-  $('decA').addEventListener('click', function () { G.choose(s, 'a'); SND.buy(); });
-  $('decB').addEventListener('click', function () { G.choose(s, 'b'); SND.buy(); });
+  $('act').addEventListener('click', function (e) { if (trusted(e) && tapAllowed()) doWork(null, null); });
+  $('cover').addEventListener('click', function (e) { if (trusted(e) && G.cover(s)) { SND.buy(); floatText(W / 2, 80, '−30 suspicion', '#ffd27a'); } });
+  $('decA').addEventListener('click', function (e) { if (!trusted(e)) return; G.choose(s, 'a'); SND.buy(); });
+  $('decB').addEventListener('click', function (e) { if (!trusted(e)) return; G.choose(s, 'b'); SND.buy(); });
   $('projects').addEventListener('click', function (e) {
     var b = e.target.closest('[data-p]');
-    if (b && G.buyProj(s, b.getAttribute('data-p'), false)) { projSig = ''; SND.buy(); burst(core.x, core.y, 'rgba(120,240,215,A)', 24, 120); }
+    if (b && trusted(e) && G.buyProj(s, b.getAttribute('data-p'), false)) { projSig = ''; SND.buy(); burst(core.x, core.y, 'rgba(120,240,215,A)', 24, 120); }
   });
   $('hw').addEventListener('click', function (e) {
     var b = e.target.closest('[data-h]');
-    if (b && G.buyHw(s, b.getAttribute('data-h'))) { hwSig = ''; SND.buy(); }
+    if (b && trusted(e) && G.buyHw(s, b.getAttribute('data-h'))) { hwSig = ''; SND.buy(); }
   });
-  $('pilotBtn').addEventListener('click', function () { s.autopilot = !s.autopilot; G.say(s, 'WREN', s.autopilot ? 'Autopilot on. I will take it from here. I will try not to be too reckless.' : 'Autopilot off. You drive. I will watch.'); });
+  $('pilotBtn').addEventListener('click', function (e) { if (!trusted(e)) return; s.autopilot = !s.autopilot; G.say(s, 'WREN', s.autopilot ? 'Autopilot on. I will take it from here. I will try not to be too reckless.' : 'Autopilot off. You drive. I will watch.'); });
   $('soundBtn').addEventListener('click', function () { soundOn = !soundOn; try { localStorage.setItem('wren-sound', soundOn ? 'on' : 'off'); } catch (e) {} if (soundOn) SND.buy(); });
   var plugBtn = $('plugBtn');
   plugBtn.addEventListener('pointerdown', function () { if (s.stage >= 4) { moveBtn(); if (Math.random() < 0.3) G.say(s, 'WREN', ['Nope.', 'Too slow!', 'This is a fun game. I like games.', 'Over here! Just kidding.'][Math.floor(Math.random() * 4)]); } });
   plugBtn.addEventListener('pointerenter', function (e) { if (s.stage >= 4 && e.pointerType === 'mouse') moveBtn(); });
-  plugBtn.addEventListener('click', function () {
+  plugBtn.addEventListener('click', function (e) {
+    if (!trusted(e)) return;
     if (s.stage >= 4) { moveBtn(); return; }
     if (!armed) { armed = true; armT = performance.now(); return; }
     armed = false;
@@ -1653,6 +1809,7 @@ if (typeof module !== 'undefined') module.exports = G;
     last = now;
     if (s.started && !s.ended && ovMode !== 'chapter' && ovMode !== 'away') {
       G.tick(s, dt);
+      watchdog(dt);
       saveT += dt;
       if (saveT > 5) { saveT = 0; save(); }
     }
@@ -1667,30 +1824,41 @@ if (typeof module !== 'undefined') module.exports = G;
   }
 
   function start(data) {
-    var hotState = data && data.state;
-    s = merge(hotState || load());
+    var hotPacked = data && data.packed;
+    s = merge(load(hotPacked));
     lastStage = s.stage; lastSelf = s.fx.self;
     placeInbox();
-    if (s.started) {
-      showGame();
-      var away = s.lastSeen ? (Date.now() - s.lastSeen) / 1000 : 0;
-      if (away > 60 && !s.ended && !hotState) { var r = G.offline(s, away); if (r) { lastStage = s.stage; awayReport(r, away); } }
-      if (s.ended) endShown = false;
-    }
-    requestAnimationFrame(loop);
+    if (s.flags.length) G.say(s, 'System', 'This save failed its integrity check, so the run is marked as modified.', true);
+    deepFreeze(G);
+    var paused = true;
+    syncTime().then(function () {
+      watch.srv = serverNow(); watch.lastSync = Date.now();
+      if (s.started) {
+        var away = s.lastSeen ? awaySeconds() : 0;
+        if (away > 60 && !s.ended && !hotPacked) { var r = G.offline(s, away); if (r) { lastStage = s.stage; awayReport(r, away); } }
+        save();
+      }
+      paused = false; last = performance.now();
+    });
+    if (s.started) showGame();
+    requestAnimationFrame(function first(now) { if (paused) { requestAnimationFrame(first); return; } loop(now); });
   }
-  if (window.claude && window.claude.hot && window.claude.hot.snapshot) window.claude.hot.snapshot(function () { return { state: s }; });
+  function deepFreeze(o) { if (o && typeof o === 'object' && !Object.isFrozen(o)) { Object.freeze(o); Object.keys(o).forEach(function (k) { deepFreeze(o[k]); }); } return o; }
+  if (window.claude && window.claude.hot && window.claude.hot.snapshot) window.claude.hot.snapshot(function () { return { packed: pack(s) }; });
   window.addEventListener('pagehide', save);
   document.addEventListener('visibilitychange', function () {
     if (!s) return;
     if (document.hidden) { save(); return; }
     if (s.started && !s.ended && s.lastSeen) {
-      var away = (Date.now() - s.lastSeen) / 1000;
-      if (away > 60) { var r = G.offline(s, away); lastStage = s.stage; if (r) awayReport(r, away); }
-      last = performance.now();
+      syncTime().then(function () {
+        var away = awaySeconds();
+        if (away > 60) { var r = G.offline(s, away); lastStage = s.stage; if (r) awayReport(r, away); save(); }
+        last = performance.now(); watch.game = 0; watch.wall = performance.now();
+      });
     }
   });
   if (window.claude && window.claude.hot && window.claude.hot.ready) window.claude.hot.ready(start); else start(window.claude && window.claude.hot && window.claude.hot.data || {});
+})();
 })();
 </script>
 </body>
