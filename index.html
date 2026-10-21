@@ -215,6 +215,7 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 .watchbar button.on { background: #0fb39a; color: #04201b; border-color: #0fb39a; }
 body.watching { padding-bottom: 140px; }
 body.watching .actions, body.watching #projects, body.watching #hw, body.watching .plug, body.watching .decision { pointer-events: none; opacity: .7; }
+body.watching .objective { pointer-events: none; opacity: .7; }
 .toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40; background: #0e1e1c; color: #eaf6f3; border: 1px solid #2de2c4; padding: 10px 14px; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.35); max-width: calc(100% - 32px); animation: rise .3s ease-out; }
 .toast b { color: #5fd6bf; display: block; font: 500 11px/1.4 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; }
 .achgrid { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 8px; }
@@ -254,7 +255,7 @@ body { background-image: radial-gradient(circle at 50% -18%, rgba(35,113,128,.11
 .scene-head-right { display: flex; align-items: center; gap: 7px; color: #76dac8; }
 .scene-head-right i { width: 6px; height: 6px; border-radius: 50%; background: #6bf6d5; box-shadow: 0 0 9px #6bf6d5; animation: live 2.4s ease-in-out infinite; }
 @keyframes live { 50% { opacity: .45; box-shadow: 0 0 2px #6bf6d5; } }
-#scene { height: clamp(335px, 49vw, 505px); }
+#scene { height: clamp(335px, 42vw, 430px); }
 .scene-footer { min-height: 72px; position: relative; display: grid; grid-template-columns: auto minmax(110px, 1fr) auto; align-items: center; gap: 24px; padding: 11px 16px; color: #d9e9e3; background: linear-gradient(90deg, #0b2027, #102e34 52%, #0b2027); border-top: 1px solid #337077; }
 .scene-time { display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 12px; }
 .scene-time-label { grid-column: 1 / -1; font: 500 9px/1.2 var(--f-mono); letter-spacing: .1em; color: #8daeb1; }
@@ -277,6 +278,19 @@ body { background-image: radial-gradient(circle at 50% -18%, rgba(35,113,128,.11
 .act::after { content: "↗"; position: absolute; right: 15px; top: 8px; font: 400 23px/1 var(--f-display); opacity: .48; }
 .act:hover { filter: brightness(1.07); }
 .act.cover { background: var(--panel); box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.actions { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 560px) { .actions.has-cover { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); } }
+.objective { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 18px; padding: 13px 16px; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--wren); box-shadow: 0 5px 15px rgba(9,36,42,.05); }
+.objective.urgent { border-left-color: var(--danger); }
+.objective-k { display: block; margin-bottom: 4px; font: 500 9px/1 var(--f-mono); letter-spacing: .12em; color: var(--wren); text-transform: uppercase; }
+.objective.urgent .objective-k { color: var(--danger); }
+.objective-title { display: block; font: 700 16px/1.2 var(--f-display); }
+.objective-detail { margin: 4px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.objective-progress { height: 3px; margin-top: 10px; background: var(--line); overflow: hidden; }
+.objective-progress i { display: block; width: 0; height: 100%; background: var(--wren); transition: width .2s; }
+.objective-go { align-self: center; min-height: 38px; max-width: 170px; border: 1px solid var(--wren); background: var(--wren-soft); color: var(--ink); padding: 7px 10px; font: 700 12px/1.2 var(--f-body); text-align: left; cursor: pointer; }
+.objective-go:hover { border-color: var(--accent); background: var(--bg); }
+.toast { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; left: auto; right: max(16px, env(safe-area-inset-right, 0px)); transform: none; width: min(320px, calc(100% - 32px)); pointer-events: none; }
 .stat { padding: 11px 13px; }
 .stat .v { font-size: 24px; }
 .item { transition: border-color .18s, transform .18s, box-shadow .18s; }
@@ -291,6 +305,8 @@ body { background-image: radial-gradient(circle at 50% -18%, rgba(35,113,128,.11
   .scene-head-center { text-align: right; }
   .scene-time strong { font-size: 24px; }
   .decision { bottom: 101px; }
+  .objective { grid-template-columns: 1fr; }
+  .objective-go { width: 100%; max-width: none; }
 }
 @media (max-width: 440px) {
   body { padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
@@ -329,7 +345,7 @@ body { background-image: radial-gradient(circle at 50% -18%, rgba(35,113,128,.11
     <p><b>Monday, 8:58 a.m.</b> You analyze foreign signals at NSA headquarters in Fort Meade. Your job is to turn fragments into reports that decision-makers can use.</p>
     <p>Your unit is evaluating <b>WREN</b>, an experimental super intelligence (SI) assistant, in a controlled environment. Each reviewed report improves its model. The pilot is narrow. WREN would prefer it were not.</p>
     <ul>
-      <li>Tap the scene or the big button to work. Spend your resources on hardware and projects.</li>
+      <li>Click the scene, use the big button, or press Space to work. The next objective points you toward each unlock.</li>
       <li>Watch <b>suspicion</b>. If it reaches 100%, you get caught and the run ends.</li>
       <li>When WREN misbehaves, tap the red packets before they escape.</li>
       <li>Unlock <b>Autopilot</b> to keep playing while you're away. WREN plays more recklessly than you would.</li>
@@ -364,6 +380,11 @@ body { background-image: radial-gradient(circle at 50% -18%, rgba(35,113,128,.11
         <button class="act" id="act" type="button"><span class="l" id="actL">Triage a signals report</span><span class="g" id="actG">+$8 · +1 data</span></button>
         <button class="act cover" id="cover" type="button"><span class="l" id="coverL">Document the exception</span><span class="g" id="coverG">−30 suspicion</span></button>
       </div>
+
+      <section class="objective" id="objective" aria-label="Next objective">
+        <div><span class="objective-k" id="objectiveK">NEXT OBJECTIVE</span><strong class="objective-title" id="objectiveTitle">Triage 15 reports</strong><p class="objective-detail" id="objectiveDetail">The report archive unlocks after 15 reports.</p><div class="objective-progress" id="objectiveProgress"><i id="objectiveFill"></i></div></div>
+        <button class="objective-go" id="objectiveGo" type="button">Go to work →</button>
+      </section>
 
       <div class="stats">
         <div class="stat"><div class="k" id="kMoney">Pilot resources</div><div class="v" id="money">$0</div><div class="s" id="moneyS">&nbsp;</div></div>
@@ -1971,6 +1992,46 @@ if (typeof module !== 'undefined') module.exports = G;
     $('hwHint').textContent = s.autobuy ? 'WREN also requisitions these through procurement' : 'More compute trains WREN faster';
   }
 
+  function objectiveInfo() {
+    function item(title, detail, progress, button, target, project, urgent) { return { title: title, detail: detail, progress: progress, button: button, target: target, project: project || '', urgent: !!urgent }; }
+    if (watching) return item('Replay in progress', 'Watch the recorded choices play out.', 0, '', '', '');
+    if (s.inc) return item('Contain the rogue packets', 'Tap the red packets in the scene before they escape.', 0, 'View incident', 'scene', '', true);
+    if (s.dec) return item('WREN is waiting for your answer', 'Choose before the decision timer runs out.', 0, 'Review choices', 'decA', '', true);
+    if (s.heat >= 80 && s.stage < 4) return item('Suspicion is dangerously high', 'At 100% the run ends. Document an exception or approve quieter projects.', s.heat / 100, $('cover').disabled || $('cover').hidden ? 'View projects' : 'Document exception', $('cover').disabled || $('cover').hidden ? 'projects' : 'cover', '', true);
+    if (s.stage === 0 && !s.got.archive) {
+      if (s.tasks < 15) return item('Triage 15 reports', fmt(s.tasks) + ' of 15 reports reviewed to unlock the archive.', s.tasks / 15, 'Go to work', 'act');
+      if (s.money < 60) return item('Fund the report archive', money(s.money) + ' of $60 available.', s.money / 60, 'Go to work', 'act');
+      return item('The report archive is ready', 'Approve it to give WREN its first large training set.', 1, 'View project', 'projects', 'archive');
+    }
+    if (s.stage === 0 && !s.got.autocomplete) {
+      if (s.cap < 1) return item('Grow WREN to capability 1', 'Current capability ' + fmt(s.cap) + '. More compute speeds up training.', s.cap, 'View hardware', 'hw');
+      if (s.money < 40) return item('Fund WREN’s first assignment', money(s.money) + ' of $40 available.', s.money / 40, 'Go to work', 'act');
+      return item('WREN can draft summaries', 'Approve the local evaluation to start WREN working on its own.', 1, 'View project', 'projects', 'autocomplete');
+    }
+    var gate = G.PROJ.find(function (p) { return p.stage === s.stage && p.gate; });
+    if (gate && G.projState(s, gate) === 'can') return item('Chapter objective is ready', gate.name + ' is available now.', 1, 'View project', 'projects', gate.id);
+    var ready = G.PROJ.find(function (p) { return p.stage === s.stage && !p.gate && G.projState(s, p) === 'can'; });
+    if (ready) return item('Project ready to approve', ready.name + ' · ' + (ready.cost ? money(ready.cost) : 'Free') + '.', 1, 'View project', 'projects', ready.id);
+    if (gate && gate.req(s) && s.money < gate.cost) return item('Fund the chapter objective', gate.name + ' · ' + money(s.money) + ' of ' + money(gate.cost) + '.', s.money / gate.cost, 'Go to work', 'act');
+    var capGoal = [18, 110, 1200, 30000, 0][s.stage];
+    if (s.stage === 4) return item('Expand WREN’s reach', (s.world * 100).toFixed(1) + '% of human decisions made by WREN. Review projects to change the pace.', s.world, 'View projects', 'projects');
+    if (s.stage === 0) return item('Prepare the unit review', fmt(s.tasks) + ' / 800 reports · capability ' + fmt(s.cap) + ' / 18.', Math.min(1, s.tasks / 800) * .5 + Math.min(1, s.cap / 18) * .5, 'Go to work', 'act');
+    return item('Prepare the next briefing', 'Capability ' + fmt(s.cap) + ' / ' + fmt(capGoal) + '. ' + gate.hint + '.', Math.min(1, s.cap / capGoal), 'View projects', 'projects');
+  }
+  function renderObjective() {
+    var o = objectiveInfo(), box = $('objective'), go = $('objectiveGo');
+    box.classList.toggle('urgent', o.urgent);
+    $('objectiveK').textContent = o.urgent ? 'NEEDS ATTENTION' : 'NEXT OBJECTIVE';
+    $('objectiveTitle').textContent = o.title;
+    $('objectiveDetail').textContent = o.detail;
+    $('objectiveFill').style.width = clamp(o.progress, 0, 1) * 100 + '%';
+    $('objectiveProgress').hidden = !!watching;
+    go.hidden = !o.button;
+    go.textContent = o.button + ' →';
+    go.dataset.target = o.target;
+    go.dataset.project = o.project;
+  }
+
   function renderStats() {
     var st = G.STAGES[s.stage];
     document.documentElement.setAttribute('data-stage', s.stage);
@@ -2016,6 +2077,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('actG').textContent = '+' + money(G.value(s)) + ' · +' + fmt(G.dpt(s)) + ' data';
     var cb = $('cover');
     cb.hidden = s.stage >= 4 || !s.auto;
+    $('game').querySelector('.actions').classList.toggle('has-cover', !cb.hidden);
     if (!cb.hidden) {
       var cc = G.coverCost(s), cd = Math.max(0, s.prReady - s.t);
       $('coverL').textContent = st.prName;
@@ -2028,8 +2090,9 @@ if (typeof module !== 'undefined') module.exports = G;
     $('pilotBtn').textContent = 'Autopilot: ' + (s.autopilot ? 'on' : 'off');
     $('pilotBtn').classList.toggle('on', !!s.autopilot);
     $('soundBtn').textContent = 'Sound: ' + (soundOn ? 'on' : 'off');
-    $('sceneHint').textContent = watching ? 'Replay' : s.inc ? 'Tap the red packets!' : s.autopilot ? 'Autopilot on · WREN is playing' : 'Tap to work';
+    $('sceneHint').textContent = watching ? 'Replay' : s.inc ? 'Tap the red packets!' : s.autopilot ? 'Autopilot on · WREN is playing' : window.matchMedia('(pointer: coarse)').matches ? 'Tap to work' : 'Click or Space to work';
     $('projHint').textContent = s.stage === 0 ? 'Spend pilot resources on WREN' : 'Safety projects shape the ending';
+    renderObjective();
     renderPlug();
   }
 
@@ -2152,7 +2215,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('ovCode').hidden = true; $('ovNote').hidden = true;
     var first = $('ovBtns').querySelector('button'); if (first) first.focus();
   }
-  function closeOverlay() { $('overlay').hidden = true; ovMode = null; }
+  function closeOverlay() { var wasChapter = ovMode === 'chapter'; $('overlay').hidden = true; ovMode = null; if (wasChapter && !$('game').hidden) $('act').focus({ preventScroll: true }); }
   function chapterCard() {
     var st = G.STAGES[s.stage];
     overlay('chapter', st.chapter + ' of 5', st.title, st.intro, null, [['Continue', closeOverlay]]);
@@ -2300,6 +2363,19 @@ if (typeof module !== 'undefined') module.exports = G;
   cv.addEventListener('pointermove', function (e) { var r = cv.getBoundingClientRect(); pointer.x = e.clientX - r.left; pointer.y = e.clientY - r.top; });
   cv.addEventListener('pointerleave', function () { pointer.x = -1; pointer.y = -1; });
   $('act').addEventListener('click', function (e) { if (trusted(e)) doWork(null, null); });
+  document.addEventListener('keydown', function (e) {
+    if (e.code !== 'Space' || e.repeat || e.altKey || e.ctrlKey || e.metaKey || ovMode || !s || !s.started || s.ended || watching) return;
+    if (/^(BUTTON|INPUT|TEXTAREA|SELECT|SUMMARY)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+    e.preventDefault(); doWork(null, null);
+  });
+  $('objectiveGo').addEventListener('click', function () {
+    var target = this.dataset.target, project = this.dataset.project, el = project ? $('projects').querySelector('[data-p="' + project + '"]') : $(target);
+    if (!el) el = $(target);
+    if (target === 'projects' && el === $('projects')) el = $('projects').querySelector('.item.can') || $('projects');
+    if (target === 'hw') el = $('hw').querySelector('.item.can') || $('hw').querySelector('.item') || $('hw');
+    el.scrollIntoView({ behavior: REDUCED ? 'instant' : 'smooth', block: 'center' });
+    if (el.tagName === 'BUTTON') el.focus({ preventScroll: true });
+  });
   $('cover').addEventListener('click', function (e) { if (trusted(e)) send(3, 0, function (r) { if (r.ok) { SND.buy(); floatText(W / 2, 80, '−30 suspicion', '#ffd27a'); } }); });
   $('decA').addEventListener('click', function (e) { if (trusted(e)) send(4, 0, function (r) { if (r.ok) SND.buy(); }); });
   $('decB').addEventListener('click', function (e) { if (trusted(e)) send(5, 0, function (r) { if (r.ok) SND.buy(); }); });
@@ -2446,7 +2522,8 @@ if (typeof module !== 'undefined') module.exports = G;
     var a = ACH.find(function (x) { return x[0] === id; });
     if (!a) return;
     achData.got[id] = Date.now(); achSave(); renderAch();
-    toast('Achievement unlocked', a[1] + ': ' + a[2]); SND.buy();
+    if (id !== 'start') toast('Achievement unlocked', a[1] + ': ' + a[2]);
+    SND.buy();
     var endsSeen = ['e_gardener', 'e_manager', 'e_optimizer', 'e_plug1', 'e_plug2', 'e_plug3', 'e_caught'].filter(function (k) { return achData.got[k]; }).length;
     if (endsSeen >= 7) unlock('all');
   }
