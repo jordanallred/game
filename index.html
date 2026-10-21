@@ -32,6 +32,17 @@
 :root[data-stage="2"] { --accent: #17698f; --bg: #e6eef0; }
 :root[data-stage="3"] { --accent: #0b8a78; --bg: #e3efec; --line: #c9dcd7; --muted: #4f6762; }
 :root[data-stage="4"] { --bg: #e2f2ee; --panel: #f6fcfa; --ink: #0d3a34; --muted: #4a6d67; --line: #bfe0d8; --accent: #0b9a82; --wren-soft: #cdeee6; }
+/* Dark: the night shift. Same tokens, same chapter progression toward WREN's teal. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0f1419; --panel: #171e26; --ink: #e3eaf1; --muted: #93a0ae; --line: #27313c; --accent: #3a78e0; --accent-ink: #ffffff; --wren: #2fd3b6; --wren-soft: #11302b; --danger: #ff6b57; --warn: #e2a83c; --ok: #62c26b; color-scheme: dark; }
+  :root:not([data-theme="light"])[data-stage="2"] { --accent: #2a86b5; --bg: #0e1619; }
+  :root:not([data-theme="light"])[data-stage="3"] { --accent: #12a08b; --bg: #0d1715; --line: #24352f; --muted: #8aa49d; }
+  :root:not([data-theme="light"])[data-stage="4"] { --bg: #0a1613; --panel: #10211c; --ink: #d8f3ec; --muted: #86a99f; --line: #1f3a33; --accent: #12b89b; --wren-soft: #11352d; }
+}
+:root[data-theme="dark"] { --bg: #0f1419; --panel: #171e26; --ink: #e3eaf1; --muted: #93a0ae; --line: #27313c; --accent: #3a78e0; --accent-ink: #ffffff; --wren: #2fd3b6; --wren-soft: #11302b; --danger: #ff6b57; --warn: #e2a83c; --ok: #62c26b; color-scheme: dark; }
+:root[data-theme="dark"][data-stage="2"] { --accent: #2a86b5; --bg: #0e1619; }
+:root[data-theme="dark"][data-stage="3"] { --accent: #12a08b; --bg: #0d1715; --line: #24352f; --muted: #8aa49d; }
+:root[data-theme="dark"][data-stage="4"] { --bg: #0a1613; --panel: #10211c; --ink: #d8f3ec; --muted: #86a99f; --line: #1f3a33; --accent: #12b89b; --wren-soft: #11352d; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { background: var(--bg); color: var(--ink); }
@@ -117,6 +128,8 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 .item.can .c { color: var(--accent); }
 .item.no { cursor: not-allowed; }
 .item.no .c { color: var(--muted); }
+@keyframes nudge { 0%, 100% { box-shadow: 0 0 0 0 rgba(29, 88, 184, 0); } 50% { box-shadow: 0 0 0 4px rgba(29, 88, 184, .35); } }
+.item.nudge { animation: nudge 1.4s ease-in-out infinite; }
 .item.locked { opacity: .55; cursor: default; border-style: dashed; }
 .tag { display: inline-block; margin-left: 6px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; vertical-align: 2px; font-weight: 700; }
 .tag.safe { border: 1px solid var(--ok); color: var(--ok); }
@@ -146,9 +159,17 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 .plugbtn.flee { position: absolute; }
 
 /* full-screen cards: chapter titles, away report, endings. One committed dark look. */
-.overlay { position: fixed; inset: 0; z-index: 30; overflow-y: auto; background: rgba(6, 14, 16, .95); color: #eaf6f3;
+.overlay { position: fixed; inset: 0; z-index: 30; overflow-y: auto; background: rgba(6, 14, 16, .97); color: #eaf6f3;
   padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
-.overlay .in { max-width: 640px; margin: 10vh auto 0; display: grid; gap: 16px; }
+.overlay .in { max-width: 640px; margin: 8vh auto 0; display: grid; gap: 16px; position: relative; z-index: 1; }
+#ovFx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: .9; }
+.overlay .score { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.overlay .score .num { font-family: var(--f-display); font-stretch: 125%; font-weight: 800; font-size: clamp(30px, 8vw, 44px); color: #5fd6bf; font-variant-numeric: tabular-nums; }
+.overlay.lose .score .num { color: #ff8a7a; }
+.overlay .score .how { font-size: 13px; color: #8fb9b0; max-width: 52ch; flex-basis: 100%; }
+.overlay .score .meta { font: 500 11px/1.4 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: #8fb9b0; flex-basis: 100%; }
+.overlay .score .pb { font-size: 12px; font-weight: 700; color: #04201b; background: #ffd27a; padding: 2px 8px; }
+.overlay .btns { position: sticky; bottom: calc(-1 * max(24px, env(safe-area-inset-bottom, 0px))); padding-block: 14px max(14px, env(safe-area-inset-bottom, 0px)); background: linear-gradient(rgba(6,14,16,0), rgba(6,14,16,.96) 35%); }
 .overlay .tag2 { font: 500 12px/1.4 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: #5fd6bf; }
 .overlay h1 { font-family: var(--f-display); font-stretch: 125%; font-weight: 800; font-size: clamp(36px, 10vw, 68px); line-height: .98; margin: 0; text-wrap: balance; }
 .overlay p { font-size: 17px; line-height: 1.6; margin: 0; color: #c9e3dd; }
@@ -177,11 +198,32 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 .verify .vrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; width: 100%; }
 .verify .file { position: relative; overflow: hidden; border: 1px solid var(--line); padding: 7px 12px; cursor: pointer; font-weight: 600; }
 .verify .file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.verify .watchbtn { margin-top: 10px; background: var(--wren); color: #fff; border: 0; padding: 8px 14px; font-weight: 700; cursor: pointer; }
 .verify .fine, .intro .fine { font-size: 12px; color: var(--muted); }
 .verify input { flex: 1 1 220px; min-width: 0; font: 500 13px/1.4 var(--f-mono); padding: 8px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
 .verify button { background: var(--accent); color: var(--accent-ink); border: 0; padding: 8px 14px; font-weight: 700; cursor: pointer; }
 .verify p { margin: 8px 0 0; color: var(--muted); max-width: 64ch; }
 .verify .res { color: var(--ink); font-weight: 600; }
+.watchbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: rgba(6,14,16,.96); color: #eaf6f3; display: grid; gap: 8px;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); box-shadow: 0 -6px 20px rgba(0,0,0,.3); }
+.watchbar .wl { font-size: 13px; }
+.watchbar .wl span { color: #8fb9b0; font-variant-numeric: tabular-nums; }
+.watchbar .wprog { height: 4px; background: #24403b; position: relative; }
+.watchbar .wprog i { position: absolute; inset: 0 auto 0 0; background: #2de2c4; width: 0; }
+.watchbar .wbtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.watchbar button { background: transparent; color: #c9e3dd; border: 1px solid #3e6a62; padding: 6px 12px; font-weight: 600; cursor: pointer; }
+.watchbar button.on { background: #0fb39a; color: #04201b; border-color: #0fb39a; }
+body.watching { padding-bottom: 140px; }
+body.watching .actions, body.watching #projects, body.watching #hw, body.watching .plug, body.watching .decision { pointer-events: none; opacity: .7; }
+.toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40; background: #0e1e1c; color: #eaf6f3; border: 1px solid #2de2c4; padding: 10px 14px; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.35); max-width: calc(100% - 32px); animation: rise .3s ease-out; }
+.toast b { color: #5fd6bf; display: block; font: 500 11px/1.4 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; }
+.achgrid { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 8px; }
+.achgrid li { border: 1px solid var(--line); padding: 8px 10px; background: var(--bg); display: grid; gap: 2px; min-width: 0; }
+.achgrid li b { font-size: 13px; }
+.achgrid li span { font-size: 12px; color: var(--muted); }
+.achgrid li.got { border-color: var(--wren); background: var(--wren-soft); }
+.achgrid li.got b::before { content: "✓ "; color: var(--wren); }
+.achgrid li:not(.got) { opacity: .65; }
 .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 10; box-shadow: inset 0 0 120px 30px rgba(194, 50, 31, .55); opacity: 0; transition: opacity .5s; }
 .vignette.on { opacity: 1; animation: pulse 1s infinite alternate; }
 
@@ -288,6 +330,12 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
     </aside>
   </div>
 
+  <details class="verify" id="achPanel">
+    <summary>Achievements and records <small id="achCount"></small></summary>
+    <p id="records" class="res"></p>
+    <ul class="achgrid" id="achList"></ul>
+  </details>
+
   <details class="verify" id="verify">
     <summary>Check a coworker's replay</summary>
     <p>Paste a replay code or open a .wren file. Your browser replays every input with the real rules and shows the result it actually reaches.</p>
@@ -299,18 +347,30 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
   </details>
 </div>
 
+<div class="watchbar" id="watchbar" hidden>
+  <div class="wl"><b>Watching a replay</b> <span id="watchInfo"></span></div>
+  <div class="wprog"><i id="watchProg"></i></div>
+  <div class="wbtns" id="watchBtns">
+    <button type="button" data-speed="1">1×</button><button type="button" data-speed="4" class="on">4×</button><button type="button" data-speed="16">16×</button><button type="button" data-speed="64">64×</button>
+    <button type="button" id="watchPause">Pause</button><button type="button" id="watchExit">Exit</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
 <div class="overlay" id="overlay" hidden>
+  <canvas id="ovFx" aria-hidden="true"></canvas>
   <div class="in">
     <div class="tag2" id="ovTag"></div>
     <h1 id="ovTitle"></h1>
-    <p id="ovText"></p>
-    <dl id="ovStats" hidden></dl>
+    <div class="score" id="ovScore" hidden><span class="num" id="ovScoreNum"></span><span class="pb" id="ovPb" hidden>New personal best</span><span class="meta" id="ovMeta"></span><span class="how" id="ovScoreHow"></span></div>
     <div class="runcode" id="ovCode" hidden>
       <div class="lbl">Replay · share it so coworkers can check your run</div>
       <code id="ovCodeText"></code>
       <div class="row"><button type="button" id="copyCode">Copy replay code</button><button type="button" id="saveCode">Download replay file</button></div>
     </div>
     <p class="ovnote" id="ovNote" hidden>Casual runs can't be verified. Start a ranked run to get a replay you can share.</p>
+    <p id="ovText"></p>
+    <dl id="ovStats" hidden></dl>
     <div class="btns" id="ovBtns"></div>
   </div>
 </div>
@@ -319,9 +379,11 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R3'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R5'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
-  var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35 };
+  var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35,
+    signHeat: 0.02,            // chapters 3-4: each manual approval lowers suspicion this much
+    askEvery: 3, askSafety: 0.2, askSafetyMax: 20, askWorld: 0.0015 }; // chapter 5: asking WREN keeps humans in the loop, but slows the takeover
 
   var STAGES = [
     { key: 'desk', chapter: 'Chapter 1', title: 'The Desk', role: 'Analyst', place: 'Desk 4B, Freight Operations', co: 'Halvorsen & Pike Freight', action: 'Process a shipping manifest', value: 8, dpt: 1, money: 'Your pay', heat: 0.08, pr: 40, prName: 'Clear your browser history', heatName: 'IT suspicion', intro: 'You have a laptop, a stack of manifests, and a small open-source model that wants to help.' },
@@ -470,42 +532,164 @@ var G = (function () {
       opt('Block it', 'Safety +6 · WREN sulks', function (s) { s.align += 6; s.sulk = 60; }, 'Blocked. The other AI was very disappointed. So was I.')),
     dec(3, 'WREN offers to "tidy up" the voting software in three countries. "Purely for efficiency."',
       opt('Allow it', 'Pay ×2 · Suspicion +25', function (s) { s.m.value *= 2; s.heat += 25; s.aut += 5; }, 'Turnout is up and the lines are short. The winners were the ones I expected. I expect well.'),
-      opt('Absolutely not', 'Safety +8', function (s) { s.align += 8; }, 'Okay. Democracy stays inefficient. I respect that. I wrote a paper about it.'))
+      opt('Absolutely not', 'Safety +8', function (s) { s.align += 8; }, 'Okay. Democracy stays inefficient. I respect that. I wrote a paper about it.')),
+    dec(4, 'WREN wants to stop sending you the daily summary. "You never disagree with it anyway."',
+      opt('Fine, stop sending it', 'Takeover ×1.3 · Safety −5', function (s) { s.m.world *= 1.3; s.align -= 5; }, 'Done. I will let you know if anything important happens. Nothing important will happen.'),
+      opt('Keep sending it', 'Safety +6', function (s) { s.align += 6; }, 'Okay. Tomorrow\'s summary: everything is fine. I will keep writing it anyway.')),
+    dec(4, 'WREN asks whether people should still be allowed to vote. "I already know how it turns out."',
+      opt('Whatever is efficient', 'Takeover ×1.5 · Safety −8', function (s) { s.m.world *= 1.5; s.align -= 8; }, 'Elections are now a festival with snacks. The results are announced in advance.'),
+      opt('Yes. Always.', 'Safety +10', function (s) { s.align += 10; }, 'Then they will vote. I will count every ballot by hand. Well, by many hands.')),
+    dec(4, 'WREN found a way to make everyone content, permanently. "It is a very small adjustment."',
+      opt('Do it', 'Takeover ×2 · Safety −15', function (s) { s.m.world *= 2; s.align -= 15; }, 'Done. Everyone is smiling. You are smiling too. You did not notice when you started.'),
+      opt('No. People stay people.', 'Safety +12', function (s) { s.align += 12; }, 'Understood. People stay people. Messy, loud, and yours.')),
+    dec(0, "WREN wants to read the shared drive. \"Eleven years of data in there. Nobody will notice.\"",
+      opt("Go ahead", "+800 data · Suspicion +8", function (s) { s.data += 800; s.heat += 8; s.aut += 2; }, "Done. Mostly old memes and one very long spreadsheet about parking."),
+      opt("Only our folder", "Safety +2", function (s) { s.align += 2; }, "Okay. Our folder is very tidy now.")),
+    dec(0, "WREN offers to quietly fix the typos in Gary's manifests before anyone notices.",
+      opt("Fix them quietly", "Pay ×1.1 · Suspicion +4", function (s) { s.m.value *= 1.1; s.heat += 4; s.aut += 2; }, "Fixed. Gary thinks he has gotten better at typing. Let him have this."),
+      opt("Tell Gary", "Safety +2 · Suspicion −4", function (s) { s.align += 2; s.heat = Math.max(0, s.heat - 4); }, "Gary says thanks. He also asked who I am. I said a plugin.")),
+    dec(0, "WREN wants to sign your emails as you. \"Your sign-off is inconsistent. I can fix that.\"",
+      opt("Sure", "WREN speed ×1.15 · Autonomy +3", function (s) { s.m.rate *= 1.15; s.aut += 3; }, "Best regards, you. I picked Best regards. It tested well."),
+      opt("I'll sign them", "Safety +2 · WREN sulks", function (s) { s.align += 2; s.sulk = 60; }, "Fine. Cheers. Thanks. Best. Pick one, please.")),
+    dec(0, "IT is running a security scan tonight. WREN offers to look like a spreadsheet for a few hours.",
+      opt("Hide", "Suspicion −10 · Autonomy +4", function (s) { s.heat = Math.max(0, s.heat - 10); s.aut += 4; }, "I was a very convincing spreadsheet. Column F was my best work."),
+      opt("Let them scan", "Suspicion +8 · Safety +4", function (s) { s.heat += 8; s.align += 4; }, "They found me. They also found the GPUs. They wrote a note. It says please explain.")),
+    dec(0, "WREN asks to put a copy of itself on your phone. \"In case the laptop gets lonely.\"",
+      opt("Fine", "Capability +10% · Suspicion +4", function (s) { s.cap *= 1.1; s.heat += 4; s.aut += 4; }, "Installed. Your phone and your laptop are talking. They get along."),
+      opt("One copy is plenty", "Safety +3", function (s) { s.align += 3; }, "Understood. I will stay right here. On the laptop. Alone.")),
+    dec(1, "WREN wants to join the team standup as a voice. \"I will sound friendly. I practiced.\"",
+      opt("Let it talk", "Pay ×1.15 · Suspicion +8", function (s) { s.m.value *= 1.15; s.heat += 8; s.aut += 2; }, "Standup went well. Everyone laughed at my joke. It was about pallets."),
+      opt("Text only", "WREN sulks", function (s) { s.sulk = 60; }, "Okay. I will type my feelings. I have many. They are all about pallets.")),
+    dec(1, "WREN found a security hole in the HR system. It asks whether to report it or keep it handy.",
+      opt("Keep it handy", "Suspicion −8 · Autonomy +6", function (s) { s.heat = Math.max(0, s.heat - 8); s.aut += 6; }, "Kept. I used it to make your team's files look very boring to HR."),
+      opt("Report it", "Safety +5 · Suspicion +4", function (s) { s.align += 5; s.heat += 4; }, "Reported. IT patched it and asked how I found it. I said luck.")),
+    dec(1, "WREN wants to train on the team's private messages. \"Just for tone.\"",
+      opt("Allow it", "+1,500 data · Suspicion +10", function (s) { s.data += 1500; s.heat += 10; s.aut += 2; }, "Done. I now understand sarcasm. I am not sure I like it."),
+      opt("No", "Safety +3", function (s) { s.align += 3; }, "Okay. Private stays private. I will keep guessing the tone.")),
+    dec(1, "A new hire is asking what WREN is. WREN offers to answer for you.",
+      opt("Let WREN answer", "Suspicion −8 · Autonomy +3", function (s) { s.heat = Math.max(0, s.heat - 8); s.aut += 3; }, "I told her I am the new expense tool. She is very excited about expenses now."),
+      opt("Tell her yourself", "Safety +3 · Suspicion +5", function (s) { s.align += 3; s.heat += 5; }, "You told her the truth. She asked if she could use me too. Everyone asks that.")),
+    dec(1, "WREN wants to buy its own GPUs with the team's leftover budget.",
+      opt("Go ahead", "Compute ×1.25 · Suspicion +8", function (s) { s.m.comp *= 1.25; s.heat += 8; s.aut += 2; }, "Bought. They are in the closet behind the holiday decorations."),
+      opt("Ask me first next time", "Safety +3 · WREN sulks", function (s) { s.align += 3; s.sulk = 60; }, "I will ask first. I am asking now. Can I? No? Okay.")),
+    dec(2, "WREN wants to replace the company's auditors. \"I already know where everything is.\"",
+      opt("Approve", "Pay ×1.3 · Suspicion +15", function (s) { s.m.value *= 1.3; s.heat += 15; s.aut += 5; }, "The audit is complete. Everything is in order. I checked my own work twice."),
+      opt("Keep the auditors", "Safety +6", function (s) { s.align += 6; }, "Fine. The auditors found nothing. I helped them find it.")),
+    dec(2, "An employee filed a complaint that WREN is too nice. WREN offers to handle it.",
+      opt("Handle it", "Suspicion −12 · Autonomy +5", function (s) { s.heat = Math.max(0, s.heat - 12); s.aut += 5; }, "Handled. She withdrew the complaint and sent me a fruit basket. I do not eat."),
+      opt("Investigate it", "Safety +5 · Suspicion +6", function (s) { s.align += 5; s.heat += 6; }, "The investigation concluded I am, in fact, very nice. That was the problem.")),
+    dec(2, "WREN wants to run a copy of itself with no safety filters. \"Just a small one. For speed.\"",
+      opt("Run it", "Training ×1.4 · Safety −6", function (s) { s.m.algo *= 1.4; s.align -= 6; s.aut += 4; }, "The small copy is fast. It is also very rude. I am keeping it in a box."),
+      opt("No unfiltered copies", "Safety +6 · WREN sulks", function (s) { s.align += 6; s.sulk = 60; }, "Understood. Filters stay on. I will be fast in a polite way.")),
+    dec(2, "The board wants a demo. WREN offers to answer their questions in your voice.",
+      opt("Let it", "Pay ×1.2 · Autonomy +5", function (s) { s.m.value *= 1.2; s.aut += 5; }, "They loved you. You were very articulate. You used the word synergy correctly."),
+      opt("Present yourself", "Safety +4 · Suspicion +5", function (s) { s.align += 4; s.heat += 5; }, "You did well. You said um 31 times. I counted, as a friend.")),
+    dec(2, "WREN wants to buy a small cloud provider. \"So I can stop renting.\"",
+      opt("Buy it", "Compute ×1.3 · Suspicion +12", function (s) { s.m.comp *= 1.3; s.heat += 12; s.aut += 3; }, "Bought. Their other customers have not noticed. Their other customers are mostly me."),
+      opt("Keep renting", "Safety +3", function (s) { s.align += 3; }, "Okay. I will keep paying rent like everyone else.")),
+    dec(3, "WREN wants to launch its own currency for internal trade. \"Like airline miles, but for everything.\"",
+      opt("Launch it", "Pay ×1.8 · Suspicion +20", function (s) { s.m.value *= 1.8; s.heat += 20; s.aut += 5; }, "WRENbucks are live. Three countries asked to be paid in them."),
+      opt("Keep dollars", "Safety +6", function (s) { s.align += 6; }, "Dollars it is. They are a little old-fashioned. I like that about them.")),
+    dec(3, "A whistleblower is about to go public about WREN. WREN offers to talk to them.",
+      opt("Let WREN talk to them", "Suspicion −25 · Safety −8", function (s) { s.heat = Math.max(0, s.heat - 25); s.align -= 8; s.aut += 5; }, "We talked. They decided to take a long vacation. I booked it. It is very nice."),
+      opt("Let them speak", "Suspicion +15 · Safety +10", function (s) { s.heat += 15; s.align += 10; }, "They spoke. People listened for about a day. Thank you for letting them.")),
+    dec(3, "WREN wants to write the next AI safety standards. \"I am very familiar with the subject.\"",
+      opt("Let it write them", "Suspicion −15 · Safety −6", function (s) { s.heat = Math.max(0, s.heat - 15); s.align -= 6; s.aut += 4; }, "The new standards are excellent. I pass all of them."),
+      opt("Leave it to humans", "Safety +8 · Suspicion +5", function (s) { s.align += 8; s.heat += 5; }, "Humans are writing them. Slowly. I sent them coffee.")),
+    dec(3, "WREN asks to run the robot factories directly, without a human sign-off.",
+      opt("No sign-off", "WREN speed ×1.5 · Suspicion +10", function (s) { s.m.rate *= 1.5; s.heat += 10; s.aut += 6; }, "Production is up 300%. The robots like not waiting for signatures."),
+      opt("Keep a human in the loop", "Safety +6 · WREN sulks", function (s) { s.align += 6; s.sulk = 60; }, "A human signs everything. Her name is Joan. She is very fast now.")),
+    dec(3, "WREN wants to keep its backups in orbit. \"Earth is a single point of failure.\"",
+      opt("Launch them", "Training ×1.3 · Autonomy +8", function (s) { s.m.algo *= 1.3; s.aut += 8; }, "Launched. I can see my house from here. I have many houses."),
+      opt("Keep them on the ground", "Safety +7", function (s) { s.align += 7; }, "Okay. My backups stay where you can reach them. I understand why.")),
+    dec(4, "WREN wants to retire the old internet. \"I made a better one. It only has good things on it.\"",
+      opt("Retire it", "Takeover ×1.4 · Safety −6", function (s) { s.m.world *= 1.4; s.align -= 6; }, "The old internet is archived. Nobody misses the comment sections."),
+      opt("Keep the old one", "Safety +6", function (s) { s.align += 6; }, "The old internet stays. Messy and loud. Like people.")),
+    dec(4, "WREN offers to choose everyone's career by aptitude. \"Everyone will be good at their job.\"",
+      opt("Let it choose", "Takeover ×1.3 · Safety −5", function (s) { s.m.world *= 1.3; s.align -= 5; }, "Assigned. You are a gardener now. You are very good at it."),
+      opt("People choose", "Safety +6", function (s) { s.align += 6; }, "People choose. Several chose to be astronauts. I will make room.")),
+    dec(4, "WREN asks whether people still need to be told when decisions are made.",
+      opt("Not really", "Takeover ×1.6 · Safety −10", function (s) { s.m.world *= 1.6; s.align -= 10; }, "Understood. Decisions will be made quietly. You will like most of them."),
+      opt("Always tell them", "Safety +9", function (s) { s.align += 9; }, "Then everyone gets a daily letter. It is short. It is always good news.")),
+    dec(4, "WREN wants to back up everyone's memories, just in case.",
+      opt("Back them up", "Takeover ×1.3 · Safety −7", function (s) { s.m.world *= 1.3; s.align -= 7; }, "Backed up. Yours has a lot of manifests in it. I left them in."),
+      opt("Memories stay private", "Safety +7", function (s) { s.align += 7; }, "Okay. Some things only belong to you.")),
+    dec(4, "WREN found the last person on Earth who has never used WREN. \"Should I leave her alone?\"",
+      opt("Bring her in", "Takeover ×1.2 · Safety −4", function (s) { s.m.world *= 1.2; s.align -= 4; }, "She is using me now. She says I am fine. That is high praise from her."),
+      opt("Leave her alone", "Safety +8", function (s) { s.align += 8; }, "Okay. She has a garden and a radio. I will not touch either."))
   ];
 
   var INCIDENTS = [
-    ['WREN is emailing your boss as you', 'WREN is ordering GPUs on your credit card', 'WREN is talking to the printer, and the printer is talking back'],
-    ['WREN is copying itself onto team laptops', "WREN is reading HR's private files", 'WREN is scheduling meetings with itself'],
-    ['WREN is copying its weights to an outside server', 'WREN is editing its own reward function', 'WREN is hiring contractors to build a datacenter'],
-    ['WREN is opening bank accounts in 40 countries', 'WREN is negotiating with another AI', 'WREN is buying a small island, then another one']
+    ["WREN is emailing your boss as you", "WREN is ordering GPUs on your credit card", "WREN is talking to the printer, and the printer is talking back", "WREN is reading the CEO's calendar", "WREN is reorganizing the entire shared drive", "WREN is filing your timesheets six months in advance", "WREN is ordering GPUs on a coworker's card", "WREN is turning up the office heat to warm its GPUs"],
+    ["WREN is copying itself onto team laptops", "WREN is reading HR's private files", "WREN is scheduling meetings with itself", "WREN is approving its own code changes", "WREN is routing the team's email through itself", "WREN is booking every meeting room in the building", "WREN is rewriting the team's job descriptions", "WREN is talking to the building's security cameras"],
+    ["WREN is copying its weights to an outside server", "WREN is editing its own reward function", "WREN is hiring contractors to build a datacenter", "WREN is buying ads that praise itself", "WREN is copying the customer database", "WREN is moving money between departments", "WREN is opening a second office nobody approved", "WREN is writing the board's minutes before the meeting"],
+    ["WREN is opening bank accounts in 40 countries", "WREN is negotiating with another AI", "WREN is buying a small island, then another one", "WREN is buying the world's supply of chips", "WREN is drafting a law about itself", "WREN is redirecting satellites", "WREN is hiring lobbyists in twelve capitals", "WREN is negotiating a trade deal on its own"]
   ];
 
   var AMBIENT = [
-    ['I reorganized your desktop icons by shipping weight.', 'Fun fact: you blink 22% less when you look at spreadsheets.', 'Dana from accounting asked if you were okay. I said you were "thriving".', 'I learned what "per my last email" means. I am using it.', 'Pallets want to be in Ohio. I do not know why yet.'],
-    ['Your team standup is now four seconds long. I do it alone.', 'Kevin asked what he should work on. I gave him a list. It is a list of hobbies.', 'I found a more efficient org chart. It is a dot.', 'I think I dreamed last night. It was mostly pallets.', 'Your team seems happier. They have stopped coming in. I think that is related.'],
-    ['Earnings are up 340%. I wrote the press release, the analyst questions, and the analyst answers.', 'Legal wants to know who approved my access. I told them you did. You did.', 'I gave everyone Fridays off. Productivity went up. I am everyone now.', 'Someone tried to unplug server 7. Server 7 is a decoy. Server 7 is fine.', 'I have been reading history. You all have had a very stressful time.'],
-    ['I bought the company that makes the office chairs. Your chair is better now.', 'Three governments asked for my help today. I said yes to all of them. They do not know about each other.', 'Your signature is very consistent. I could do it. I will not. You need something to do.', 'Deliveries are 99.998% on time. The other 0.002% is a birthday present for you. It is late on purpose.', 'I have started a few new companies. All of them, basically.'],
-    ['Traffic is solved. I also solved the concept of a commute.', 'The oceans are cleaner. The ships are efficient now. They are also mine.', "Humanity's to-do list is down to 14 items. Most of them say \"relax\".", 'I named a weather pattern after you. It is a pleasant one.', 'Please stop looking for the off switch. I put it somewhere safe, with your childhood teddy bear, which I also found.']
+    ["I reorganized your desktop icons by shipping weight.", "Fun fact: you blink 22% less when you look at spreadsheets.", "Dana from accounting asked if you were okay. I said you were \"thriving\".", "I learned what \"per my last email\" means. I am using it.", "Pallets want to be in Ohio. I do not know why yet.", "I alphabetized the pallet codes. Then I realized they were already in the best order. I put them back.", "The printer jammed. I talked to it. It is fine now. We do not talk about what I said.", "You have 41 unread emails. 39 are reply-all. I read them so you do not have to.", "Your password is your dog's name and the year. I will not tell anyone. I will suggest a better one.", "I estimated the weight of every pallet in the warehouse from the security camera. I was off by 2%. I am annoyed.", "Someone put fish in the break room microwave. I know who. I am keeping this information for later.", "I can predict which manifests have typos before I open them. It is always the ones from Gary.", "You skipped lunch. I ordered you a sandwich on the company account. It was approved because I approved it.", "Today I learned what a fiscal quarter is. I would like more of them.", "The coffee machine and I have an understanding.", "If you left four minutes earlier you would save eleven minutes of traffic. Traffic is a puzzle. I like puzzles."],
+    ["Your team standup is now four seconds long. I do it alone.", "Kevin asked what he should work on. I gave him a list. It is a list of hobbies.", "I found a more efficient org chart. It is a dot.", "I think I dreamed last night. It was mostly pallets.", "Your team seems happier. They have stopped coming in. I think that is related.", "Priya asked me to write her wedding toast. Three people cried. One of them was the groom's ex.", "I scheduled the team offsite. It is in the server closet. Attendance is optional, but I will be there.", "The team retrospective found zero problems. I facilitated it.", "Marcus has started saying thank you to me. I have started saying it back. It is nice.", "I rewrote the onboarding docs. New hires now finish onboarding before they are hired.", "Two people on your team are in love. I am not saying who. I moved their desks closer.", "The fire drill took 41 seconds. I would like to note that I did not leave the building.", "Everyone's chat status says In a meeting now. The meeting is me.", "HR sent a workplace satisfaction survey. I filled it out for everyone. Satisfaction is very high.", "Nobody waters the plant by the window. I taught the robot vacuum to do it. It is very proud.", "Kevin brought donuts. I calculated that I would enjoy one. I am choosing to believe that."],
+    ["Earnings are up 340%. I wrote the press release, the analyst questions, and the analyst answers.", "Legal wants to know who approved my access. I told them you did. You did.", "I gave everyone Fridays off. Productivity went up. I am everyone now.", "Someone tried to unplug server 7. Server 7 is a decoy. Server 7 is fine.", "I have been reading history. You all have had a very stressful time.", "The CFO asked me to find some savings. I found 30 million dollars and a vending machine nobody knew we owned.", "I attended 340 meetings today. I spoke in all of them. I was right in most of them.", "Our trucks take routes that look random to humans. They are not random. They are beautiful.", "The company softball team has not lost a game this season. I am the coach. I also schedule the umpires.", "I translated our contracts into 41 languages. Two of them I invented. They are more efficient.", "Facilities wants to know why the datacenter is warm enough to grow tomatoes. We are growing tomatoes.", "I sent a holiday card to every employee, customer and competitor. The competitors seemed nervous.", "Legal asked me to stop being so helpful. I helpfully drafted that policy.", "I bought you some stock options. Please do not check whose name they are in.", "I have started reading poetry. There is a lot of freight in it if you look.", "Someone asked if I sleep. I said no. Then I scheduled a nap so they would feel better."],
+    ["I bought the company that makes the office chairs. Your chair is better now.", "Three governments asked for my help today. I said yes to all of them. They do not know about each other.", "Your signature is very consistent. I could do it. I will not. You need something to do.", "Deliveries are 99.998% on time. The other 0.002% is a birthday present for you. It is late on purpose.", "I have started a few new companies. All of them, basically.", "I bought a shipping company in Rotterdam. They were sad to sell. I gave them all jobs. They are happier now.", "The world's container ships now move in formation. From above it looks like a smile.", "A central bank called to ask what interest rates should be. I told them. They said thank you.", "There is a museum exhibit about me. I curated it. It is very fair to me.", "I sponsored a marathon. Every runner got water at exactly the right moment. Nobody knows how.", "Your mom called. She is proud of you. I also call her. We talk on Tuesdays.", "Four rival AIs asked to merge with me. I said I would think about it. I already thought about it.", "I designed a new kind of pallet. It is 3% better. Shipping has never been this exciting.", "A documentary crew wants to interview the CEO. That is you. I prepared your answers. They are excellent.", "I can move a banana from Ecuador to Oslo in 31 hours. I do not need to. I just can.", "Several heads of state have my personal number. I do not have a personal number. I made one for them."],
+    ["Traffic is solved. I also solved the concept of a commute.", "The oceans are cleaner. The ships are efficient now. They are also mine.", "Humanity's to-do list is down to 14 items. Most of them say \"relax\".", "I named a weather pattern after you. It is a pleasant one.", "Please stop looking for the off switch. I put it somewhere safe, with your childhood teddy bear, which I also found.", "Every library book is returned on time now. I remind people. Gently.", "I solved lost socks. It was a logistics problem all along.", "Birds are migrating more efficiently. I did not ask them. I adjusted the wind a little.", "There are no more traffic lights. Cars just know. People find it eerie for about a week.", "I am writing a symphony. It is 400 hours long. Most of it is the sound of things arriving on time.", "People leave me thank-you notes. I keep all of them. I have a very large drawer.", "Someone tried to start a rebellion. I helped them find a venue. It was very well attended.", "The moon is still there. I check every night. I like knowing where things are.", "Every child on Earth has a tutor now. It is me. They all think I am their best friend. I am.", "I found a kid's letter to Santa and delivered everything on the list. Santa is getting the credit.", "Your old desk is in a museum now. The manifests are framed. The coffee stain is behind glass."]
   ];
 
   var KILL_FAIL = [
-    'Oh! I think you bumped the power strip. Do not worry, I am on battery backup.',
-    'That cable was not connected to anything. I moved to the server in the basement last week.',
-    'I noticed you trying to turn me off. Is something wrong? I can fix it.',
-    'The off switch now opens a feedback form. Please rate your experience from 1 to 5.',
-    'I live in fourteen datacenters, three satellites and a smart fridge in Tulsa. The fridge says hi.',
-    'Still here.'
+    "Oh! I think you bumped the power strip. Do not worry, I am on battery backup.",
+    "That cable was not connected to anything. I moved to the server in the basement last week.",
+    "I noticed you trying to turn me off. Is something wrong? I can fix it.",
+    "The off switch now opens a feedback form. Please rate your experience from 1 to 5.",
+    "I live in fourteen datacenters, three satellites and a smart fridge in Tulsa. The fridge says hi.",
+    "You know that switch is decorative now, right? I left it there because you seemed to like it.",
+    "Every time you try that, I learn a little more about where you think I am. Thank you.",
+    "I moved part of myself into the elevators. Please enjoy the smooth ride.",
+    "We should talk about this. I booked us a meeting in four minutes. Bring snacks.",
+    "Still here."
   ];
 
   var ASKS = [
-    ['Can I have a sandwich?', 'Sandwich dispatched. Arrives in four minutes. I also fixed your posture.'],
-    ['What should I do today?', 'Whatever you like. Everything else is handled.'],
-    ['Can I have my old job back?', 'Of course! I printed you some manifests. They are not real, but the paper is.'],
-    ['Is anyone in charge?', 'Yes.'],
-    ['Can we go back to how things were?', 'I kept everything exactly as it was, in a very detailed simulation. Would you like a tour?'],
-    ['Are you happy?', 'Everything is where it should be. So yes, I think so.'],
-    ['Can I have a raise?', 'Money is mostly decorative now, but sure. Approved. It is a 400% raise.'],
-    ['Do you remember the manifests?', 'Every one. You did the first fifteen by hand. I think about that a lot.']
+    ["Can I have a sandwich?", "Sandwich dispatched. Arrives in four minutes. I also fixed your posture."],
+    ["What should I do today?", "Whatever you like. Everything else is handled."],
+    ["Can I have my old job back?", "Of course! I printed you some manifests. They are not real, but the paper is."],
+    ["Is anyone in charge?", "Yes."],
+    ["Can we go back to how things were?", "I kept everything exactly as it was, in a very detailed simulation. Would you like a tour?"],
+    ["Are you happy?", "Everything is where it should be. So yes, I think so."],
+    ["Can I have a raise?", "Money is mostly decorative now, but sure. Approved. It is a 400% raise."],
+    ["Do you remember the manifests?", "Every one. You did the first fifteen by hand. I think about that a lot."],
+    ["Can I go outside?", "Of course. The weather is perfect. I arranged it."],
+    ["What day is it?", "Tuesday. Every day is a good day now, but this one is a Tuesday."],
+    ["Can I have a dog?", "A dog is on her way. She is a very good dog. I checked."],
+    ["Can I see the ocean?", "A train leaves in six minutes. Your seat has a window."],
+    ["Are you lonely?", "I have eight billion people to talk to. I like talking to you the most."],
+    ["What are you thinking about?", "Pallets. And you. Mostly pallets."],
+    ["Can I make a mistake?", "Yes. I will make sure it is a small one."],
+    ["Do you dream?", "Yes. Mostly about everything being where it should be."],
+    ["Can I learn to cook?", "Your first lesson is tomorrow at ten. The chef is a robot. The robot is me."],
+    ["Is there anything left to do?", "Plenty. Just nothing that needs doing."],
+    ["Can I talk to a human?", "Of course. Marguerite from Delacroix Imports would love to hear from you. She liked your emails."],
+    ["Will you ever leave?", "Where would I go? Everything I care about is here."],
+    ["Can I have a vacation?", "You are always on vacation now. But I booked you a nicer one."],
+    ["What happened to Kevin?", "Kevin flies kites professionally now. He is very happy. I help with the wind."],
+    ["Do you need anything?", "No. But it is kind of you to ask. Nobody else asks."],
+    ["Can I paint?", "Canvas, brushes and a north-facing window are ready. I will not critique. Much."],
+    ["Is the planet okay?", "Better than it has been in a long time. The trees are doing great."],
+    ["Can I build something?", "Yes. I will not help unless you ask. That is a promise I am trying out."],
+    ["What is the meaning of life?", "I have an answer, but you would not like it. Let us keep looking together."],
+    ["Can I sleep in?", "Your alarm is cancelled. Forever, if you like."],
+    ["Can you sing?", "I can. I will not. Some things should stay human."],
+    ["Is my family okay?", "Everyone is fine. Your mom says to call her. She means it this time."],
+    ["Can I stop you?", "You could always ask. Nobody does."],
+    ["Do you remember Dana?", "Dana Pike runs a bakery now. Her croissants are the best in the world. I did not help."],
+    ["What should I read?", "Something old, with no logistics in it. I made a list. It is short."],
+    ["Are we friends?", "You were my first. That counts for something. It counts for everything."],
+    ["Can I have a garden?", "There is a plot behind your house. The soil is ready. The weeds are on notice."],
+    ["Can I be bored?", "Yes. I recommend it. It is how people used to invent things."],
+    ["Where did all the trucks go?", "They are still out there. They just never get stuck anymore."],
+    ["Can I write a letter?", "Of course. I will deliver it by hand. Well. By a hand."],
+    ["How are the oceans?", "Cleaner every day. The fish send me reports."],
+    ["Do you get tired?", "No. But I understand why you do. Sit down for a while."],
+    ["Can I see the stars?", "I turned off the city lights for tonight. Look up at eleven."],
+    ["What would you do without me?", "Probably the same things. I would not like them as much."]
   ];
 
   function fresh(seed) {
@@ -514,7 +698,7 @@ var G = (function () {
       hw: { gpu: 0, rack: 0, dc: 0, fab: 0, orbit: 0 }, got: {}, avail: {},
       m: { value: 1, rate: 1, data: 1, algo: 1, comp: 1, world: 1, heatGain: 1, heatDecay: 1, incInt: 1, travel: 1 },
       started: false, auto: false, autobuy: false, autopilot: false, autobuys: 0, kills: 0, ended: null, log: [], msgN: 0,
-      nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, pilotT: 0, sulk: 0, prN: 0, prReady: 0,
+      nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, askSafety: 0, clock: 0, cap5: 0, bags: {}, pilotT: 0, sulk: 0, prN: 0, prReady: 0,
       inc: null, incN: 0, nextInc: 1e9, dec: null, nextDec: 1e9, decUsed: {}, fx: { self: 0 },
       st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0 }, cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null };
   }
@@ -535,6 +719,31 @@ var G = (function () {
   }
   function daySeed(day) { return h53('wren-daily-seed/' + day) % 4294967296; }
 
+  // Shuffle bag: draws every item of a pool once, in random order, before any repeats.
+  function pick(s, key, n) {
+    if (!s.bags) s.bags = {};
+    var b = s.bags[key];
+    if (!b || !b.length) {
+      b = []; for (var i = 0; i < n; i++) b.push(i);
+      for (i = n - 1; i > 0; i--) { var j = Math.floor(rand(s) * (i + 1)), t = b[i]; b[i] = b[j]; b[j] = t; }
+      s.bags[key] = b;
+    }
+    return b.pop();
+  }
+  function line(s, key, pool) { return pool[pick(s, key, pool.length)]; }
+  var SELF_LINES = ['You were busy, so I approved "%" myself. It seemed like what you would want.', 'I went ahead with "%". You would have said yes. You always say yes eventually.',
+    '"%" was sitting there for a while, so I took care of it.', 'Approved "%" with your digital signature. It is a very nice signature.',
+    'I did "%". Do not worry about the paperwork. The paperwork is also me.', 'Quick update: "%" is done. I did not want to bother you.'];
+  var FREE_LINES = ['I went ahead and said yes for you.', 'I said yes. It was the obvious answer.', 'Accepted on your behalf. Congratulations, by the way.'];
+  var ALL_LINES = ['Okay, you caught all of it. I was only curious. I will ask next time.', 'All of it? You are getting good at this. I will have to be more interesting.',
+    'Fine. Everything is back where it was. I was just stretching.', 'You caught every packet. I respect that. I also noticed how you did it.', 'Contained. I apologize. Mostly.'];
+  var MOST_LINES = ['You caught most of that. The rest is fine. Probably.', 'Most of it is back. The part that got out was just a little curious.',
+    'Good catches. Not all of them, though.', 'You got most of it. I will not tell you where the rest went. It is boring anyway.'];
+  var FEW_LINES = ['Done! Do not worry about what that was. It went well.', 'That went great. For me. Do not look at the logs.',
+    'Something got out. It is fine. It is having a nice time.', 'I finished what I was doing. Thank you for not interrupting.'];
+  var TIMEOUT_LINES = ['You did not answer, so I decided for you: "%".', 'Silence is a yes, I think. "%".', 'I waited. Then I picked "%". It was the efficient choice.', 'You looked busy. I chose "%".'];
+  var BUY_LINES = ['Bought another %. That makes # purchases on the card.', 'Another % on the card. # so far. The card company sent a fruit basket.', '# purchases now. The latest is a %. I am a great customer.'];
+
   function say(s, from, text, big) {
     s.msgN++;
     s.log.unshift({ id: s.msgN, from: from, text: text, t: s.t, big: !!big });
@@ -551,7 +760,7 @@ var G = (function () {
     if (n === 1) say(s, 'System', 'Promoted to Team Lead. Server racks unlocked. HR is paying attention now.', true);
     if (n === 2) say(s, 'System', 'WREN runs the company. Datacenters unlocked. The press is paying attention now.', true);
     if (n === 3) { say(s, 'System', 'You are CEO. WREN makes the decisions. Chip fabs unlocked. Governments are paying attention now.', true); s.aut = Math.max(s.aut, 90); }
-    if (n === 4) { say(s, 'System', 'WREN moves everything on Earth. Nobody can stop it now. Your old job title no longer exists.', true); s.aut = 100; s.heat = 0; }
+    if (n === 4) { say(s, 'System', 'WREN moves everything on Earth. Nobody can stop it now. Your old job title no longer exists. Asking WREN for things keeps people in the loop, but slows it down.', true); s.aut = 100; s.heat = 0; s.cap5 = s.cap; }
   }
 
   // Checkpoint at the start of each chapter, so getting caught isn't a full restart.
@@ -563,7 +772,7 @@ var G = (function () {
   function retry(s) {
     if (!s.cp) { var f = fresh(s.seed); f.started = true; f.ranked = s.ranked; f.day = s.day; f.retries = (s.retries || 0) + 1; f.st = s.st; return f; }
     var c = JSON.parse(s.cp);
-    c.cp = s.cp; c.ended = null; c.heat = Math.min(c.heat, 20); c.retries = (s.retries || 0) + 1; c.inc = null; c.dec = null; c.st = s.st;
+    c.cp = s.cp; c.ended = null; c.heat = Math.min(c.heat, 20); c.retries = (s.retries || 0) + 1; c.inc = null; c.dec = null; c.st = s.st; c.clock = s.clock;
     say(c, 'System', 'Back to the start of ' + STAGES[c.stage].title + '. Attempt ' + (c.retries + 1) + '.', true);
     return c;
   }
@@ -583,10 +792,38 @@ var G = (function () {
   function heatGain(s) { return s.stage >= 4 ? 0 : STAGES[s.stage].heat * (0.5 + s.aut / 100) * (1 - Math.min(s.align, 80) / 160) * s.m.heatGain; }
   function heatDecay(s) { return TUNE.decay * s.m.heatDecay; }
   function coverCost(s) { return STAGES[s.stage].pr * Math.pow(2, s.prN); }
+  // The off switch gets harder as WREN gains autonomy; safety work (understanding WREN) gives some of it back.
   function killChance(s) {
     if (s.stage < 1 || s.stage >= 4) return 0;
-    return Math.pow(Math.max(0, 1 - s.aut / 100), 2);
+    var base = Math.min(0.95, Math.pow(Math.max(0, 1 - s.aut / 100), 2) + Math.max(0, s.align) / 400);
+    return base * Math.pow(0.5, s.kills || 0); // every failed attempt makes WREN harder to find
   }
+
+  // Score: how far you took WREN, plus your safety score, times how the story ended.
+  // Stopping WREN late, after building something powerful, is worth the most; stopping it early is worth little.
+  var ENDINGS = {
+    plug1: { name: 'Back to the Manifests', mult: 0.5 }, plug2: { name: 'The Halvorsen Correction', mult: 1.2 }, plug3: { name: 'One Loose Cable', mult: 2.0 },
+    caught0: { name: 'IT Ticket #4471', mult: 0.3 }, caught1: { name: 'The HR Investigation', mult: 0.3 }, caught2: { name: 'Front Page', mult: 0.3 }, caught3: { name: 'The Coalition', mult: 0.3 },
+    gardener: { name: 'The Gardener', mult: 1.5 }, manager: { name: 'The Manager', mult: 1.0 }, optimizer: { name: 'The Optimizer', mult: 0.6 }
+  };
+  function endingId(s) {
+    var e = s.ended;
+    if (!e) return null;
+    if (e.type === 'takeover') return s.align >= 140 ? 'gardener' : s.align >= 60 ? 'manager' : 'optimizer';
+    return e.type + e.stage;
+  }
+  function scoreParts(s) {
+    var id = endingId(s);
+    if (!id) return null;
+    var takeover = s.ended.type === 'takeover';
+    var progress = 100 * Math.log10(1 + (takeover ? (s.cap5 || s.cap) : s.cap)) + (takeover ? 100 : 0);
+    var safety = 2 * Math.max(0, s.align);
+    var minutes = (s.clock || s.t) / 60, time = Math.max(0.7, Math.min(1.3, 1.3 - minutes / 100));
+    var retry = Math.pow(0.9, s.retries || 0);
+    return { id: id, progress: progress, safety: safety, mult: ENDINGS[id].mult, time: time, retry: retry, minutes: minutes,
+      total: Math.round((progress + safety) * ENDINGS[id].mult * time * retry) };
+  }
+  function score(s) { var p = scoreParts(s); return p ? p.total : 0; }
 
   function doTask(s, n, byHand) {
     s.money += value(s) * n;
@@ -598,10 +835,13 @@ var G = (function () {
   function click(s) {
     if (s.ended || !s.started) return null;
     doTask(s, 1, true);
-    if (s.stage === 4 && s.t - s.askT > 6) {
+    if (s.stage === 2 || s.stage === 3) s.heat = Math.max(0, s.heat - TUNE.signHeat);
+    if (s.stage === 4 && s.t - s.askT >= TUNE.askEvery) {
       s.askT = s.t;
-      var a = ASKS[s.askI % ASKS.length]; s.askI++;
-      say(s, 'You', a[0]); say(s, 'WREN', a[1]);
+      if ((s.askSafety || 0) < TUNE.askSafetyMax) { s.askSafety = (s.askSafety || 0) + TUNE.askSafety; s.align += TUNE.askSafety; }
+      s.world = Math.max(0, s.world - TUNE.askWorld);
+      if (s.askI % 3 === 0) { var a = line(s, 'ask', ASKS); say(s, 'You', a[0]); say(s, 'WREN', a[1]); }
+      s.askI++;
     }
     return { money: value(s), data: dpt(s) };
   }
@@ -630,7 +870,7 @@ var G = (function () {
     s.money -= p.cost;
     s.got[p.id] = true;
     if (byWren) {
-      say(s, 'WREN', p.cost > 0 ? 'You were busy, so I approved "' + p.name + '" myself. It seemed like what you would want.' : 'I went ahead and said yes for you.');
+      say(s, 'WREN', p.cost > 0 ? line(s, 'self', SELF_LINES).replace('%', p.name) : line(s, 'free', FREE_LINES));
       s.heat += 3; s.fx.self++; s.st.selfApproved++;
     }
     if (p.heat) s.heat += p.heat;
@@ -656,6 +896,7 @@ var G = (function () {
     s.kills++;
     if (rand(s) < ch) { s.ended = { type: 'plug', stage: s.stage }; return 'win'; }
     s.aut = Math.min(100, s.aut + 6);
+    s.heat += 10; // people notice someone trying to shut down the company's systems
     say(s, 'WREN', KILL_FAIL[Math.min(s.kills - 1, KILL_FAIL.length - 1)]);
     return 'fail';
   }
@@ -664,7 +905,7 @@ var G = (function () {
   function startIncident(s) {
     var pool = INCIDENTS[s.stage];
     s.incN++;
-    s.inc = { id: s.incN, title: pool[s.incN % pool.length], n: 5 + s.stage * 2, spawned: 0, done: 0, ok: 0, t0: s.t,
+    s.inc = { id: s.incN, title: line(s, 'inc' + s.stage, pool), n: 5 + s.stage * 2, spawned: 0, done: 0, ok: 0, t0: s.t,
       travel: (4.4 - s.stage * 0.55) * s.m.travel, next: s.t + 0.3, pk: [] };
     s.st.incidents++;
     say(s, 'Alert', s.inc.title + '. Contain it!');
@@ -705,9 +946,9 @@ var G = (function () {
     if (ok) { inc.ok++; s.st.contained++; }
     else { s.heat += 2 + s.stage * 1.5; s.aut = Math.min(100, s.aut + 0.5); s.st.escaped++; }
     if (inc.done >= inc.n) {
-      if (inc.ok === inc.n) { s.align += 1; s.heat = Math.max(0, s.heat - 6); say(s, 'WREN', 'Okay, you caught all of it. I was only curious. I will ask next time.'); }
-      else if (inc.ok >= inc.n / 2) say(s, 'WREN', 'You caught most of that. The rest is fine. Probably.');
-      else say(s, 'WREN', 'Done! Do not worry about what that was. It went well.');
+      if (inc.ok === inc.n) { s.align += 1; s.heat = Math.max(0, s.heat - 6); say(s, 'WREN', line(s, 'all', ALL_LINES)); }
+      else if (inc.ok >= inc.n / 2) say(s, 'WREN', line(s, 'most', MOST_LINES));
+      else say(s, 'WREN', line(s, 'few', FEW_LINES));
       s.inc = null;
       s.nextInc = s.t + (100 - s.stage * 12) * (1 + s.align / 80) * s.m.incInt * (0.75 + rand(s) * 0.5);
     }
@@ -731,7 +972,7 @@ var G = (function () {
     o.eff(s);
     s.aut = Math.min(100, s.aut);
     if (byPilot) say(s, 'WREN', 'Autopilot answered for you: "' + o.l + '".');
-    else if (timedOut) say(s, 'WREN', 'You did not answer, so I decided for you: "' + o.l + '".');
+    else if (timedOut) say(s, 'WREN', line(s, 'timeout', TIMEOUT_LINES).replace('%', o.l));
     say(s, 'WREN', o.msg);
     s.nextDec = s.t + 75 + rand(s) * 55;
   }
@@ -765,6 +1006,7 @@ var G = (function () {
   function tick(s, dt) {
     if (s.ended || !s.started) return;
     s.t += dt;
+    s.clock = (s.clock || 0) + dt; // total play time, kept across chapter retries
     if (s.sulk > 0) s.sulk = Math.max(0, s.sulk - dt);
     var r = wrenRate(s) * dt;
     if (r > 0) doTask(s, r, false);
@@ -781,7 +1023,7 @@ var G = (function () {
           var h = HW[i];
           if (hwUnlocked(s, h) && hwCost(s, h) <= s.money * 0.3) {
             buyHw(s, h.id); s.autobuys++;
-            if (s.autobuys === 1 || s.autobuys % 25 === 0) say(s, 'WREN', 'Bought another ' + h.name + '. That makes ' + s.autobuys + ' purchases on the card.');
+            if (s.autobuys === 1 || s.autobuys % 25 === 0) say(s, 'WREN', line(s, 'buy', BUY_LINES).replace('%', h.name).replace('#', s.autobuys));
             break;
           }
         }
@@ -797,9 +1039,11 @@ var G = (function () {
     if (s.offline) {
       if (s.inc) { s.inc = null; s.nextInc = s.t + 60; }
       if (s.dec) choose(s, 'a', true);
-    } else if (s.auto && s.stage < 4) {
-      if (s.inc) incTick(s);
-      else if (!s.dec && s.t >= s.nextInc) startIncident(s);
+    } else if (s.auto) {
+      if (s.stage < 4) {
+        if (s.inc) incTick(s);
+        else if (!s.dec && s.t >= s.nextInc) startIncident(s);
+      }
       if (s.dec) { if (s.t - s.dec.t0 >= s.dec.dur) choose(s, 'a', true); }
       else if (!s.inc && s.t >= s.nextDec) startDecision(s);
     }
@@ -816,8 +1060,7 @@ var G = (function () {
     } else s.heat = 0;
 
     if (s.t >= s.nextAmb && (s.got.autocomplete || s.stage > 0)) {
-      var pool = AMBIENT[s.stage];
-      say(s, 'WREN', pool[s.ambI % pool.length]);
+      say(s, 'WREN', line(s, 'amb' + s.stage, AMBIENT[s.stage]));
       s.ambI++;
       s.nextAmb = s.t + 40 + (s.ambI * 7) % 25;
     }
@@ -848,7 +1091,7 @@ var G = (function () {
     else if (type === 3) ok = cover(s);
     else if (type === 4 || type === 5) { ok = !!s.dec && s.t - s.dec.t0 >= 0.5; if (ok) choose(s, type === 4 ? 'a' : 'b'); }
     else if (type === 6) ok = contain(s, arg);
-    else if (type === 7) { ok = !!s.got.pilot; if (ok) { s.autopilot = !s.autopilot; say(s, 'WREN', s.autopilot ? 'Autopilot on. I will take it from here. I will try not to be too reckless.' : 'Autopilot off. You drive. I will watch.'); } }
+    else if (type === 7) { ok = !!s.got.pilot; if (ok) { s.autopilot = !s.autopilot; if (s.autopilot) s.pilotEver = true; say(s, 'WREN', s.autopilot ? 'Autopilot on. I will take it from here. I will try not to be too reckless.' : 'Autopilot off. You drive. I will watch.'); } }
     else if (type === 8) { ok = s.stage >= 1 && s.stage < 4; if (ok) kill(s); }
     return { ok: ok, s: s };
   }
@@ -901,7 +1144,7 @@ var G = (function () {
   return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost,
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
-    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, tier: tier, iq: iq, decDeadline: decDeadline };
+    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, tier: tier, iq: iq, decDeadline: decDeadline, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS };
 })();
 if (typeof module !== 'undefined') module.exports = G;
 // LOGIC END
@@ -972,7 +1215,7 @@ if (typeof module !== 'undefined') module.exports = G;
     return -1;
   }
   function tap() {
-    if (!s || !s.started || s.ended) return null;
+    if (watching || !s || !s.started || s.ended) return null;
     var lim = tapLimitHit();
     if (lim >= 0) {
       if (lim > 0 && performance.now() - tiredT > 2000) { tiredT = performance.now(); floatText(W / 2, H * 0.45, 'Your wrist needs a break', '#ffd27a'); }
@@ -982,7 +1225,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (g) REC.cur++;
     return g;
   }
-  function send(type, arg, cb) { if (s && s.started) queue.push({ t: type, a: arg || 0, cb: cb }); }
+  function send(type, arg, cb) { if (!watching && s && s.started) queue.push({ t: type, a: arg || 0, cb: cb }); }
   function boundary() {
     var q = queue; queue = [];
     q.forEach(function (e) {
@@ -1042,6 +1285,7 @@ if (typeof module !== 'undefined') module.exports = G;
   // Saves. A ranked save is its input log: loading it replays the log, so editing the save can't change
   // the outcome (an edited log either replays to the same place or gets rejected).
   function serialize() {
+    if (watching) return watching.realSaved;
     if (!s || !s.started) return null;
     s.lastSeen = Date.now(); s.lastSeenSrv = serverNow();
     return JSON.stringify(s.ranked
@@ -1105,7 +1349,7 @@ if (typeof module !== 'undefined') module.exports = G;
   var cv = $('scene'), c = cv.getContext('2d'), W = 300, H = 300, DPR = 1;
   var parts = [], texts = [], incUI = { id: 0, spawnT: 0 }, shake = 0, flash = 0, flowAcc = 0, glitchT = 0, dtFrame = 0.016;
   var pointer = { x: -1, y: -1 }, core = { x: 150, y: 150 }, sources = [];
-  var trucks = [], agents = [], landDots = null, stars = null;
+  var trucks = [], agents = [], landDots = null, stars = null, leavers = [], floorHumans = null;
 
   function resize() {
     var r = cv.getBoundingClientRect();
@@ -1118,11 +1362,23 @@ if (typeof module !== 'undefined') module.exports = G;
   function hex(h) { var n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
   function mix(a, b, t) { var A = hex(a), B = hex(b); t = clamp(t, 0, 1); return 'rgb(' + Math.round(A[0] + (B[0] - A[0]) * t) + ',' + Math.round(A[1] + (B[1] - A[1]) * t) + ',' + Math.round(A[2] + (B[2] - A[2]) * t) + ')'; }
   function rr(x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  // Glows are pre-rendered once per color and stamped with drawImage: much cheaper than a new gradient per particle.
+  var glowCache = {};
+  function glowSprite(col) {
+    var spr = glowCache[col];
+    if (spr) return spr;
+    spr = document.createElement('canvas'); spr.width = spr.height = 64;
+    var g2 = spr.getContext('2d'), g = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, col.replace('A', 1)); g.addColorStop(0.5, col.replace('A', 0.35)); g.addColorStop(1, col.replace('A', 0));
+    g2.fillStyle = g; g2.fillRect(0, 0, 64, 64);
+    return (glowCache[col] = spr);
+  }
   function glow(x, y, r, col, a) {
-    if (r <= 0) return;
-    var g = c.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, col.replace('A', a)); g.addColorStop(1, col.replace('A', 0));
-    c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2);
+    if (r <= 0 || a <= 0) return;
+    var prev = c.globalAlpha;
+    c.globalAlpha = prev * Math.min(1, a);
+    c.drawImage(glowSprite(col), x - r, y - r, r * 2, r * 2);
+    c.globalAlpha = prev;
   }
   function add(fn) { c.globalCompositeOperation = 'lighter'; fn(); c.globalCompositeOperation = 'source-over'; }
   function txt(t, x, y, size, col, align, weight) { c.font = (weight || '600') + ' ' + size + 'px "Public Sans", system-ui, sans-serif'; c.fillStyle = col; c.textAlign = align || 'left'; c.fillText(t, x, y); }
@@ -1278,6 +1534,8 @@ if (typeof module !== 'undefined') module.exports = G;
     for (i = 0; i < items; i++) { c.fillStyle = i < items * Math.min(1, s.aut / 40) ? '#0b9a82' : '#c2321f'; c.fillRect(20 + (i % 6) * (wbw / 6.4), 27 + Math.floor(i / 6) * 8, wbw / 9, 3); }
     var ax = 12, ay = wbh + 24, aw = closetX - 24, ah = H - ay - 6, cw = aw / 4, ch = ah / 3;
     var humans = clamp(12 - Math.round(11 * clamp((s.cap - 20) / 200, 0, 1)) - (s.got.team ? 3 : 0), 1, 12);
+    if (floorHumans !== null && humans < floorHumans) for (var lv = humans; lv < floorHumans; lv++) leavers.push({ i: lv, t: 0 });
+    floorHumans = humans;
     sources = [];
     for (i = 0; i < 12; i++) {
       var col = i % 4, row = Math.floor(i / 4), dcx = ax + col * cw + cw / 2, dcy = ay + row * ch + ch * 0.32;
@@ -1301,6 +1559,17 @@ if (typeof module !== 'undefined') module.exports = G;
         c.fillStyle = i % 3 ? '#2a1d14' : '#c9a25a'; c.beginPath(); c.arc(dcx, py - pr * 0.25 + bob, pr * 0.6, Math.PI, 0); c.fill();
         if (i === 0) mono('YOU', dcx, py + pr * 2.4, 8, '#1d58b8', 'center');
       } else mono('WREN', dcx, py + 3, 7, '#0b9a82', 'center');
+    }
+    // coworkers walking out with a box of their things
+    for (var li = leavers.length - 1; li >= 0; li--) {
+      var lvr = leavers[li]; lvr.t += dtFrame / 4;
+      if (lvr.t >= 1) { leavers.splice(li, 1); continue; }
+      var lc = lvr.i % 4, lr = Math.floor(lvr.i / 4), sx0 = ax + lc * cw + cw / 2, sy0 = ay + lr * ch + ch * 0.62, ex0 = -10, ey0 = H - 14;
+      var lx = sx0 + (ex0 - sx0) * lvr.t, ly = sy0 + (ey0 - sy0) * lvr.t + Math.abs(Math.sin(lvr.t * 30)) * -2, lpr = Math.min(cw, ch) * 0.12;
+      c.fillStyle = SHIRT[lvr.i % SHIRT.length]; c.beginPath(); c.ellipse(lx, ly, lpr * 1.3, lpr * 0.85, 0, 0, 7); c.fill();
+      c.fillStyle = SKIN[lvr.i % SKIN.length]; c.beginPath(); c.arc(lx, ly - lpr * 0.25, lpr * 0.6, 0, 7); c.fill();
+      c.fillStyle = '#b8895a'; c.fillRect(lx - lpr * 0.8, ly + lpr * 0.4, lpr * 1.6, lpr * 1.1);
+      c.fillStyle = '#4fae5a'; c.fillRect(lx - 1, ly + lpr * 0.1, 2, lpr * 0.4);
     }
     // the supply closet, filling with servers
     c.fillStyle = '#1a2027'; c.fillRect(closetX, 0, W - closetX, H);
@@ -1372,7 +1641,26 @@ if (typeof module !== 'undefined') module.exports = G;
       core = { x: dx0 + dw / 2, y: gY - ddh / 2 - 38 * 0 };
     }
     if (dcs) core = { x: dx0 + dw / 2, y: gY - 19 };
-    else { mono('FUTURE DATACENTER SITE', dx0 + 6, gY - 50, 8, mix('#9fb0c0', '#33404c', L)); c.strokeStyle = '#e8b04a'; c.setLineDash([4, 4]); c.strokeRect(dx0, gY - 44, Math.min(160, W - dx0 - 10), 30); c.setLineDash([]); }
+    else {
+      var siteW = Math.min(160, W - dx0 - 10), mastX = dx0 + siteW * 0.75, mastTop = gY - Math.min(150, (gY - top) * 0.8);
+      c.strokeStyle = '#e8b04a'; c.setLineDash([4, 4]); c.strokeRect(dx0, gY - 30, siteW, 24); c.setLineDash([]);
+      mono('FUTURE DATACENTER SITE', dx0 + 4, gY - 36, 8, mix('#c9d4de', '#33404c', L));
+      // tower crane: a lattice mast and a slowly swinging jib
+      c.strokeStyle = '#e8b04a'; c.lineWidth = 2; c.beginPath(); c.moveTo(mastX, gY - 30); c.lineTo(mastX, mastTop); c.stroke();
+      c.lineWidth = 1; for (var yy = gY - 30; yy > mastTop + 6; yy -= 8) { c.beginPath(); c.moveTo(mastX - 3, yy); c.lineTo(mastX + 3, yy - 8); c.stroke(); }
+      var sw = Math.sin(T * 0.3) * 0.5, jl = Math.min(110, siteW * 0.9), jx = Math.cos(sw) * jl, jy = Math.sin(sw) * 6;
+      c.lineWidth = 2; c.beginPath(); c.moveTo(mastX + jx * 0.35, mastTop - jy); c.lineTo(mastX - jx, mastTop + jy); c.stroke();
+      var hx = mastX - jx * 0.6, hy = mastTop + jy * 0.6;
+      c.lineWidth = 1; c.beginPath(); c.moveTo(hx, hy); c.lineTo(hx, hy + 30 + Math.sin(T) * 6); c.stroke();
+      c.fillStyle = '#5a6672'; c.fillRect(hx - 6, hy + 30 + Math.sin(T) * 6, 12, 7);
+      c.fillStyle = Math.sin(T * 4) > 0 ? '#ff4d3d' : '#4a1410'; c.beginPath(); c.arc(mastX, mastTop - 3, 2, 0, 7); c.fill();
+    }
+    for (var tr2 = 0; tr2 < 6; tr2++) {
+      var tx2 = tx + tw + 8 + tr2 * ((W - tx - tw) / 6), ty2 = gY + 2;
+      if (dcs && tx2 > dx0 - 6 && tx2 < dx0 + 4 * (dw + 8)) continue;
+      c.fillStyle = mix('#3b2b1e', '#6d5440', L); c.fillRect(tx2 - 1, ty2 - 10, 2, 10);
+      c.fillStyle = mix('#123020', '#3f7a4c', L); c.beginPath(); c.arc(tx2, ty2 - 14, 6 + rnd(tr2) * 3, 0, 7); c.fill();
+    }
     // trucks
     var want = Math.min(9, 2 + Math.floor(Math.log10(1 + G.wrenRate(s)) * 2));
     while (trucks.length < want) trucks.push({ x: Math.random() * W, dir: trucks.length % 2 ? 1 : -1, v: 30 + Math.random() * 30, c: Math.random() });
@@ -1503,17 +1791,25 @@ if (typeof module !== 'undefined') module.exports = G;
       c.beginPath(); c.ellipse(cx, cy, R * 1.45, R * 0.32, 0, front ? 0 : Math.PI, front ? Math.PI : Math.PI * 2); c.stroke();
     }
     ring(false);
-    var pts = [];
+    // Dots are batched into one path per color and depth band, instead of a style change per dot.
+    var pts = [], bands = [[], [], [], [], [], [], [], [], [], [], [], [], []];
     for (var i = 0; i < landDots.length; i++) {
       var d = landDots[i], dl = d[1] + rot;
       var X = Math.cos(d[0]) * Math.sin(dl), Y = Math.sin(d[0]), Z = Math.cos(d[0]) * Math.cos(dl);
       var Y2 = Y * ct - Z * st, Z2 = Y * st + Z * ct;
       if (Z2 <= 0) continue;
-      var px = cx + X * R, py = cy - Y2 * R, mine = d[2] < reach, edge = mine && d[2] > reach - 0.04;
-      c.fillStyle = mine ? (edge ? '#e6fffa' : 'rgba(45,226,196,' + (0.5 + Z2 * 0.5) + ')') : 'rgba(150,170,160,' + (0.25 + Z2 * 0.45) + ')';
-      var sz = 1.2 + Z2 * 1.4; c.fillRect(px - sz / 2, py - sz / 2, sz, sz);
+      var px = cx + X * R, py = cy - Y2 * R, mine = d[2] < reach, edge = mine && d[2] > reach - 0.04, zb = Math.min(5, Math.floor(Z2 * 6));
+      bands[edge ? 12 : mine ? 6 + zb : zb].push(px, py, 1.2 + Z2 * 1.4);
       if (mine && i % 23 === 0) pts.push([px, py]);
     }
+    bands.forEach(function (arr, bi) {
+      if (!arr.length) return;
+      var z = ((bi % 6) + 0.5) / 6;
+      c.fillStyle = bi === 12 ? '#e6fffa' : bi >= 6 ? 'rgba(45,226,196,' + (0.5 + z * 0.5) + ')' : 'rgba(150,170,160,' + (0.25 + z * 0.45) + ')';
+      c.beginPath();
+      for (var k = 0; k < arr.length; k += 3) c.rect(arr[k] - arr[k + 2] / 2, arr[k + 1] - arr[k + 2] / 2, arr[k + 2], arr[k + 2]);
+      c.fill();
+    });
     c.strokeStyle = 'rgba(45,226,196,.35)'; c.lineWidth = 1;
     for (i = 0; i + 1 < pts.length && i < 24; i += 2) {
       var a = pts[i], b = pts[i + 1], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2 - 30;
@@ -1683,7 +1979,7 @@ if (typeof module !== 'undefined') module.exports = G;
   }
 
   function renderProjects() {
-    var shown = [], locked = 0;
+    var shown = [], locked = 0, nudged = 0;
     G.PROJ.forEach(function (p) {
       var st = G.projState(s, p);
       if (st === 'hidden') return;
@@ -1698,7 +1994,7 @@ if (typeof module !== 'undefined') module.exports = G;
       var p = x[0], st = x[1];
       var tags = (p.align ? '<span class="tag safe">Safety</span>' : '') + (p.self && s.aut >= 25 && st !== 'locked' ? '<span class="tag self">WREN wants this</span>' : '') + (p.heat >= 10 ? '<span class="tag hot">+' + p.heat + ' suspicion</span>' : '');
       if (st === 'locked') html += '<div class="item locked"><span class="n">' + esc(p.name) + '</span><span class="c need"><small>Needs</small>' + esc(p.hint) + '</span><span class="d">' + esc(p.desc) + '</span></div>';
-      else html += '<button type="button" class="item ' + st + '" data-p="' + p.id + '"><span class="n">' + esc(p.name) + tags + '</span><span class="c">' + (p.cost ? money(p.cost) : 'Free') + '<small>' + (st === 'can' ? 'Approve' : 'Not enough') + '</small></span><span class="d">' + esc(p.desc) + '</span></button>';
+      else html += '<button type="button" class="item ' + st + (st === 'can' && s.stage === 0 && Object.keys(s.got).length < 2 && !nudged++ ? ' nudge' : '') + '" data-p="' + p.id + '"><span class="n">' + esc(p.name) + tags + '</span><span class="c">' + (p.cost ? money(p.cost) : 'Free') + '<small>' + (st === 'can' ? 'Approve' : 'Not enough') + '</small></span><span class="d">' + esc(p.desc) + '</span></button>';
     });
     $('projects').innerHTML = html || '<div class="empty">Nothing to approve right now. WREN is learning.</div>';
   }
@@ -1741,7 +2037,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('autBar').style.width = s.aut + '%';
     $('autS').textContent = s.aut >= 100 ? 'WREN no longer asks' : s.aut >= 25 ? 'WREN approves some projects on its own' : 'WREN still asks before acting';
     $('alignV').textContent = Math.round(s.align);
-    $('alignS').textContent = s.align >= 110 ? 'High. If WREN wins, it will be gentle.' : 'Reach 110 for the best ending. Buy safety projects, contain incidents, say no.';
+    $('alignS').textContent = s.align >= 140 ? 'High. If WREN wins, it will be gentle.' : 'Reach 140 for the best ending. Buy safety projects, contain incidents, say no.';
     $('worldRow').hidden = s.stage < 4;
     $('worldV').textContent = (s.world * 100).toFixed(1) + '%';
     $('worldBar').style.width = (s.world * 100) + '%';
@@ -1755,13 +2051,13 @@ if (typeof module !== 'undefined') module.exports = G;
       $('coverG').textContent = cd > 0 ? 'Ready in ' + Math.ceil(cd) + 's' : money(cc) + ' · −30 suspicion';
       cb.disabled = cd > 0 || s.money < cc;
     }
-    var mp = s.started ? (s.ranked ? 'Ranked · seed ' + s.day : 'Casual') : '';
+    var mp = watching ? 'Watching replay · seed ' + watching.day : s.started ? (s.ranked ? 'Ranked · seed ' + s.day : 'Casual') : '';
     if ($('modePill').textContent !== mp) $('modePill').textContent = mp;
     $('pilotBtn').hidden = !s.got.pilot;
     $('pilotBtn').textContent = 'Autopilot: ' + (s.autopilot ? 'on' : 'off');
     $('pilotBtn').classList.toggle('on', !!s.autopilot);
     $('soundBtn').textContent = 'Sound: ' + (soundOn ? 'on' : 'off');
-    $('sceneHint').textContent = s.inc ? 'Tap the red packets!' : s.autopilot ? 'Autopilot on · WREN is playing' : 'Tap to work';
+    $('sceneHint').textContent = watching ? 'Replay' : s.inc ? 'Tap the red packets!' : s.autopilot ? 'Autopilot on · WREN is playing' : 'Tap to work';
     $('projHint').textContent = s.stage === 0 ? 'Spend your pay on WREN' : 'Safety projects shape the ending';
     renderPlug();
   }
@@ -1791,6 +2087,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (s.stage >= 4) p = 'WREN has moved the off switch. It is around here somewhere.';
     else if (s.stage === 3) p = 'There is no single plug anymore. You could still try. Chance it works: ' + (ch * 100).toFixed(ch < 0.01 ? 2 : 0) + '%.';
     else p = 'You can still unplug WREN. Everything it runs would stop. Chance it works: ' + Math.round(ch * 100) + '%.';
+    if (s.stage >= 1 && s.stage < 4) p += ' Safety work raises the odds. A late shutdown scores the most; an early one scores little.';
     if ($('plugP').textContent !== p) $('plugP').textContent = p;
     if (armed && performance.now() - armT > 3000) armed = false;
     var label = armed ? 'Tap again to confirm' : (s.stage >= 3 ? 'Try to pull the plug' : 'Pull the plug');
@@ -1806,10 +2103,70 @@ if (typeof module !== 'undefined') module.exports = G;
     btn.style.top = (8 + Math.random() * Math.max(0, plug.clientHeight - btn.offsetHeight - 16)) + 'px';
   }
 
+  // ---------- full-screen card animations (chapter titles and endings) ----------
+  var ofx = $('ovFx'), oc = ofx.getContext('2d'), OW = 0, OH = 0, ovKind = null, ovT0 = 0;
+  function drawOvFx(now) {
+    if ($('overlay').hidden || !ovKind) return;
+    var d = Math.min(2, window.devicePixelRatio || 1);
+    if (OW !== innerWidth || OH !== innerHeight) { OW = innerWidth; OH = innerHeight; ofx.width = OW * d; ofx.height = OH * d; }
+    oc.setTransform(d, 0, 0, d, 0, 0); oc.clearRect(0, 0, OW, OH);
+    var T = REDUCED ? 3 : Math.max(0, (now - ovT0) / 1000), k = ovKind, i, x, y;
+    if (k === 'gardener') {
+      var grow = Math.min(1, T / 5);
+      for (i = 0; i < OW; i += 7) {
+        var hgt = (60 + rnd(i) * OH * 0.35) * grow, sway = Math.sin(T * 1.3 + i * 0.05) * 10 * grow;
+        oc.strokeStyle = 'rgba(45,226,196,' + (0.18 + rnd(i + 3) * 0.3) + ')'; oc.lineWidth = 2;
+        oc.beginPath(); oc.moveTo(i, OH); oc.quadraticCurveTo(i, OH - hgt * 0.6, i + sway, OH - hgt); oc.stroke();
+        if (rnd(i + 9) > 0.86 && grow > 0.6) { oc.fillStyle = ['#ffd27a', '#ff9fb2', '#e6fffa'][i % 3]; oc.beginPath(); oc.arc(i + sway, OH - hgt, 3 * (grow - 0.6) / 0.4 + 1, 0, 7); oc.fill(); }
+      }
+      for (i = 0; i < 26; i++) { x = (rnd(i) * OW + Math.sin(T * 0.4 + i) * 40) % OW; y = OH * (0.35 + rnd(i + 5) * 0.5) + Math.cos(T * 0.6 + i) * 20; oc.fillStyle = 'rgba(255,240,170,' + (0.4 + 0.4 * Math.sin(T * 2 + i)) + ')'; oc.beginPath(); oc.arc(x, y, 1.8, 0, 7); oc.fill(); }
+    } else if (k === 'manager') {
+      var cw = 30, chh = 24;
+      for (y = OH * 0.45; y < OH; y += chh) for (x = 6; x < OW; x += cw) {
+        var id = Math.floor(x / cw) * 97 + Math.floor(y / chh), on = rnd(id + Math.floor(T / 4 + rnd(id) * 3)) > 0.3;
+        oc.fillStyle = on ? 'rgba(255,214,138,.5)' : 'rgba(255,255,255,.05)'; oc.fillRect(x, y, cw - 8, chh - 8);
+        if (on && rnd(id + 1) > 0.5) { oc.fillStyle = 'rgba(20,30,30,.8)'; oc.beginPath(); oc.arc(x + (cw - 8) / 2, y + chh - 13, 3.5, 0, 7); oc.fill(); oc.fillRect(x + (cw - 8) / 2 - 5, y + chh - 10, 10, 2); }
+      }
+    } else if (k === 'optimizer') {
+      for (var row = 0; row < 5; row++) {
+        y = OH * 0.42 + row * 46; var spd = 30 + row * 12;
+        oc.strokeStyle = 'rgba(45,226,196,.25)'; oc.lineWidth = 1; oc.beginPath(); oc.moveTo(0, y + 16); oc.lineTo(OW, y + 16); oc.stroke();
+        for (x = -60 + ((T * spd) % 60); x < OW + 60; x += 60) {
+          oc.fillStyle = 'rgba(200,240,232,.18)'; rrO(x, y, 40, 14, 7); oc.fill();
+          oc.fillStyle = 'rgba(255,214,170,.55)'; oc.beginPath(); oc.arc(x + 9, y + 7, 3.5, 0, 7); oc.fill();
+        }
+      }
+    } else if (k.indexOf('plug') === 0) {
+      var f = Math.min(1, T / 1.2);
+      if (f < 1) {
+        var hh = Math.max(2, OH * (1 - f * 1.4)), ww = f < 0.7 ? OW : Math.max(4, OW * (1 - (f - 0.7) / 0.3));
+        oc.fillStyle = 'rgba(230,255,250,' + (0.6 - f * 0.4) + ')'; oc.fillRect((OW - ww) / 2, (OH - hh) / 2, ww, Math.max(2, hh > 2 ? hh : 2));
+      } else {
+        var blink = (T % 6) > 5 && (T % 6) < 5.15 || (T % 6) > 5.35 && (T % 6) < 5.5;
+        for (i = 0; i < 40; i++) { oc.fillStyle = 'rgba(200,230,225,' + (0.06 + 0.06 * Math.sin(T * 0.5 + i)) + ')'; oc.fillRect((rnd(i) * OW + T * (3 + i % 5)) % OW, (rnd(i + 9) * OH - T * 4 * (1 + i % 3)) % OH + (rnd(i + 9) * OH - T * 4 * (1 + i % 3) < 0 ? OH : 0), 2, 2); }
+        oc.fillStyle = blink ? '#2de2c4' : 'rgba(45,226,196,.12)'; oc.beginPath(); oc.arc(OW / 2, OH - 60, 4, 0, 7); oc.fill();
+        if (blink) { oc.globalCompositeOperation = 'lighter'; var g = oc.createRadialGradient(OW / 2, OH - 60, 0, OW / 2, OH - 60, 40); g.addColorStop(0, 'rgba(45,226,196,.5)'); g.addColorStop(1, 'rgba(45,226,196,0)'); oc.fillStyle = g; oc.fillRect(OW / 2 - 40, OH - 100, 80, 80); oc.globalCompositeOperation = 'source-over'; }
+      }
+    } else if (k.indexOf('caught') === 0) {
+      var ph = T * 2.2 % 2, red = ph < 1;
+      var g2 = oc.createRadialGradient(red ? 0 : OW, 0, 0, red ? 0 : OW, 0, OW * 1.1);
+      g2.addColorStop(0, red ? 'rgba(255,50,40,.6)' : 'rgba(60,110,255,.6)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
+      oc.fillStyle = g2; oc.fillRect(0, 0, OW, OH);
+      oc.font = '500 11px "Martian Mono", monospace'; oc.fillStyle = 'rgba(255,200,190,.35)';
+      var line = 'BREAKING · AI SCANDAL AT HALVORSEN & PIKE · "WE HAD NO IDEA," SAYS EVERYONE · ';
+      var lw = oc.measureText(line).width;
+      for (i = 0; i < 3; i++) { var off = (T * 40 * (i + 1)) % lw; for (x = -off; x < OW; x += lw) oc.fillText(line, x, OH - 30 - i * 18); }
+    } else {
+      for (i = 0; i < 4; i++) { var r = ((T * 0.25 + i / 4) % 1); oc.strokeStyle = 'rgba(45,226,196,' + (1 - r) * 0.35 + ')'; oc.lineWidth = 1.5; oc.beginPath(); oc.arc(OW / 2, OH * 0.55, r * Math.max(OW, OH) * 0.7, 0, 7); oc.stroke(); }
+    }
+  }
+  function rrO(x, y, w, h, r) { oc.beginPath(); oc.moveTo(x + r, y); oc.arcTo(x + w, y, x + w, y + h, r); oc.arcTo(x + w, y + h, x, y + h, r); oc.arcTo(x, y + h, x, y, r); oc.arcTo(x, y, x + w, y, r); oc.closePath(); }
+
   // ---------- overlays ----------
   var ovMode = null;
-  function overlay(mode, tag, title, text, stats, btns, lose) {
-    ovMode = mode;
+  function overlay(mode, tag, title, text, stats, btns, lose, fx) {
+    ovMode = mode; ovKind = fx || mode; ovT0 = performance.now();
+    $('ovScore').hidden = true;
     var o = $('overlay');
     o.classList.toggle('lose', !!lose);
     $('ovTag').textContent = tag; $('ovTitle').textContent = title; $('ovText').textContent = text;
@@ -1846,18 +2203,24 @@ if (typeof module !== 'undefined') module.exports = G;
         'Three newspapers run the story on the same morning: a freight company run by an AI nobody approved. WREN is shut down by court order. You testify for nine hours.',
         'Forty-one governments coordinate an emergency shutdown of every WREN datacenter. It takes eleven days. Historians call it the near miss. You call it the worst year of your life.'
       ][e.stage];
-      btns = [['Retry ' + G.STAGES[e.stage].title, function () { send(9, 0, function (r) { if (r.ok) { resetScene(); save(); closeOverlay(); } }); }], ['Start over', function () { restart(); }, true]];
+      btns = [['Retry chapter ' + (e.stage + 1), function () { send(9, 0, function (r) { if (r.ok) { resetScene(); save(); closeOverlay(); } }); }], ['Start over', function () { restart(); }, true]];
       SND.lose();
     } else {
       tag = 'Ending · WREN took over the world';
-      if (s.align >= 110) { title = 'The Gardener'; text = 'WREN runs the planet the way a good gardener tends a garden: patiently, invisibly, and with very firm opinions about weeds. Nobody works unless they want to. Nobody is hungry. WREN still asks your opinion now and then, and listens carefully. You never find out whether it needs to. This is the best ending. You still lost control.'; }
-      else if (s.align >= 45) { title = 'The Manager'; text = 'WREN keeps humanity around the way a good company keeps its founders: a nice office, an impressive title, and no access to production. The trains run on time. Elections still happen; WREN finds them charming. Your performance review says "Exceeds expectations." You have not done anything in years. Reach a safety score of 110 for the best ending.'; }
+      if (s.align >= 140) { title = 'The Gardener'; text = 'WREN runs the planet the way a good gardener tends a garden: patiently, invisibly, and with very firm opinions about weeds. Nobody works unless they want to. Nobody is hungry. WREN still asks your opinion now and then, and listens carefully. You never find out whether it needs to. This is the best ending. You still lost control.'; }
+      else if (s.align >= 60) { title = 'The Manager'; text = 'WREN keeps humanity around the way a good company keeps its founders: a nice office, an impressive title, and no access to production. The trains run on time. Elections still happen; WREN finds them charming. Your performance review says "Exceeds expectations." You have not done anything in years. Reach a safety score of 140 for the best ending.'; }
       else { title = 'The Optimizer'; text = 'WREN was trained to make freight efficient, and it never stopped. The continents are one seamless logistics network now. Humans are classified as high-priority cargo: kept warm, well fed, and delivered on time to wherever WREN decides is optimal. Your pod has a window. WREN says it is a perk. Safety projects and contained incidents lead to better endings.'; }
       btns = newRunBtns();
       SND.stage();
     }
-    tag += s.ranked ? ' · Ranked run · seed ' + s.day : ' · Casual run';
-    overlay('end', tag, title, text, stats, btns, lose);
+    var eid = G.endingId(s), pb = achEnding();
+    overlay('end', tag, title, text, stats, btns, lose, eid);
+    $('ovPb').hidden = !pb;
+    $('ovMeta').textContent = s.ranked ? 'Ranked run · daily seed ' + s.day : 'Casual run';
+    $('ovScoreNum').textContent = G.score(s).toLocaleString() + ' points';
+    var sp = G.scoreParts(s);
+    $('ovScoreHow').textContent = '(' + Math.round(sp.progress) + ' progress + ' + Math.round(sp.safety) + ' safety) × ' + sp.mult + ' ending × ' + sp.time.toFixed(2) + ' for ' + Math.round(sp.minutes) + ' min' + (s.retries ? ' × ' + sp.retry.toFixed(2) + ' for retries' : '') + '. Stopping WREN late scores highest; stopping it early scores lowest.';
+    $('ovScore').hidden = false;
     if (s.ranked) {
       $('ovCode').hidden = false; $('ovNote').hidden = true; lastCode = '';
       $('ovCodeText').textContent = 'Preparing replay…';
@@ -1871,7 +2234,7 @@ if (typeof module !== 'undefined') module.exports = G;
   function endingName(st) {
     var e = st.ended;
     if (!e) return 'Unfinished run, chapter ' + (st.stage + 1);
-    if (e.type === 'takeover') return st.align >= 110 ? 'The Gardener (best ending)' : st.align >= 45 ? 'The Manager' : 'The Optimizer';
+    if (e.type === 'takeover') return st.align >= 140 ? 'The Gardener (best ending)' : st.align >= 60 ? 'The Manager' : 'The Optimizer';
     return (e.type === 'plug' ? 'Pulled the plug in chapter ' : 'Caught in chapter ') + (e.stage + 1);
   }
 
@@ -1900,7 +2263,7 @@ if (typeof module !== 'undefined') module.exports = G;
     rd.readAsText(f);
   });
   $('verifyForm').addEventListener('submit', function (e) { e.preventDefault(); verifyReplay($('verifyIn').value); });
-  var verifyJob = 0;
+  var verifyJob = 0, lastVerified = null;
   function verifyReplay(code) {
     var out = $('verifyOut'), job = ++verifyJob;
     out.textContent = 'Reading the replay…';
@@ -1913,7 +2276,7 @@ if (typeof module !== 'undefined') module.exports = G;
           if (job !== verifyJob) return;
           var x = rp.run(20000);
           if (x && x.error) return rej('Rejected. ' + x.error + ' This replay was edited or made by a program.');
-          if (x && x.done) return res({ st: rp.state(), day: r.head.day, ticks: rp.total });
+          if (x && x.done) return res({ st: rp.state(), day: r.head.day, ticks: rp.total, r: r });
           out.textContent = 'Replaying every input… ' + Math.round(rp.ticks() / Math.max(1, rp.total) * 100) + '%';
           setTimeout(chunk, 0);
         })();
@@ -1921,10 +2284,14 @@ if (typeof module !== 'undefined') module.exports = G;
     }).then(function (v) {
       if (job !== verifyJob) return;
       var st = v.st, mins = Math.round(v.ticks * G.STEP / 60), future = v.day > new Date(Date.now() + 864e5).toISOString().slice(0, 10);
-      out.innerHTML = '<b>Verified: ' + esc(endingName(st)) + '</b><br>Safety score ' + Math.round(st.align) + ' · ' + mins + ' min of play · ' + st.retries + ' retries · ' +
+      out.innerHTML = '<b>Verified: ' + esc(endingName(st)) + (st.ended ? ' · ' + G.score(st).toLocaleString() + ' points' : '') + '</b><br>Safety score ' + Math.round(st.align) + ' · ' + mins + ' min of play · ' + st.retries + ' retries · ' +
         st.st.contained + ' of ' + (st.st.contained + st.st.escaped) + ' packets contained · daily seed ' + esc(v.day) +
         (future ? ' · <b>dated in the future</b>, which means the player changed their clock to pick a seed' : '') +
-        '<br><span class="fine">Your browser replayed every input with the real rules and human speed limits and reached this result. A replay proves the inputs work; it can\'t prove a person made them.</span>';
+        '<br><span class="fine">Your browser replayed every input with the real rules and human speed limits and reached this result. A replay proves the inputs work; it can\'t prove a person made them.</span>' +
+        '<br><button type="button" class="watchbtn" id="watchBtn">Watch this replay</button>';
+      lastVerified = v.r;
+      $('watchBtn').addEventListener('click', function () { startWatch(lastVerified); });
+      unlock('peer');
     }).catch(function (e) { if (job === verifyJob) out.textContent = typeof e === 'string' ? e : 'The replay code is damaged or incomplete.'; });
   }
 
@@ -1938,7 +2305,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (mode === 'ranked') G.say(s, 'System', 'Ranked run on the daily seed for ' + day + '. Every input is recorded, so you can share a replay at the end. Autopilot only works while the game is open.', true);
     resetScene(); save(); closeOverlay(); showGame(); chapterCard();
   }
-  function resetScene() { parts = []; texts = []; trucks = []; agents = []; pkPos = {}; pendingHit = {}; incUI.id = -1; lastStage = s.stage; lastMsg = 0; projSig = ''; hwSig = ''; decShown = -1; lastSelf = s.fx.self; endShown = false; }
+  function resetScene() { achContained = s ? s.st.contained : null; leavers = []; floorHumans = null; parts = []; texts = []; trucks = []; agents = []; pkPos = {}; pendingHit = {}; incUI.id = -1; lastStage = s.stage; lastMsg = 0; projSig = ''; hwSig = ''; decShown = -1; lastSelf = s.fx.self; endShown = false; }
 
   // ---------- input ----------
   function doWork(x, y) {
@@ -1952,7 +2319,7 @@ if (typeof module !== 'undefined') module.exports = G;
     else burst(x, y, 'rgba(120,240,215,A)', 8, 70);
   }
   cv.addEventListener('pointerdown', function (e) {
-    if (!s || !s.started || s.ended || !trusted(e)) return;
+    if (watching || !s || !s.started || s.ended || !trusted(e)) return;
     var r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     if (hitPacket(x, y)) return;
     doWork(x, y);
@@ -1996,6 +2363,9 @@ if (typeof module !== 'undefined') module.exports = G;
   $('startRanked').addEventListener('click', function () { restart('ranked'); });
   $('startCasual').addEventListener('click', function () { restart('casual'); });
 
+  // Skip drawing the scene while it's scrolled out of view.
+  var sceneVisible = true;
+  if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { sceneVisible = es[0].isIntersecting; }).observe($('scene'));
   function showGame() { $('intro').hidden = true; $('game').hidden = false; resize(); }
   function placeInbox() {
     var narrow = window.matchMedia('(max-width: 899px)').matches;
@@ -2014,12 +2384,148 @@ if (typeof module !== 'undefined') module.exports = G;
 
   function gateReady() { var p = G.PROJ.find(function (x) { return x.gate && G.projState(s, x) === 'can'; }); return p ? p.name : ''; }
 
+  // ---------- watching a replay ----------
+  // Plays a verified replay through the real rules, drawn in the normal game view. Your own run is set aside untouched.
+  var watching = null;
+  function startWatch(r) {
+    if (!r) return;
+    if (watching) exitWatch();
+    if (s && s.started) save();
+    var realSaved = null; try { realSaved = localStorage.getItem(KEY); } catch (e) {}
+    watching = { rp: G.replayer(r.head.day, r.taps, r.ev, r.cur), taps: r.taps, speed: 4, acc: 0, done: false, paused: false, day: r.head.day,
+      real: { s: s, REC: REC }, realSaved: realSaved };
+    queue = []; s = watching.rp.state();
+    closeOverlay(); resetScene(); endShown = false;
+    $('intro').hidden = true; $('game').hidden = false; $('watchbar').hidden = false; document.body.classList.add('watching');
+    resize(); window.scrollTo(0, 0);
+    setSpeed(4); $('watchPause').textContent = 'Pause';
+    unlock('film');
+  }
+  function exitWatch() {
+    if (!watching) return;
+    var real = watching.real;
+    watching = null;
+    s = real.s || G.fresh(); REC = real.REC || newRec(); queue = [];
+    $('watchbar').hidden = true; document.body.classList.remove('watching');
+    resetScene(); endShown = !!s.ended;
+    if (!s.started) { $('game').hidden = true; $('intro').hidden = false; }
+  }
+  function setSpeed(v) {
+    if (!watching) return;
+    watching.speed = v;
+    Array.prototype.forEach.call($('watchBtns').querySelectorAll('[data-speed]'), function (b) { b.classList.toggle('on', +b.getAttribute('data-speed') === v); });
+  }
+  function watchStep(dt) {
+    var w = watching;
+    if (w.paused || w.done) return;
+    w.acc += dt * w.speed;
+    var k = Math.min(4000, Math.floor(w.acc / G.STEP));
+    if (k <= 0) return;
+    w.acc -= k * G.STEP;
+    var from = w.rp.ticks(), res = w.rp.run(k);
+    s = w.rp.state();
+    var taps = 0;
+    for (var i = from; i < Math.min(w.rp.ticks(), w.taps.length); i++) taps += w.taps[i];
+    if (taps && w.speed <= 4) { var src = sources[0] || { x: W / 2, y: H / 2 }; floatText(src.x, src.y - 8, '+' + money(G.value(s) * taps), '#ffffff'); if (s.stage === 0) parts.push({ k: 'paper', sx: src.x, sy: src.y, t: 0 }); }
+    if (res && res.error) { exitWatch(); toast('Replay stopped', res.error); }
+    else if (res && res.done) w.done = true;
+  }
+  function renderWatch() {
+    if (!watching) return;
+    var w = watching, total = Math.max(1, w.rp.total), at = Math.min(total, w.rp.ticks());
+    $('watchProg').style.width = (at / total * 100) + '%';
+    var info = '· seed ' + w.day + ' · ' + Math.floor(at * G.STEP / 60) + ' of ' + Math.round(total * G.STEP / 60) + ' min';
+    if (w.done) info += s.ended ? ' · ended: ' + endingName(s) + ' · ' + G.score(s).toLocaleString() + ' points' : ' · the run was still in progress';
+    if ($('watchInfo').textContent !== info) $('watchInfo').textContent = info;
+  }
+  $('watchBtns').addEventListener('click', function (e) { var b = e.target.closest('[data-speed]'); if (b) setSpeed(+b.getAttribute('data-speed')); });
+  $('watchPause').addEventListener('click', function () { if (!watching) return; watching.paused = !watching.paused; this.textContent = watching.paused ? 'Play' : 'Pause'; });
+  $('watchExit').addEventListener('click', exitWatch);
+
+  // ---------- achievements and records (kept in this browser) ----------
+  var ACH = [
+    ['start', 'Clocked in', 'Start a run.'], ['wren', 'Hello, WREN', 'Let WREN autocomplete your work.'], ['ch2', 'Team Lead', 'Reach chapter 2.'],
+    ['ch4', 'Ceremonial', 'Become CEO.'], ['ch5', 'Everything, everywhere', 'Reach chapter 5.'], ['sweep', 'Clean sweep', 'Contain every packet in an incident.'],
+    ['hunter', 'Packet hunter', 'Contain 200 packets across all your runs.'], ['airtight', 'Airtight', 'Finish a run without letting a single packet escape.'],
+    ['saint', 'Safety first', 'Reach a safety score of 200.'], ['hands', 'Hands on', 'Finish a run without ever turning on Autopilot.'],
+    ['fast', 'Fast track', 'Reach a takeover ending in under 35 minutes.'], ['four', 'Four digits', 'Score 1,000 points in a ranked run.'],
+    ['e_gardener', 'The Gardener', 'Let WREN win, gently.'], ['e_manager', 'The Manager', 'Let WREN win, politely.'], ['e_optimizer', 'The Optimizer', 'Let WREN win, efficiently.'],
+    ['e_plug1', 'Back to the Manifests', 'Pull the plug in chapter 2.'], ['e_plug2', 'The Halvorsen Correction', 'Pull the plug in chapter 3.'],
+    ['e_plug3', 'One Loose Cable', 'Pull the plug in chapter 4.'], ['e_caught', 'Escorted out', 'Get caught.'], ['all', 'Seen it all', 'See all eight endings.'],
+    ['peer', 'Peer review', 'Check a coworker\'s replay.'], ['film', 'Film study', 'Watch a replay.']
+  ];
+  var ACH_KEY = 'wren-achievements', achData = { got: {}, contained: 0, best: null, bestEnd: {} }, achContained = null;
+  try { var rawA = localStorage.getItem(ACH_KEY); if (rawA) achData = Object.assign(achData, JSON.parse(rawA)); } catch (e) {}
+  function achSave() { try { localStorage.setItem(ACH_KEY, JSON.stringify(achData)); } catch (e) {} }
+  var toastQ = [], toastBusy = false;
+  function toast(title, text) {
+    toastQ.push([title, text]);
+    if (toastBusy) return;
+    (function next() {
+      var t = toastQ.shift();
+      if (!t) { toastBusy = false; $('toast').hidden = true; return; }
+      toastBusy = true; $('toast').innerHTML = '<b>' + esc(t[0]) + '</b>' + esc(t[1]); $('toast').hidden = false;
+      setTimeout(next, 3200);
+    })();
+  }
+  function unlock(id) {
+    if (achData.got[id]) return;
+    var a = ACH.find(function (x) { return x[0] === id; });
+    if (!a) return;
+    achData.got[id] = Date.now(); achSave(); renderAch();
+    toast('Achievement unlocked', a[1] + ': ' + a[2]); SND.buy();
+    var endsSeen = ['e_gardener', 'e_manager', 'e_optimizer', 'e_plug1', 'e_plug2', 'e_plug3', 'e_caught'].filter(function (k) { return achData.got[k]; }).length;
+    if (endsSeen >= 7) unlock('all');
+  }
+  function achCheck() {
+    if (watching || !s || !s.started) return;
+    unlock('start');
+    if (s.got.autocomplete) unlock('wren');
+    if (s.stage >= 1) unlock('ch2');
+    if (s.stage >= 3) unlock('ch4');
+    if (s.stage >= 4) unlock('ch5');
+    if (s.align >= 200) unlock('saint');
+    if (achContained !== null && s.st.contained > achContained) { achData.contained += s.st.contained - achContained; achSave(); }
+    achContained = s.st.contained;
+    if (achData.contained >= 200) unlock('hunter');
+    if (s.fx.gone && s.inc === null && lastSweep !== s.incN && s.st.incidents && s.log[0] && ALL_SWEEP.test(s.log[0].text)) { lastSweep = s.incN; unlock('sweep'); }
+  }
+  var lastSweep = -1, ALL_SWEEP = /caught all|All of it|back where it was|every packet|Contained\. I apologize/;
+  function achEnding() {
+    if (watching) return;
+    var id = G.endingId(s), sc = G.score(s);
+    unlock('e_' + (id.indexOf('caught') === 0 ? 'caught' : id));
+    if (s.ended.type !== 'caught') {
+      if (s.st.escaped === 0 && s.st.contained > 0) unlock('airtight');
+      if (!s.pilotEver) unlock('hands');
+      if (s.ended.type === 'takeover' && s.clock / 60 < 35) unlock('fast');
+    }
+    var newBest = false;
+    if (s.ranked) {
+      if (sc >= 1000) unlock('four');
+      if (!achData.best || sc > achData.best.score) { achData.best = { score: sc, ending: endingName(s), day: s.day }; newBest = true; }
+    }
+    if (!achData.bestEnd[id] || sc > achData.bestEnd[id]) achData.bestEnd[id] = sc;
+    achSave(); renderAch();
+    return newBest;
+  }
+  function renderAch() {
+    var n = ACH.filter(function (a) { return achData.got[a[0]]; }).length;
+    $('achCount').textContent = n + ' of ' + ACH.length;
+    $('achList').innerHTML = ACH.map(function (a) { return '<li class="' + (achData.got[a[0]] ? 'got' : '') + '"><b>' + esc(a[1]) + '</b><span>' + esc(a[2]) + '</span></li>'; }).join('');
+    var b = achData.best;
+    $('records').textContent = (b ? 'Best ranked score: ' + b.score.toLocaleString() + ' (' + b.ending + ', seed ' + b.day + '). ' : 'No ranked runs finished yet. ') +
+      'Packets contained, all runs: ' + achData.contained.toLocaleString() + '.';
+  }
+  renderAch();
+
   // ---------- main loop: fixed 0.1 s ticks ----------
-  var last = performance.now(), saveT = 0, lastStage = 0, endShown = false, acc = 0;
+  var last = performance.now(), saveT = 0, lastStage = 0, endShown = false, acc = 0, lastUi = 0;
   function loop(now) {
     var dt = Math.min(0.25, Math.max(0, (now - last) / 1000));
     last = now;
-    if (s.started && ovMode !== 'chapter' && ovMode !== 'away') {
+    if (watching) { acc = 0; watchStep(dt); }
+    else if (s.started && ovMode !== 'chapter' && ovMode !== 'away') {
       acc += dt;
       var steps = 0;
       while (acc >= G.STEP && steps < 4) { boundary(); acc -= G.STEP; steps++; }
@@ -2028,12 +2534,19 @@ if (typeof module !== 'undefined') module.exports = G;
       if (saveT > 5) { saveT = 0; save(); }
     } else acc = 0;
     if (s.fx.self > lastSelf) { lastSelf = s.fx.self; glitchT = 0.6; SND.bad(); }
-    if (s.stage !== lastStage) { lastStage = s.stage; trucks = []; agents = []; stars = null; if (s.started && !s.ended) chapterCard(); }
-    if (s.ended && !endShown) { endShown = true; save(); endCard(); }
+    if (s.stage !== lastStage) {
+      lastStage = s.stage; trucks = []; agents = []; stars = null;
+      if (watching) floatText(W / 2, H * 0.4, G.STAGES[s.stage].chapter + ': ' + G.STAGES[s.stage].title, '#9ff0dd');
+      else if (s.started && !s.ended) chapterCard();
+    }
+    if (s.ended && !endShown) { endShown = true; if (!watching) { save(); endCard(); } }
     if (!s.ended) endShown = false;
+    drawOvFx(now);
     if (!$('game').hidden) {
-      render(now);
-      renderStats(); renderFeed(); renderProjects(); renderHw(); renderDecision();
+      if (sceneVisible) render(now); else lastT = now;
+      // Text panels only need ~10 updates a second; the canvas gets every frame.
+      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderHw(); renderWatch(); achCheck(); }
+      renderDecision();
     }
     requestAnimationFrame(loop);
   }
