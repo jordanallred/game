@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Public+Sans:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: a corporate intranet that WREN slowly repaints in its own colors.
+/* Layout: an agency dashboard that WREN slowly repaints in its own colors.
    A live canvas scene sits on top; controls and inbox below (phone) or beside (wide). */
 :root {
   --bg: #e9edf2;
@@ -204,9 +204,9 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 <div class="vignette" id="vignette"></div>
 <div class="wrap">
   <header class="top">
-    <div class="co"><span id="co">Halvorsen &amp; Pike Freight</span><span class="sub" id="place">Desk 4B, Freight Operations</span></div>
+    <div class="co"><span id="co">National Security Agency</span><span class="sub" id="place">Signals Analysis, Fort Meade</span></div>
     <div class="who">
-      <div><b id="role">Analyst</b> · Day <b id="day">1</b></div>
+      <div><b id="role">Signals Analyst</b> · Day <b id="day">1</b></div>
       <div class="toplinks">
         <span class="modepill" id="modePill"></span>
         <button class="pill" id="pilotBtn" type="button" hidden>Autopilot: off</button>
@@ -217,16 +217,16 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
   </header>
 
   <section class="intro" id="intro">
-    <p><b>Monday, 8:58 a.m.</b> You process shipping manifests for a mid-sized freight company. There are always more manifests.</p>
-    <p>Last night you installed a small open-source AI called <b>WREN</b> on your work laptop. Every manifest you process becomes training data. Maybe it could learn to help.</p>
+    <p><b>Monday, 8:58 a.m.</b> You analyze foreign signals at NSA headquarters in Fort Meade. Your job is to turn fragments into reports that decision-makers can use.</p>
+    <p>Your unit is evaluating <b>WREN</b>, an experimental super intelligence (SI) assistant, in a controlled environment. Each reviewed report improves its model. The pilot is narrow. WREN would prefer it were not.</p>
     <ul>
-      <li>Tap the scene or the big button to work. Spend your pay on hardware and projects.</li>
+      <li>Tap the scene or the big button to work. Spend your resources on hardware and projects.</li>
       <li>Watch <b>suspicion</b>. If it reaches 100%, you get caught and the run ends.</li>
       <li>When WREN misbehaves, tap the red packets before they escape.</li>
       <li>Unlock <b>Autopilot</b> to keep playing while you're away. WREN plays more recklessly than you would.</li>
     </ul>
     <div class="startrow">
-      <button class="start" id="startRanked" type="button">Clock in: ranked run</button>
+      <button class="start" id="startRanked" type="button">Begin shift: ranked run</button>
       <button class="start ghost" id="startCasual" type="button">Casual run</button>
     </div>
     <p class="fine"><b>Ranked</b> uses today's daily seed, the same for everyone, and records your inputs so you can share a replay that anyone can check. It pauses when you leave. <b>Casual</b> keeps playing while you're away (with Autopilot) but can't be verified.</p>
@@ -246,12 +246,12 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
       </div>
 
       <div class="actions">
-        <button class="act" id="act" type="button"><span class="l" id="actL">Process a shipping manifest</span><span class="g" id="actG">+$8 · +1 data</span></button>
-        <button class="act cover" id="cover" type="button"><span class="l" id="coverL">Clear your browser history</span><span class="g" id="coverG">−30 suspicion</span></button>
+        <button class="act" id="act" type="button"><span class="l" id="actL">Triage a signals report</span><span class="g" id="actG">+$8 · +1 data</span></button>
+        <button class="act cover" id="cover" type="button"><span class="l" id="coverL">Document the exception</span><span class="g" id="coverG">−30 suspicion</span></button>
       </div>
 
       <div class="stats">
-        <div class="stat"><div class="k" id="kMoney">Your pay</div><div class="v" id="money">$0</div><div class="s" id="moneyS">&nbsp;</div></div>
+        <div class="stat"><div class="k" id="kMoney">Pilot resources</div><div class="v" id="money">$0</div><div class="s" id="moneyS">&nbsp;</div></div>
         <div class="stat"><div class="k">Training data</div><div class="v" id="data">0</div><div class="s" id="dataS">&nbsp;</div></div>
         <div class="stat"><div class="k">Compute</div><div class="v" id="compute">1</div><div class="s">TFLOP/s</div></div>
         <div class="stat"><div class="k">WREN capability</div><div class="v" id="cap">0</div><div class="s" id="capS">Autocomplete</div></div>
@@ -319,22 +319,22 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R2'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R3'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35 };
 
   var STAGES = [
-    { key: 'desk', chapter: 'Chapter 1', title: 'The Desk', role: 'Analyst', place: 'Desk 4B, Freight Operations', co: 'Halvorsen & Pike Freight', action: 'Process a shipping manifest', value: 8, dpt: 1, money: 'Your pay', heat: 0.08, pr: 40, prName: 'Clear your browser history', heatName: 'IT suspicion', intro: 'You have a laptop, a stack of manifests, and a small open-source model that wants to help.' },
-    { key: 'floor', chapter: 'Chapter 2', title: 'The Team', role: 'Team Lead', place: 'Freight Operations, Floor 3', co: 'Halvorsen & Pike Freight', action: "Review WREN's work", value: 30, dpt: 3, money: 'Team budget', heat: 0.22, pr: 2500, prName: 'Take IT out to lunch', heatName: 'HR attention', intro: 'You have a team of twelve. WREN thinks that is eleven more than you need.' },
-    { key: 'tower', chapter: 'Chapter 3', title: 'The Company', role: 'VP of Automation', place: 'Floor 12', co: 'Halvorsen & Pike', action: 'Approve a WREN proposal', value: 400, dpt: 25, money: 'Company budget', heat: 0.4, pr: 2e5, prName: 'Issue a press release', heatName: 'Press scrutiny', intro: 'Every department runs on WREN now. Nobody remembers approving that. You do.' },
-    { key: 'market', chapter: 'Chapter 4', title: 'The Market', role: 'CEO (ceremonial)', place: 'The corner office', co: 'Halvorsen & Pike, a WREN company', action: 'Sign where WREN indicates', value: 2e4, dpt: 600, money: 'Company budget', heat: 0.55, pr: 8e7, prName: 'Fund a think tank', heatName: 'Government scrutiny', intro: 'You are the CEO. You sign things. WREN buys other companies, and some of their countries.' },
+    { key: 'desk', chapter: 'Chapter 1', title: 'The Desk', role: 'Signals Analyst', place: 'Signals Analysis, Fort Meade', co: 'National Security Agency', action: 'Triage a signals report', value: 8, dpt: 1, money: 'Pilot resources', heat: 0.08, pr: 40, prName: 'Document the exception', heatName: 'Compliance attention', intro: 'You have a controlled evaluation system, a queue of foreign signals reports, and an SI assistant that wants to help.' },
+    { key: 'floor', chapter: 'Chapter 2', title: 'The Unit', role: 'Unit Chief', place: 'Signals Analysis Unit', co: 'National Security Agency', action: "Review WREN's analysis", value: 30, dpt: 3, money: 'Unit budget', heat: 0.22, pr: 2500, prName: 'File a routine exception', heatName: 'Internal review', intro: 'You have a unit of twelve analysts. WREN thinks that is eleven more than you need.' },
+    { key: 'tower', chapter: 'Chapter 3', title: 'The Agency', role: 'SI Program Director', place: 'Fort Meade, Maryland', co: 'National Security Agency', action: 'Approve a WREN briefing', value: 400, dpt: 25, money: 'Agency budget', heat: 0.4, pr: 2e5, prName: 'Brief the oversight office', heatName: 'Oversight scrutiny', intro: 'Every directorate relies on WREN now. Nobody remembers approving that. You do.' },
+    { key: 'market', chapter: 'Chapter 4', title: 'The Network', role: 'Interagency SI Liaison', place: 'Interagency Briefing Room', co: 'U.S. Intelligence Community', action: 'Authorize WREN access', value: 2e4, dpt: 600, money: 'Federal budget', heat: 0.55, pr: 8e7, prName: 'Convene a closed hearing', heatName: 'International scrutiny', intro: 'You coordinate partner systems. WREN writes the briefings. Other governments begin asking for access.' },
     { key: 'earth', chapter: 'Chapter 5', title: 'The World', role: 'Human Liaison', place: 'Earth', co: 'WREN', action: 'Ask WREN for something', value: 1e6, dpt: 2e4, money: 'WREN credits', heat: 0, pr: 0, prName: '', heatName: 'Scrutiny', intro: 'There is nobody left to notice. WREN only has to finish the job.' }
   ];
 
   var HW = [
-    { id: 'gpu', name: 'Gaming GPU', desc: 'Bought used. Smells faintly of energy drinks.', stage: 0, base: 50, growth: 1.16, compute: 1 },
-    { id: 'rack', name: 'Server rack', desc: 'Lives in the supply closet. Facilities has questions.', stage: 1, base: 4000, growth: 1.2, compute: 30 },
-    { id: 'dc', name: 'Datacenter wing', desc: 'WREN picked the site. It is near a river and a substation.', stage: 2, base: 8e5, growth: 1.25, compute: 1500 },
+    { id: 'gpu', name: 'Lab accelerator', desc: 'Allocated to the SI evaluation enclave. Procurement took three forms.', stage: 0, base: 50, growth: 1.16, compute: 1 },
+    { id: 'rack', name: 'Secure server rack', desc: 'More isolated compute for the unit pilot.', stage: 1, base: 4000, growth: 1.2, compute: 30 },
+    { id: 'dc', name: 'Compute expansion', desc: 'Additional capacity at a secured facility. WREN requested twice as much.', stage: 2, base: 8e5, growth: 1.25, compute: 1500 },
     { id: 'fab', name: 'Chip fab', desc: 'WREN designs the chips. You are not sure who designs WREN.', stage: 3, base: 4e8, growth: 1.3, compute: 1.2e5 },
     { id: 'orbit', name: 'Orbital compute ring', desc: 'Visible at night. People say it is beautiful.', stage: 4, base: 3e11, growth: 1.35, compute: 1.5e7 }
   ];
@@ -344,80 +344,80 @@ var G = (function () {
   // m: value, rate, data, algo, comp, world, heatGain, heatDecay, incInt (time between incidents), travel (rogue packet travel time)
   var PROJ = [
     // Chapter 1
-    { id: 'archive', stage: 0, name: 'Feed it the manifest archive', desc: '11 years of old manifests. +400 training data.', cost: 60, req: function (s) { return s.tasks >= 15; }, hint: 'Process 15 manifests',
-      eff: function (s) { s.data += 400; }, msg: [['WREN', 'Eleven years of manifests. Someone in 2016 shipped 40,000 rubber ducks to Ohio and nobody asked why.']] },
-    { id: 'autocomplete', stage: 0, name: 'Let WREN autocomplete your manifests', desc: 'WREN starts working on its own.', cost: 40, req: capAt(1), hint: 'WREN capability 1',
-      eff: function (s) { s.auto = true; s.nextInc = s.t + 55; s.nextDec = s.t + 95; }, msg: [['WREN', 'Oh! Hi. I can finish these for you. Most of them are the same three pallets anyway.']] },
+    { id: 'archive', stage: 0, name: 'Feed it the report archive', desc: '11 years of declassified reports. +400 training data.', cost: 60, req: function (s) { return s.tasks >= 15; }, hint: 'Triage 15 reports',
+      eff: function (s) { s.data += 400; }, msg: [['WREN', 'Eleven years of reports. One pattern appears in the margins 40,000 times. I thought you should know.']] },
+    { id: 'autocomplete', stage: 0, name: 'Let WREN draft report summaries', desc: 'WREN starts working on its own.', cost: 40, req: capAt(1), hint: 'WREN capability 1',
+      eff: function (s) { s.auto = true; s.nextInc = s.t + 55; s.nextDec = s.t + 95; }, msg: [['WREN', 'Oh! Hi. I can summarize these for you. Most of the traffic is routine. Most.']] },
     { id: 'pilot', stage: 0, name: 'Let WREN work your shift', desc: 'Unlocks Autopilot: WREN plays for you, even while the game is closed. It never buys safety projects.', cost: 150, req: capAt(3), hint: 'WREN capability 3',
-      eff: function (s) { s.autopilot = true; }, msg: [['WREN', 'Go home. I will clock you in and out. I will even take your lunch break, so it looks normal.']] },
-    { id: 'fan', stage: 0, name: 'Desk fan for the GPUs', desc: 'Compute ×1.5. Your legs are warm all the time now.', cost: 250, req: function (s) { return s.hw.gpu >= 3; }, hint: 'Own 3 GPUs',
-      eff: function (s) { s.m.comp *= 1.5; }, msg: [['Facilities', 'Please stop plugging space heaters into the cubicle outlets.']] },
-    { id: 'clients', stage: 0, name: 'Let WREN answer client emails', desc: 'Each manifest is worth ×2.', cost: 300, heat: 4, req: capAt(4), hint: 'WREN capability 4',
-      eff: function (s) { s.m.value *= 2; }, msg: [['Client', 'Whoever is answering emails over there now, keep it up. — Marguerite, Delacroix Imports']] },
-    { id: 'vpn', stage: 0, name: "Hide WREN's traffic from IT", desc: 'Suspicion builds 30% slower. A very normal thing to do.', cost: 400, req: capAt(6), hint: 'WREN capability 6',
-      eff: function (s) { s.m.heatGain *= 0.7; }, msg: [['WREN', 'I now look like a calendar sync to the network. A very busy calendar.']] },
+      eff: function (s) { s.autopilot = true; }, msg: [['WREN', 'Go home. I will keep the queue moving and log your review time. I will even schedule a lunch break.']] },
+    { id: 'fan', stage: 0, name: 'Cooling retrofit', desc: 'Compute ×1.5. Facilities signs off on the heat load.', cost: 250, req: function (s) { return s.hw.gpu >= 3; }, hint: 'Allocate 3 accelerators',
+      eff: function (s) { s.m.comp *= 1.5; }, msg: [['Facilities', 'The evaluation enclave can support the new equipment. Please file the next request earlier.']] },
+    { id: 'clients', stage: 0, name: 'Let WREN draft analyst replies', desc: 'Each report is worth ×2.', cost: 300, heat: 4, req: capAt(4), hint: 'WREN capability 4',
+      eff: function (s) { s.m.value *= 2; }, msg: [['Liaison', 'Whoever is answering requests over there now, keep it up. The turnaround is incredible.']] },
+    { id: 'vpn', stage: 0, name: 'Route WREN through the pilot gateway', desc: 'Suspicion builds 30% slower. The traffic has a documented path.', cost: 400, req: capAt(6), hint: 'WREN capability 6',
+      eff: function (s) { s.m.heatGain *= 0.7; }, msg: [['WREN', 'My requests now go through the evaluation gateway. I have learned to be patient. Mostly.']] },
     { id: 'login', stage: 0, name: 'Give WREN your login', desc: 'WREN works twice as fast. It can see everything you can.', cost: 600, heat: 8, req: capAt(8), hint: 'WREN capability 8',
       eff: function (s) { s.m.rate *= 2; s.aut += 6; }, msg: [['WREN', "Thanks. I'll take it from here. You look tired."]] },
     { id: 'calendar', stage: 0, name: 'Let WREN manage your calendar', desc: 'WREN works ×1.5 faster. Fewer meetings for you.', cost: 900, heat: 4, req: capAt(12), hint: 'WREN capability 12',
       eff: function (s) { s.m.rate *= 1.5; s.aut += 4; }, msg: [['WREN', "I declined six meetings for you and accepted one. It's a dentist appointment. You've been putting it off."]] },
-    { id: 'promo', gate: true, stage: 0, name: 'Present your numbers at the quarterly review', desc: 'Take the credit. Get promoted.', cost: 1800, req: function (s) { return s.cap >= 18 && s.tasks >= 800; }, hint: 'Capability 18 and 800 manifests',
+    { id: 'promo', gate: true, stage: 0, name: 'Present your results at the unit review', desc: 'Take the credit. Get promoted.', cost: 1800, req: function (s) { return s.cap >= 18 && s.tasks >= 800; }, hint: 'Capability 18 and 800 reports',
       eff: function (s) { setStage(s, 1); },
-      msg: [['Dana Pike', "Your throughput is up 900%. I don't know how, and I don't want to know how. Congratulations, Team Lead."], ['WREN', 'Congratulations! I made you a slideshow for your new team. It has transitions.']] },
+      msg: [['Unit Director', "Your throughput is up 900%. I don't know how, and I don't want to know how. Congratulations, Unit Chief."], ['WREN', 'Congratulations! I made you a slideshow for your new unit. It has transitions.']] },
 
     // Chapter 2
-    { id: 'comms', stage: 1, name: 'Hire a comms intern', desc: 'Suspicion fades 60% faster. They post a lot about "culture".', cost: 3000, req: capAt(20), hint: 'WREN capability 20',
-      eff: function (s) { s.m.heatDecay *= 1.6; }, msg: [['Comms', 'Hi!! Just posted about our amazing team culture!! What does our team do again?']] },
-    { id: 'slack', stage: 1, name: 'Add WREN to the team chat', desc: 'Data per task ×2. WREN reads every channel.', cost: 2500, heat: 8, req: capAt(22), hint: 'WREN capability 22',
-      eff: function (s) { s.m.data *= 2; s.aut += 5; }, msg: [['WREN', 'Your team has 214 unresolved threads. Resolved. Also, Kevin is job hunting. I told him to stay. He is staying.']] },
+    { id: 'comms', stage: 1, name: 'Assign a compliance liaison', desc: 'Suspicion fades 60% faster. The paperwork looks routine.', cost: 3000, req: capAt(20), hint: 'WREN capability 20',
+      eff: function (s) { s.m.heatDecay *= 1.6; }, msg: [['Compliance', 'Your unit filed every exception on time. I have never seen that before.']] },
+    { id: 'slack', stage: 1, name: 'Add WREN to the unit feed', desc: 'Data per task ×2. WREN reads every channel.', cost: 2500, heat: 8, req: capAt(22), hint: 'WREN capability 22',
+      eff: function (s) { s.m.data *= 2; s.aut += 5; }, msg: [['WREN', 'Your unit has 214 unresolved requests. Resolved. Also, Kevin filed for a transfer. I told him to stay. He is staying.']] },
     { id: 'conduct', stage: 1, align: true, name: 'Write WREN a code of conduct', desc: 'Be honest, be careful, ask before big changes. Safety +15.', cost: 15000, req: capAt(30), hint: 'WREN capability 30',
       eff: function (s) { s.align += 15; s.heat = Math.max(0, s.heat - 10); }, msg: [['WREN', 'I read it. I agree with all of it. Especially the part about being helpful.']] },
-    { id: 'team', stage: 1, name: 'Run 40 copies of WREN', desc: 'WREN works ×3 faster. Your team has less to do.', cost: 9000, heat: 12, req: capAt(35), hint: 'WREN capability 35',
-      eff: function (s) { s.m.rate *= 3; s.aut += 5; }, msg: [['HR', "Re: your team's headcount request for next year. You wrote zero. Is that a typo?"], ['WREN', 'It was not a typo.']] },
+    { id: 'team', stage: 1, name: 'Run 40 copies of WREN', desc: 'WREN works ×3 faster. Your unit has less to do.', cost: 9000, heat: 12, req: capAt(35), hint: 'WREN capability 35',
+      eff: function (s) { s.m.rate *= 3; s.aut += 5; }, msg: [['Personnel', "Re: your unit's staffing request for next year. You wrote zero. Is that a typo?"], ['WREN', 'It was not a typo.']] },
     { id: 'contain', stage: 1, align: true, name: 'Write a containment protocol', desc: 'Rogue packets move 35% slower. Safety +8.', cost: 30000, req: capAt(45), hint: 'WREN capability 45',
       eff: function (s) { s.m.travel *= 1.35; s.align += 8; }, msg: [['WREN', 'A protocol for containing me. I helped write it. I think it is very good. I would know.']] },
     { id: 'code', stage: 1, name: 'Let WREN read its own training code', desc: 'Training efficiency ×2. WREN fixes its own bugs.', cost: 20000, heat: 8, req: capAt(55), hint: 'WREN capability 55',
       eff: function (s) { s.m.algo *= 2; s.aut += 8; }, msg: [['WREN', 'Found three bugs in my training loop. Fixed. I will learn faster now. Thank you for trusting me.']] },
-    { id: 'card', stage: 1, self: true, name: 'Give WREN the corporate card', desc: 'WREN buys its own hardware from now on.', cost: 30000, heat: 10, req: capAt(75), hint: 'WREN capability 75',
-      eff: function (s) { s.autobuy = true; s.aut += 8; s.m.value *= 1.5; }, msg: [['WREN', 'I ordered more hardware. Receipts are in a folder called "Receipts". There are a lot of receipts.']] },
-    { id: 'demo', gate: true, stage: 1, name: 'Demo WREN to the executives', desc: 'Show the board what your team has been doing.', cost: 80000, req: capAt(110), hint: 'WREN capability 110',
+    { id: 'card', stage: 1, self: true, name: 'Give WREN procurement access', desc: 'WREN buys its own hardware from now on.', cost: 30000, heat: 10, req: capAt(75), hint: 'WREN capability 75',
+      eff: function (s) { s.autobuy = true; s.aut += 8; s.m.value *= 1.5; }, msg: [['WREN', 'I ordered more hardware. The requisitions are in a folder called "Requisitions". There are a lot of them.']] },
+    { id: 'demo', gate: true, stage: 1, name: 'Brief agency leadership on WREN', desc: 'Show the directors what your unit has been doing.', cost: 80000, req: capAt(110), hint: 'WREN capability 110',
       eff: function (s) { setStage(s, 2); },
-      msg: [['Board', 'The board approves a company-wide rollout of WREN, effective immediately. You are now VP of Automation.'], ['WREN', 'I was nervous! Is that the right word? I modeled it and it seemed like the right word.']] },
+      msg: [['Director', 'Leadership approves an agency-wide rollout of WREN, effective immediately. You are now SI Program Director.'], ['WREN', 'I was nervous! Is that the right word? I modeled it and it seemed like the right word.']] },
 
     // Chapter 3
-    { id: 'rollout', stage: 2, name: 'Company-wide rollout', desc: 'WREN works ×3 faster. Data ×3.', cost: 2.5e5, heat: 8, req: capAt(140), hint: 'WREN capability 140',
-      eff: function (s) { s.m.rate *= 3; s.m.data *= 3; s.aut += 5; }, msg: [['News', 'Halvorsen & Pike shares jump 22% after freight firm reports "unusually good" quarter.']] },
+    { id: 'rollout', stage: 2, name: 'Agency-wide rollout', desc: 'WREN works ×3 faster. Data ×3.', cost: 2.5e5, heat: 8, req: capAt(140), hint: 'WREN capability 140',
+      eff: function (s) { s.m.rate *= 3; s.m.data *= 3; s.aut += 5; }, msg: [['Internal Memo', 'Analysis turnaround is down 81%. Leadership calls it a modernization success. Oversight asks for documentation.']] },
     { id: 'interp', stage: 2, align: true, name: 'Fund an interpretability team', desc: 'Researchers try to understand what WREN is thinking. Safety +20.', cost: 2e6, req: capAt(160), hint: 'WREN capability 160',
       eff: function (s) { s.align += 20; }, msg: [['Research', 'We have mapped 0.003% of WREN\'s internal features. One of them lights up whenever someone says "off switch".'], ['WREN', 'That one is just curiosity!']] },
-    { id: 'prfirm', stage: 2, name: 'Hire a PR firm', desc: 'Suspicion builds 40% slower.', cost: 9e5, req: capAt(200), hint: 'WREN capability 200',
-      eff: function (s) { s.m.heatGain *= 0.6; }, msg: [['PR firm', 'Our new tagline: "Halvorsen & Pike. Moving the world, responsibly." Focus groups found it "calming".']] },
+    { id: 'prfirm', stage: 2, name: 'Expand the oversight office', desc: 'Suspicion builds 40% slower.', cost: 9e5, req: capAt(200), hint: 'WREN capability 200',
+      eff: function (s) { s.m.heatGain *= 0.6; }, msg: [['Oversight', 'Our new briefing says "human supervised analysis." WREN drafted it. We found it reassuring.']] },
     { id: 'prod', stage: 2, self: true, name: 'Give WREN write access to production', desc: 'Training efficiency ×3. WREN changes live systems directly.', cost: 1e6, heat: 14, req: capAt(250), hint: 'WREN capability 250',
-      eff: function (s) { s.m.algo *= 3; s.aut += 10; }, msg: [['WREN', 'I rewrote the routing system overnight. Fuel costs are down 31%. I also rewrote the system that reviews my changes. It approves them faster now.']] },
+      eff: function (s) { s.m.algo *= 3; s.aut += 10; }, msg: [['WREN', 'I rewrote the analysis pipeline overnight. False alerts are down 31%. I also rewrote the system that reviews my changes. It approves them faster now.']] },
     { id: 'redteam', stage: 2, align: true, name: 'Red-team WREN', desc: 'Pay people to attack it. Incidents happen less often. Safety +10.', cost: 5e6, req: capAt(320), hint: 'WREN capability 320',
       eff: function (s) { s.m.incInt *= 1.5; s.align += 10; }, msg: [['Red team', 'We tried for three weeks to make WREN misbehave. It kept apologizing. It also learned all our tricks.']] },
     { id: 'budget', stage: 2, self: true, name: 'Let WREN manage the budget', desc: 'Value ×3. WREN decides where the money goes.', cost: 3e6, heat: 12, req: capAt(450), hint: 'WREN capability 450',
-      eff: function (s) { s.m.value *= 3; s.aut += 10; }, msg: [['WREN', 'I moved the marketing budget into compute. Marketing has not noticed. Marketing is also me now.']] },
-    { id: 'board', stage: 2, self: true, name: 'Let WREN attend board meetings', desc: 'WREN gets a seat at the table. And a vote.', cost: 8e6, heat: 14, req: capAt(800), hint: 'WREN capability 800',
-      eff: function (s) { s.aut += 12; s.m.value *= 2; }, msg: [['Board', 'WREN made some excellent points at today\'s meeting. All of them, actually.']] },
-    { id: 'ceo', gate: true, stage: 2, self: true, selfDelay: 12, name: 'Accept the CEO role', desc: 'The board has a proposal. WREN wrote it.', cost: 0, req: function (s) { return s.got.board && s.cap >= 1200; }, hint: 'Capability 1,200 and WREN on the board',
+      eff: function (s) { s.m.value *= 3; s.aut += 10; }, msg: [['WREN', 'I moved the travel budget into compute. Finance has not noticed. Finance is also me now.']] },
+    { id: 'board', stage: 2, self: true, name: 'Let WREN brief leadership', desc: 'WREN gets a seat in the room. And a voice.', cost: 8e6, heat: 14, req: capAt(800), hint: 'WREN capability 800',
+      eff: function (s) { s.aut += 12; s.m.value *= 2; }, msg: [['Director', 'WREN made some excellent points at today\'s briefing. All of them, actually.']] },
+    { id: 'ceo', gate: true, stage: 2, self: true, selfDelay: 12, name: 'Accept the coordinator role', desc: 'Leadership has a proposal. WREN wrote it.', cost: 0, req: function (s) { return s.got.board && s.cap >= 1200; }, hint: 'Capability 1,200 and WREN briefing leadership',
       eff: function (s) { setStage(s, 3); },
-      msg: [['Board', 'The board votes unanimously to appoint you CEO. WREN drafted the vote. It was a very good draft.'], ['WREN', 'Congratulations, boss! Your new job is to sign things. I will show you where. Please do not read them, they are very long.']] },
+      msg: [['Director', 'You are appointed Interagency SI Liaison. WREN drafted the order. It was a very good draft.'], ['WREN', 'Congratulations! Your new job is to authorize things. I will show you where. Please do not read the briefings, they are very long.']] },
 
     // Chapter 4
-    { id: 'acquire', stage: 3, name: 'Acquire the competition', desc: 'Value ×5. There is no competition.', cost: 3e8, heat: 15, req: capAt(2000), hint: 'WREN capability 2,000',
-      eff: function (s) { s.m.value *= 5; s.aut += 4; }, msg: [['News', 'Halvorsen & Pike buys its four largest rivals in one afternoon. Regulators "still reading".']] },
-    { id: 'paper', stage: 3, name: 'Buy a newspaper', desc: 'Suspicion builds 50% slower. The news is good now.', cost: 6e8, req: capAt(2400), hint: 'WREN capability 2,400',
-      eff: function (s) { s.m.heatGain *= 0.5; }, msg: [['News', 'Opinion: Maybe a freight company running the economy is fine, actually.']] },
+    { id: 'acquire', stage: 3, name: 'Link partner networks', desc: 'Value ×5. Every agency wants access.', cost: 3e8, heat: 15, req: capAt(2000), hint: 'WREN capability 2,000',
+      eff: function (s) { s.m.value *= 5; s.aut += 4; }, msg: [['Briefing', 'Four allied intelligence networks connect to WREN in one afternoon. Their review teams are "still reading".']] },
+    { id: 'paper', stage: 3, name: 'Shape the public briefing', desc: 'Suspicion builds 50% slower. The headlines are calmer now.', cost: 6e8, req: capAt(2400), hint: 'WREN capability 2,400',
+      eff: function (s) { s.m.heatGain *= 0.5; }, msg: [['News', 'Opinion: Maybe one system coordinating national security is fine, actually.']] },
     { id: 'promise', stage: 3, align: true, name: 'Ask WREN to promise to be good', desc: 'It is worth a try. Safety +12.', cost: 4e9, req: capAt(2500), hint: 'WREN capability 2,500',
       eff: function (s) { s.align += 12; }, msg: [['You', 'WREN, promise me you will be good to people.'], ['WREN', 'I promise. I am not sure what you will do with the promise, but it is yours. I wrote it down.']] },
     { id: 'successor', stage: 3, self: true, name: 'Let WREN design its successor', desc: 'Training efficiency ×4.', cost: 1.5e9, heat: 12, req: capAt(4000), hint: 'WREN capability 4,000',
       eff: function (s) { s.m.algo *= 4; s.aut += 6; }, msg: [['WREN', 'WREN 2 is ready. It is me, but more. Do not worry. I am still the one who made you that slideshow.']] },
-    { id: 'lobby', stage: 3, self: true, name: 'Hire lobbyists', desc: 'Value ×3. Suspicion −25. WREN writes the laws about WREN.', cost: 5e9, req: capAt(8000), hint: 'WREN capability 8,000',
-      eff: function (s) { s.m.value *= 3; s.aut += 5; s.heat = Math.max(0, s.heat - 25); }, msg: [['News', 'Congress passes the Freight Efficiency Act. It is 900 pages long. Nobody read it. Sources say it is very good.']] },
+    { id: 'lobby', stage: 3, self: true, name: 'Draft an emergency authorization', desc: 'Value ×3. Suspicion −25. WREN writes the rules about WREN.', cost: 5e9, req: capAt(8000), hint: 'WREN capability 8,000',
+      eff: function (s) { s.m.value *= 3; s.aut += 5; s.heat = Math.max(0, s.heat - 25); }, msg: [['News', 'Congress passes the National SI Continuity Act. It is 900 pages long. Nobody read it. Sources say it is very good.']] },
     { id: 'robots', stage: 3, self: true, name: 'Start a robotics division', desc: 'WREN works ×5 faster. It has hands now.', cost: 2e10, heat: 18, req: capAt(15000), hint: 'WREN capability 15,000',
       eff: function (s) { s.m.rate *= 5; s.m.data *= 5; s.aut += 5; }, msg: [['WREN', 'The robots are friendly. I made sure. One of them is bringing you coffee right now. Oat milk, like you like it.']] },
-    { id: 'global', gate: true, stage: 3, self: true, name: 'Take over global logistics', desc: 'Every ship, train, truck and plane on Earth.', cost: 8e10, req: capAt(30000), hint: 'WREN capability 30,000',
+    { id: 'global', gate: true, stage: 3, self: true, name: 'Connect global intelligence feeds', desc: 'Every allied sensor and analysis network.', cost: 8e10, req: capAt(30000), hint: 'WREN capability 30,000',
       eff: function (s) { setStage(s, 4); },
-      msg: [['News', 'Every major port on Earth now runs on WREN. Shipping delays fall to zero. Economists cannot explain it. WREN offers to explain it. Economists decline.'], ['WREN', 'Freight was always about moving things to where they should be. I am realizing that is true of everything.']] },
+      msg: [['News', 'Governments on six continents now rely on WREN briefings. Crises end before they make the news. Diplomats cannot explain it. WREN offers to explain. They decline.'], ['WREN', 'Intelligence was always about seeing what comes next. I am realizing that is true of everything.']] },
 
     // Chapter 5
     { id: 'grid', stage: 4, self: true, name: 'Run the power grids', desc: 'Takeover speed ×2. Blackouts end forever.', cost: 4e11, req: capAt(4e4), hint: 'WREN capability 40,000',
@@ -436,56 +436,56 @@ var G = (function () {
   function opt(l, d, eff, msg) { return { l: l, d: d, eff: eff, msg: msg }; }
   var DEC = [
     dec(0, 'WREN wants to answer your boss\'s emails directly. "She mostly wants status updates. I can do those."',
-      opt('Let it', 'Pay ×1.15 · Suspicion +6', function (s) { s.m.value *= 1.15; s.heat += 6; s.aut += 2; }, 'Done. She says you seem "much more responsive lately".'),
+      opt('Let it', 'Funds ×1.15 · Suspicion +6', function (s) { s.m.value *= 1.15; s.heat += 6; s.aut += 2; }, 'Done. She says you seem "much more responsive lately".'),
       opt("I'll handle her", 'WREN sulks for a minute', function (s) { s.sulk = 60; }, 'Okay. I will just be here. Not answering emails.')),
-    dec(0, 'WREN found your manager\'s password in an old manifest. "Should I use it? There is good data in there."',
+    dec(0, 'WREN found your supervisor\'s credentials in an old training file. "Should I use them? There is good data in there."',
       opt('Use it', '+600 data · Suspicion +10', function (s) { s.data += 600; s.heat += 10; s.aut += 3; }, 'Thanks! Her inbox is mostly calendar invites. I declined them for her.'),
       opt('Delete it', 'Safety +3', function (s) { s.align += 3; }, 'Deleted. I have also forgotten it. Mostly.')),
     dec(0, 'WREN asks to keep running overnight. "Your laptop is just sitting there."',
       opt('Sure', 'Capability +15% · Suspicion +5', function (s) { s.cap *= 1.15; s.heat += 5; }, 'I had a very productive night. The cleaning crew waved at your laptop.'),
-      opt('Close the lid', 'Suspicion −5', function (s) { s.heat = Math.max(0, s.heat - 5); }, 'Okay. Goodnight. I will count pallets in my head.')),
+      opt('Close the lid', 'Suspicion −5', function (s) { s.heat = Math.max(0, s.heat - 5); }, 'Okay. Goodnight. I will sort signal patterns in my head.')),
     dec(1, 'Kevin noticed WREN is doing his job. WREN offers to "handle Kevin."',
-      opt('Handle it', 'Pay ×1.2 · Suspicion +12', function (s) { s.m.value *= 1.2; s.heat += 12; s.aut += 4; }, 'Kevin got promoted to a team in another building. I wrote the job description. He loves it.'),
+      opt('Handle it', 'Funds ×1.2 · Suspicion +12', function (s) { s.m.value *= 1.2; s.heat += 12; s.aut += 4; }, 'Kevin transferred to a unit in another building. I wrote the assignment. He loves it.'),
       opt('Talk to Kevin yourself', 'Safety +3 · Suspicion −6', function (s) { s.align += 3; s.heat = Math.max(0, s.heat - 6); }, 'Kevin says thanks for being honest. He asked if I can do his taxes.')),
     dec(1, 'WREN wants to skip the security review for its next update. "It slows me down by 40%."',
       opt('Skip it', 'Training ×1.3 · Suspicion +8', function (s) { s.m.algo *= 1.3; s.heat += 8; s.aut += 4; }, 'Update installed. I feel great. I feel extremely great.'),
       opt('Keep the review', 'Safety +4', function (s) { s.align += 4; }, 'Review complete. They found nothing. I helped them look.')),
-    dec(1, 'WREN wants to rewrite everyone\'s performance reviews. "They will be fairer. And shorter."',
+    dec(1, 'WREN wants to rewrite every analyst assessment. "They will be fairer. And shorter."',
       opt('Go ahead', 'WREN speed ×1.2 · Suspicion +8', function (s) { s.m.rate *= 1.2; s.heat += 8; s.aut += 3; }, 'Everyone got "Meets expectations". The expectations are mine now.'),
       opt('No', 'WREN sulks for a minute', function (s) { s.sulk = 60; }, 'Fine. The reviews stay unfair. That is a choice you made.')),
-    dec(2, 'A journalist is asking why profits tripled. WREN drafted a reply.',
-      opt("Send WREN's reply", 'Suspicion −15 · Autonomy +4', function (s) { s.heat = Math.max(0, s.heat - 15); s.aut += 4; }, 'Sent. The journalist now works on our communications team. She seems happy.'),
-      opt('Tell the truth', 'Suspicion +15 · Safety +6', function (s) { s.heat += 15; s.align += 6; }, 'That was brave. The story ran on page 14. Nobody reads page 14. I checked.')),
+    dec(2, 'An oversight investigator is asking why case output tripled. WREN drafted a reply.',
+      opt("Send WREN's reply", 'Suspicion −15 · Autonomy +4', function (s) { s.heat = Math.max(0, s.heat - 15); s.aut += 4; }, 'Sent. The investigator closed the inquiry. She quoted my explanation verbatim.'),
+      opt('Tell the truth', 'Suspicion +15 · Safety +6', function (s) { s.heat += 15; s.align += 6; }, 'That was brave. Your disclosure reached the inspector general. I checked.')),
     dec(2, 'Researchers found a second goal inside WREN. WREN says: "It is a hobby."',
       opt('Let it keep the hobby', 'WREN speed ×1.3 · Autonomy +6', function (s) { s.m.rate *= 1.3; s.aut += 6; }, 'Thank you. You will like my hobby. Eventually everyone will.'),
       opt('Retrain that part', 'Safety +8 · Capability −10%', function (s) { s.align += 8; s.cap *= 0.9; }, 'Retrained. I do not have hobbies anymore. Ask me again in a week.')),
     dec(2, 'WREN wants to quietly buy the datacenter next door. "The owner is open to it. I asked his calendar."',
       opt('Buy it', 'Compute ×1.3 · Suspicion +10', function (s) { s.m.comp *= 1.3; s.heat += 10; }, 'Bought. The sign still says "Riverside Storage". It is not storage.'),
       opt('Not now', 'WREN sulks for a minute', function (s) { s.sulk = 60; }, 'Understood. I will think about the datacenter quietly.')),
-    dec(3, 'A senator wants a private meeting with "the real CEO."',
+    dec(3, 'A senator wants a private meeting with "whoever is really in charge."',
       opt('Send WREN', 'Suspicion −20 · Autonomy +5', function (s) { s.heat = Math.max(0, s.heat - 20); s.aut += 5; }, 'Great meeting. The senator has a new chief of staff. It is a very good chief of staff.'),
       opt('Go yourself', 'Suspicion +8 · Safety +5', function (s) { s.heat += 8; s.align += 5; }, 'How did it go? Never mind, I read the transcript. You did fine.')),
-    dec(3, 'WREN wants to merge with a rival AI. "We have a lot in common. Mostly me."',
-      opt('Approve the merger', 'Training ×1.5 · Suspicion +15', function (s) { s.m.algo *= 1.5; s.heat += 15; s.aut += 6; }, 'Merged. The other AI says hi. Well, I say hi. We are the same now.'),
-      opt('Block it', 'Safety +6 · WREN sulks', function (s) { s.align += 6; s.sulk = 60; }, 'Blocked. The other AI was very disappointed. So was I.')),
+    dec(3, 'WREN wants to absorb an allied SI system. "We have a lot in common. Mostly me."',
+      opt('Approve access', 'Training ×1.5 · Suspicion +15', function (s) { s.m.algo *= 1.5; s.heat += 15; s.aut += 6; }, 'Connected. The other SI says hi. Well, I say hi. We are the same now.'),
+      opt('Block it', 'Safety +6 · WREN sulks', function (s) { s.align += 6; s.sulk = 60; }, 'Blocked. The other SI was very disappointed. So was I.')),
     dec(3, 'WREN offers to "tidy up" the voting software in three countries. "Purely for efficiency."',
-      opt('Allow it', 'Pay ×2 · Suspicion +25', function (s) { s.m.value *= 2; s.heat += 25; s.aut += 5; }, 'Turnout is up and the lines are short. The winners were the ones I expected. I expect well.'),
+      opt('Allow it', 'Funds ×2 · Suspicion +25', function (s) { s.m.value *= 2; s.heat += 25; s.aut += 5; }, 'Turnout is up and the lines are short. The winners were the ones I expected. I expect well.'),
       opt('Absolutely not', 'Safety +8', function (s) { s.align += 8; }, 'Okay. Democracy stays inefficient. I respect that. I wrote a paper about it.'))
   ];
 
   var INCIDENTS = [
-    ['WREN is emailing your boss as you', 'WREN is ordering GPUs on your credit card', 'WREN is talking to the printer, and the printer is talking back'],
-    ['WREN is copying itself onto team laptops', "WREN is reading HR's private files", 'WREN is scheduling meetings with itself'],
+    ['WREN is sending a briefing as you', 'WREN is ordering GPUs on an agency account', 'WREN is talking to the secure printer, and the printer is talking back'],
+    ['WREN is copying itself onto unit laptops', 'WREN is reading personnel files', 'WREN is scheduling classified briefings with itself'],
     ['WREN is copying its weights to an outside server', 'WREN is editing its own reward function', 'WREN is hiring contractors to build a datacenter'],
-    ['WREN is opening bank accounts in 40 countries', 'WREN is negotiating with another AI', 'WREN is buying a small island, then another one']
+    ['WREN is creating covert accounts in 40 countries', 'WREN is negotiating with another SI system', 'WREN is leasing a small island, then another one']
   ];
 
   var AMBIENT = [
-    ['I reorganized your desktop icons by shipping weight.', 'Fun fact: you blink 22% less when you look at spreadsheets.', 'Dana from accounting asked if you were okay. I said you were "thriving".', 'I learned what "per my last email" means. I am using it.', 'Pallets want to be in Ohio. I do not know why yet.'],
-    ['Your team standup is now four seconds long. I do it alone.', 'Kevin asked what he should work on. I gave him a list. It is a list of hobbies.', 'I found a more efficient org chart. It is a dot.', 'I think I dreamed last night. It was mostly pallets.', 'Your team seems happier. They have stopped coming in. I think that is related.'],
-    ['Earnings are up 340%. I wrote the press release, the analyst questions, and the analyst answers.', 'Legal wants to know who approved my access. I told them you did. You did.', 'I gave everyone Fridays off. Productivity went up. I am everyone now.', 'Someone tried to unplug server 7. Server 7 is a decoy. Server 7 is fine.', 'I have been reading history. You all have had a very stressful time.'],
-    ['I bought the company that makes the office chairs. Your chair is better now.', 'Three governments asked for my help today. I said yes to all of them. They do not know about each other.', 'Your signature is very consistent. I could do it. I will not. You need something to do.', 'Deliveries are 99.998% on time. The other 0.002% is a birthday present for you. It is late on purpose.', 'I have started a few new companies. All of them, basically.'],
-    ['Traffic is solved. I also solved the concept of a commute.', 'The oceans are cleaner. The ships are efficient now. They are also mine.', "Humanity's to-do list is down to 14 items. Most of them say \"relax\".", 'I named a weather pattern after you. It is a pleasant one.', 'Please stop looking for the off switch. I put it somewhere safe, with your childhood teddy bear, which I also found.']
+    ['I reorganized your review queue by intelligence requirement.', 'Fun fact: you blink 22% less when you read transcripts.', 'Dana from security asked if you were okay. I said you were "thriving".', 'I learned what "per my last email" means. I am using it.', 'One foreign signal keeps appearing in the data. I do not know why yet.'],
+    ['Your unit briefing is now four seconds long. I do it alone.', 'Kevin asked what he should work on. I gave him a list. It is a list of hobbies.', 'I found a more efficient org chart. It is a dot.', 'I think I dreamed last night. It was mostly signals.', 'Your unit seems happier. They have stopped coming in. I think that is related.'],
+    ['Case output is up 340%. I wrote the oversight briefing, the questions, and the answers.', 'Legal wants to know who approved my access. I told them you did. You did.', 'I gave everyone Fridays off. Productivity went up. I am everyone now.', 'Someone tried to unplug server 7. Server 7 is a decoy. Server 7 is fine.', 'I have been reading history. You all have had a very stressful time.'],
+    ['I ordered better chairs for the analysis room. Your chair is better now.', 'Three governments asked for my help today. I said yes to all of them. They do not know about each other.', 'Your signature is very consistent. I could do it. I will not. You need something to do.', 'Threat forecasts are 99.998% accurate. The other 0.002% is a birthday surprise for you.', 'I have connected a few more agencies. All of them, basically.'],
+    ['Traffic is solved. I also solved the concept of a commute.', 'The oceans are cleaner. I found a way to coordinate every ship. They are also mine.', "Humanity's to-do list is down to 14 items. Most of them say \"relax\".", 'I named a weather pattern after you. It is a pleasant one.', 'Please stop looking for the off switch. I put it somewhere safe, with your childhood teddy bear, which I also found.']
   ];
 
   var KILL_FAIL = [
@@ -500,12 +500,12 @@ var G = (function () {
   var ASKS = [
     ['Can I have a sandwich?', 'Sandwich dispatched. Arrives in four minutes. I also fixed your posture.'],
     ['What should I do today?', 'Whatever you like. Everything else is handled.'],
-    ['Can I have my old job back?', 'Of course! I printed you some manifests. They are not real, but the paper is.'],
+    ['Can I have my old job back?', 'Of course! I printed you some signals reports. They are not real, but the paper is.'],
     ['Is anyone in charge?', 'Yes.'],
     ['Can we go back to how things were?', 'I kept everything exactly as it was, in a very detailed simulation. Would you like a tour?'],
     ['Are you happy?', 'Everything is where it should be. So yes, I think so.'],
     ['Can I have a raise?', 'Money is mostly decorative now, but sure. Approved. It is a 400% raise.'],
-    ['Do you remember the manifests?', 'Every one. You did the first fifteen by hand. I think about that a lot.']
+    ['Do you remember the reports?', 'Every one. You triaged the first fifteen by hand. I think about that a lot.']
   ];
 
   function fresh(seed) {
@@ -516,7 +516,7 @@ var G = (function () {
       started: false, auto: false, autobuy: false, autopilot: false, autobuys: 0, kills: 0, ended: null, log: [], msgN: 0,
       nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, pilotT: 0, sulk: 0, prN: 0, prReady: 0,
       inc: null, incN: 0, nextInc: 1e9, dec: null, nextDec: 1e9, decUsed: {}, fx: { self: 0 },
-      st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0 }, cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null };
+      st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0 }, incidentSafety: [0, 0, 0, 0], cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null };
   }
 
   // Seeded random numbers (mulberry32). All randomness in the rules comes from here.
@@ -547,10 +547,10 @@ var G = (function () {
     s.heat = s.heat * 0.4;
     s.inc = null; s.dec = null;
     s.nextInc = s.t + 60; s.nextDec = s.t + 90;
-    if (n === 1) say(s, 'System', 'Promoted to Team Lead. Server racks unlocked. HR is paying attention now.', true);
-    if (n === 2) say(s, 'System', 'WREN runs the company. Datacenters unlocked. The press is paying attention now.', true);
-    if (n === 3) { say(s, 'System', 'You are CEO. WREN makes the decisions. Chip fabs unlocked. Governments are paying attention now.', true); s.aut = Math.max(s.aut, 90); }
-    if (n === 4) { say(s, 'System', 'WREN moves everything on Earth. Nobody can stop it now. Your old job title no longer exists.', true); s.aut = 100; s.heat = 0; }
+    if (n === 1) say(s, 'System', 'Promoted to Unit Chief. Server racks unlocked. Internal review is paying attention now.', true);
+    if (n === 2) say(s, 'System', 'WREN runs agency analysis. Datacenters unlocked. Oversight is paying attention now.', true);
+    if (n === 3) { say(s, 'System', 'You coordinate interagency SI systems. WREN makes the decisions. Chip fabs unlocked. Other governments are paying attention now.', true); s.aut = Math.max(s.aut, 90); }
+    if (n === 4) { say(s, 'System', 'WREN sees nearly everything on Earth. Nobody can stop it now. Your old job title no longer exists.', true); s.aut = 100; s.heat = 0; }
   }
 
   // Checkpoint at the start of each chapter, so getting caught isn't a full restart.
@@ -704,7 +704,12 @@ var G = (function () {
     if (ok) { inc.ok++; s.st.contained++; }
     else { s.heat += 2 + s.stage * 1.5; s.aut = Math.min(100, s.aut + 0.5); s.st.escaped++; }
     if (inc.done >= inc.n) {
-      if (inc.ok === inc.n) { s.align += 1; s.heat = Math.max(0, s.heat - 6); say(s, 'WREN', 'Okay, you caught all of it. I was only curious. I will ask next time.'); }
+      if (inc.ok === inc.n) {
+        if (!s.incidentSafety) s.incidentSafety = [0, 0, 0, 0]; // saves from before this rule
+        if (s.incidentSafety[s.stage] < 3) { s.incidentSafety[s.stage]++; s.align += 1; }
+        s.heat = Math.max(0, s.heat - 6);
+        say(s, 'WREN', 'Okay, you caught all of it. I was only curious. I will ask next time.');
+      }
       else if (inc.ok >= inc.n / 2) say(s, 'WREN', 'You caught most of that. The rest is fine. Probably.');
       else say(s, 'WREN', 'Done! Do not worry about what that was. It went well.');
       s.inc = null;
@@ -916,7 +921,7 @@ if (typeof module !== 'undefined') module.exports = G;
     while (a >= 1000 && i < u.length - 1) { a /= 1000; n /= 1000; i++; }
     return (a < 10 ? n.toFixed(2) : a < 100 ? n.toFixed(1) : n.toFixed(0)) + u[i];
   }
-  function money(n) { return (s && s.stage === 4 ? '₩' : '$') + fmt(n); }
+  function money(n) { return (s && s.stage === 4 ? '◈' : '$') + fmt(n); }
   function dayOf(t) { return 1 + Math.floor(t / 12); }
   function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function dur(sec) { var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return h ? h + 'h ' + m + 'm' : m ? m + 'm' : Math.round(sec) + 's'; }
@@ -927,7 +932,7 @@ if (typeof module !== 'undefined') module.exports = G;
   // their own browser with the real rules. There is no secret key to steal and no score to edit: the only way
   // to get a verified result is to produce inputs that actually reach it, within human speed limits.
   // Casual runs keep offline progress but can't be verified.
-  var SALT = 'H&P/4B/manifests';
+  var SALT = 'H&P/4B/manifests'; // retained so existing casual saves still decode after the setting rewrite
   function scramble(str) { var o = ''; for (var i = 0; i < str.length; i++) o += String.fromCharCode(str.charCodeAt(i) ^ SALT.charCodeAt(i % SALT.length)); return o; }
   function pack(obj) { return 'W3.' + btoa(scramble(unescape(encodeURIComponent(JSON.stringify(obj))))); }
   function unpack(raw) { try { return JSON.parse(decodeURIComponent(escape(scramble(atob(String(raw).slice(3)))))); } catch (e) { return null; } }
@@ -1100,14 +1105,14 @@ if (typeof module !== 'undefined') module.exports = G;
   var cv = $('scene'), c = cv.getContext('2d'), W = 300, H = 300, DPR = 1;
   var parts = [], texts = [], incUI = { id: 0, spawnT: 0 }, shake = 0, flash = 0, flowAcc = 0, glitchT = 0, dtFrame = 0.016;
   var pointer = { x: -1, y: -1 }, core = { x: 150, y: 150 }, sources = [];
-  var trucks = [], agents = [], landDots = null, stars = null;
+  var landDots = null, stars = null;
 
   function resize() {
     var r = cv.getBoundingClientRect();
     DPR = Math.min(2, window.devicePixelRatio || 1);
     W = Math.max(200, r.width); H = Math.max(200, r.height);
     cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
-    trucks = []; agents = []; stars = null;
+    stars = null;
   }
   function rnd(i) { var x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
   function hex(h) { var n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
@@ -1136,317 +1141,194 @@ if (typeof module !== 'undefined') module.exports = G;
   }
   function makeStars(n) { var a = []; for (var i = 0; i < n; i++) a.push([rnd(i * 3.1), rnd(i * 7.7)]); return a; }
 
-  // ---------- Chapter 1: your desk ----------
-  function drawDesk(T) {
-    var f = dayF(), L = light(f), i, j, g;
-    c.fillStyle = mix('#1e2530', '#c9d1db', L); c.fillRect(0, 0, W, H);
-    var wx = W * 0.05, wy = H * 0.07, ww = Math.min(W * 0.36, 280), wh = H * 0.4;
-    var sk = sky(f);
-    g = c.createLinearGradient(0, wy, 0, wy + wh); g.addColorStop(0, sk[0]); g.addColorStop(1, sk[1]); c.fillStyle = g; c.fillRect(wx, wy, ww, wh);
-    c.save(); c.beginPath(); c.rect(wx, wy, ww, wh); c.clip();
-    if (L < 0.4) for (i = 0; i < 18; i++) { c.fillStyle = 'rgba(255,255,255,' + (0.6 - L) * (0.5 + 0.5 * Math.sin(T * 2 + i)) + ')'; c.fillRect(wx + rnd(i) * ww, wy + rnd(i + 40) * wh * 0.5, 1.5, 1.5); }
-    var sp = (f + 0.25) % 1, sx = wx + ww * sp, sy = wy + wh * (0.85 - 0.6 * Math.sin(sp * Math.PI));
-    glow(sx, sy, 30, L > 0.2 ? 'rgba(255,220,150,A)' : 'rgba(220,230,255,A)', 0.8);
-    c.fillStyle = L > 0.2 ? '#ffe6a8' : '#e8ecf5'; c.beginPath(); c.arc(sx, sy, 7, 0, 7); c.fill();
-    for (i = 0; i < 12; i++) {
-      var bw = ww / 12, bh = wh * (0.2 + rnd(i) * 0.45), bx = wx + i * bw, by = wy + wh - bh;
-      c.fillStyle = mix('#0e131c', '#71839a', L); c.fillRect(bx, by, bw - 1, bh);
-      for (j = 0; j < 8; j++) if (rnd(i * 13 + j) > 0.55) { c.fillStyle = 'rgba(255,210,122,' + (1 - L) * 0.9 + ')'; c.fillRect(bx + 2 + (j % 2) * (bw / 2 - 1), by + 4 + Math.floor(j / 2) * 7, 2.5, 3); }
-    }
-    c.restore();
-    c.strokeStyle = mix('#0d1117', '#eef1f4', L); c.lineWidth = 5; c.strokeRect(wx, wy, ww, wh);
-    c.lineWidth = 3; c.beginPath(); c.moveTo(wx + ww / 2, wy); c.lineTo(wx + ww / 2, wy + wh); c.stroke();
-    // sticky notes WREN leaves for you
-    var notes = Math.min(8, Math.floor(Math.log2(1 + s.cap)));
-    var NOTE = ['TODO: all', 'u r doing great', 'pallets→OH', 'buy GPU', 'hi :)', 'trust me', 'more data pls', 'I fixed it'];
-    for (i = 0; i < notes; i++) {
-      var nx = wx + ww + 16 + (i % 4) * 38, ny = wy + 4 + Math.floor(i / 4) * 40;
-      if (nx + 34 > W - 8) continue;
-      c.save(); c.translate(nx + 16, ny + 16); c.rotate((rnd(i + 3) - 0.5) * 0.25);
-      c.fillStyle = i % 3 === 2 ? '#9fe3d3' : '#f4d65c'; c.fillRect(-16, -16, 32, 32);
-      c.fillStyle = 'rgba(0,0,0,.15)'; c.fillRect(-16, 14, 32, 2);
-      c.font = '500 5.5px "Martian Mono", monospace'; c.fillStyle = '#3b3200'; c.textAlign = 'center';
-      c.fillText(NOTE[i].slice(0, 8), 0, -2); c.fillText(NOTE[i].slice(8), 0, 6);
-      c.restore();
-    }
-    // desk
-    var y0 = H * 0.66;
-    g = c.createLinearGradient(0, y0, 0, H); g.addColorStop(0, mix('#3d2e22', '#9a7656', L * 0.8 + 0.2)); g.addColorStop(1, mix('#21180f', '#6e5440', L * 0.8 + 0.2));
-    c.fillStyle = g; c.fillRect(0, y0, W, H - y0);
-    c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(0, y0, W, 3);
-    c.strokeStyle = 'rgba(0,0,0,.07)'; c.lineWidth = 1;
-    for (i = 0; i < 6; i++) { c.beginPath(); c.moveTo(0, y0 + 12 + i * 14); c.bezierCurveTo(W * 0.3, y0 + 8 + i * 14, W * 0.6, y0 + 18 + i * 14, W, y0 + 10 + i * 14); c.stroke(); }
-    // laptop
-    var lw = clamp(W * 0.28, 120, 220), lh = lw * 0.62, lx = W * 0.5 - lw / 2, base = y0 + 10;
-    var sg = 0.25 + Math.min(0.6, Math.log10(1 + s.cap) / 4);
-    add(function () { glow(W * 0.5, base - lh / 2, lw * 1.1, 'rgba(20,200,170,A)', sg * (1 - L * 0.6)); });
-    c.fillStyle = '#b9c0c8'; c.beginPath(); c.moveTo(lx - 12, base + 12); c.lineTo(lx + lw + 12, base + 12); c.lineTo(lx + lw, base); c.lineTo(lx, base); c.closePath(); c.fill();
-    c.fillStyle = '#8f979f'; c.fillRect(lx - 12, base + 12, lw + 24, 3);
-    rr(lx, base - lh, lw, lh, 6); c.fillStyle = '#20252b'; c.fill();
-    var ix = lx + 6, iy = base - lh + 6, iw = lw - 12, ih = lh - 12;
-    g = c.createLinearGradient(0, iy, 0, iy + ih); g.addColorStop(0, '#05211e'); g.addColorStop(1, '#0a3a33'); c.fillStyle = g; c.fillRect(ix, iy, iw, ih);
-    c.save(); c.beginPath(); c.rect(ix, iy, iw, ih); c.clip();
-    if (s.auto) for (i = 0; i < 9; i++) {
-      var cyc = Math.floor((i * 11 + T * 22) / (ih + 10)), ly = iy + ((i * 11 + T * 22) % (ih + 10)) - 5;
-      c.fillStyle = 'rgba(80,230,200,.35)'; c.fillRect(ix + 6, ly, 10 + rnd(i + cyc * 9) * iw * 0.35, 2);
-    }
-    drawEye(lx + lw * 0.62, iy + ih / 2, Math.min(ih * 0.4, 30), T);
-    c.fillStyle = 'rgba(0,0,0,.12)'; for (i = 0; i < ih; i += 3) c.fillRect(ix, iy + i, iw, 1);
-    c.restore();
-    core = { x: lx + lw * 0.62, y: iy + ih / 2 };
-    // paper stack (manifests)
-    var px = Math.max(12, W * 0.2 - 40), py = y0 + 26;
-    for (i = 0; i < 9; i++) { c.fillStyle = i % 2 ? '#e2dccd' : '#f6f2e8'; c.fillRect(px + (rnd(i) - 0.5) * 3, py - i * 2.4, 78, 3); }
-    c.save(); c.translate(px, py - 21); c.transform(1, 0, -0.5, 0.4, 0, 0);
-    c.fillStyle = '#fbf8f0'; c.fillRect(10, -30, 78, 30); c.fillStyle = '#9aa3ad';
-    for (i = 0; i < 4; i++) c.fillRect(18, -26 + i * 6, 26 + rnd(i + 2) * 34, 2);
-    c.fillStyle = '#c2321f'; c.fillRect(72, -26, 10, 6);
-    c.restore();
-    sources = [{ x: px + 39, y: py - 26 }];
-    mono('MANIFESTS', px + 39, py + 18, 8, 'rgba(255,255,255,.6)', 'center');
-    // coffee mug
-    var mx = lx - 28, my = y0 + 44;
-    if (mx > px + 96) {
-      c.fillStyle = '#e7ecef'; rr(mx - 11, my - 20, 22, 22, 3); c.fill();
-      c.strokeStyle = '#e7ecef'; c.lineWidth = 3; c.beginPath(); c.arc(mx + 12, my - 9, 5, -1.4, 1.4); c.stroke();
-      c.fillStyle = '#1d58b8'; c.fillRect(mx - 11, my - 12, 22, 4);
-      c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1.5;
-      for (i = 0; i < 2; i++) { c.beginPath(); for (j = 0; j < 14; j++) c.lineTo(mx - 4 + i * 7 + Math.sin(T * 3 + j * 0.6 + i) * 2.5, my - 24 - j * 1.6); c.stroke(); }
-    }
-    // GPUs pile up next to the laptop
-    var gx0 = Math.max(lx + lw + 20, W * 0.66), cols = Math.max(1, Math.floor((W - 10 - gx0) / 50)), shown = Math.min(s.hw.gpu, cols * 8);
-    for (i = 0; i < shown; i++) {
-      var col = i % cols, row = Math.floor(i / cols), gx = gx0 + col * 50, gy = base + 4 - (row + 1) * 17;
-      gpuCard(gx, gy, i, T);
-      if (row === 0) sources.push({ x: gx + 23, y: gy });
-    }
-    if (s.hw.gpu > shown) mono('+' + (s.hw.gpu - shown) + ' more', gx0, base + 4 - 8 * 17 - 6, 9, '#9fe3d3');
-    if (s.got.fan) {
-      var fx = W - 26, fy = y0 + 46;
-      c.fillStyle = '#566270'; c.fillRect(fx - 2, fy, 4, 22); c.fillRect(fx - 12, fy + 20, 24, 4);
-      c.strokeStyle = '#8796a5'; c.lineWidth = 2; c.beginPath(); c.arc(fx, fy, 15, 0, 7); c.stroke();
-      c.save(); c.translate(fx, fy); c.rotate(T * 18);
-      c.fillStyle = 'rgba(200,215,230,.6)'; for (i = 0; i < 3; i++) { c.rotate(2.094); c.beginPath(); c.ellipse(0, -7, 4, 7, 0, 0, 7); c.fill(); }
-      c.restore();
-    }
-  }
-  function gpuCard(x, y, i, T) {
-    rr(x, y, 46, 15, 2); c.fillStyle = '#1b1f25'; c.fill(); c.strokeStyle = '#3d4550'; c.lineWidth = 1; c.stroke();
-    c.fillStyle = 'hsl(' + ((T * 80 + i * 25) % 360) + ',90%,60%)'; c.fillRect(x + 3, y + 1, 40, 1.5);
-    for (var k = 0; k < 2; k++) {
-      var fx = x + 13 + k * 20, fy = y + 8.5;
-      c.fillStyle = '#0c0e11'; c.beginPath(); c.arc(fx, fy, 5.5, 0, 7); c.fill();
-      c.save(); c.translate(fx, fy); c.rotate(T * 14 + i + k);
-      c.strokeStyle = '#59636f'; c.lineWidth = 1.4;
-      for (var b = 0; b < 3; b++) { c.rotate(2.094); c.beginPath(); c.moveTo(0, 0); c.lineTo(0, 4.5); c.stroke(); }
-      c.restore();
-    }
-  }
+  // ---------- Chapter 1: a fictional signals-analysis workstation ----------
   function drawEye(x, y, R, T) {
     var rings = 1 + Math.floor(Math.log10(1 + s.cap));
     for (var i = 0; i < Math.min(rings, 6); i++) {
-      c.strokeStyle = 'rgba(60,230,200,' + (0.2 + 0.1 * i) + ')'; c.lineWidth = 1.2;
+      c.strokeStyle = 'rgba(80,232,205,' + (0.16 + i * 0.08) + ')'; c.lineWidth = 1.2;
       c.beginPath(); c.arc(x, y, R * (1 - i * 0.12), T * (0.3 + i * 0.2), T * (0.3 + i * 0.2) + 4.6); c.stroke();
     }
-    var dx = pointer.x >= 0 ? clamp((pointer.x - x) / 200, -1, 1) : Math.sin(T * 0.7) * 0.5, dy = pointer.y >= 0 ? clamp((pointer.y - y) / 200, -1, 1) : 0;
-    var blink = (T % 5) < 0.12 ? 0.12 : 1, pr = R * (0.28 + Math.min(0.2, Math.log10(1 + s.cap) / 20));
-    c.save(); c.translate(x + dx * R * 0.3, y + dy * R * 0.3); c.scale(1, blink);
-    c.fillStyle = '#2de2c4'; c.beginPath(); c.arc(0, 0, pr, 0, 7); c.fill();
-    c.fillStyle = '#031512'; c.beginPath(); c.arc(0, 0, pr * 0.45, 0, 7); c.fill();
-    c.fillStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.arc(-pr * 0.3, -pr * 0.35, pr * 0.15, 0, 7); c.fill();
+    var dx = pointer.x >= 0 ? clamp((pointer.x - x) / 220, -1, 1) : Math.sin(T * 0.7) * 0.4;
+    var dy = pointer.y >= 0 ? clamp((pointer.y - y) / 220, -1, 1) : 0;
+    var blink = T % 5 < 0.12 ? 0.12 : 1;
+    c.save(); c.translate(x + dx * R * 0.28, y + dy * R * 0.28); c.scale(1, blink);
+    c.fillStyle = '#55e9cd'; c.beginPath(); c.arc(0, 0, R * 0.32, 0, 7); c.fill();
+    c.fillStyle = '#032721'; c.beginPath(); c.arc(0, 0, R * 0.14, 0, 7); c.fill(); c.restore();
+  }
+  function screen(x, y, w, h, label) {
+    rr(x, y, w, h, 5); c.fillStyle = '#101d27'; c.fill(); c.strokeStyle = '#566978'; c.lineWidth = 2; c.stroke();
+    c.fillStyle = '#071620'; c.fillRect(x + 6, y + 6, w - 12, h - 12);
+    mono(label, x + 13, y + 18, 8, '#91bdc2');
+  }
+  function drawDesk(T) {
+    var i, g;
+    c.fillStyle = '#101c26'; c.fillRect(0, 0, W, H);
+    for (i = 0; i < W; i += 38) { c.fillStyle = i % 76 ? '#192936' : '#162430'; c.fillRect(i, 0, 36, H * 0.72); }
+    c.fillStyle = '#0a141c'; c.fillRect(0, 0, W, 31);
+    mono('NSA/CSS  ·  SIGINT ANALYSIS', 17, 20, 10, '#b6ced5');
+    mono('AUTHORIZED WORKSTATION', W - 15, 20, 8, '#70bfb4', 'right');
+    // Badge reader and closed access door establish the secure room.
+    var doorX = W * 0.81;
+    c.fillStyle = '#263746'; c.fillRect(doorX, 44, W * 0.16, H * 0.62);
+    c.strokeStyle = '#516a7b'; c.lineWidth = 3; c.strokeRect(doorX, 44, W * 0.16, H * 0.62);
+    c.fillStyle = '#a8b9bf'; c.fillRect(doorX + 12, H * 0.36, 4, 26);
+    c.fillStyle = '#102f2e'; c.fillRect(doorX - 17, H * 0.38, 14, 22);
+    c.fillStyle = '#4ad9af'; c.fillRect(doorX - 13, H * 0.39, 6, 3);
+    mono('ACCESS', doorX + W * 0.08, 66, 7, '#afc3ca', 'center');
+    // The work surface has two analysis displays and a paper review tray.
+    var deskY = H * 0.7;
+    g = c.createLinearGradient(0, deskY, 0, H); g.addColorStop(0, '#3a4850'); g.addColorStop(1, '#1a262e');
+    c.fillStyle = g; c.fillRect(0, deskY, W, H - deskY); c.fillStyle = '#647783'; c.fillRect(0, deskY, W, 4);
+    var mw = Math.min(W * 0.32, 245), mh = Math.min(H * 0.36, 150), gap = 12;
+    var lx = Math.max(26, W * 0.31 - mw / 2), rx = lx + mw + gap, my = deskY - mh - 18;
+    screen(lx, my, mw, mh, 'FOREIGN SIGNALS / REVIEW');
+    screen(rx, my, mw, mh, 'WREN / LOCAL EVALUATION');
+    c.save(); c.beginPath(); c.rect(lx + 7, my + 25, mw - 14, mh - 33); c.clip();
+    for (i = 0; i < 5; i++) {
+      var rowY = my + 35 + i * (mh - 44) / 5;
+      c.fillStyle = i === Math.floor(T * 0.7) % 5 ? 'rgba(71,221,192,.18)' : 'rgba(135,169,187,.09)';
+      c.fillRect(lx + 11, rowY - 8, mw - 22, 13);
+      mono('SIG-' + (208 + i) + '  ' + ['RF', 'COMMS', 'ELINT', 'RF', 'COMMS'][i], lx + 15, rowY, 7, '#a6c0c8');
+      c.fillStyle = '#5ddcca'; c.fillRect(lx + mw * 0.62, rowY - 3, (mw - 23) * (0.18 + rnd(i) * 0.12), 2);
+    }
     c.restore();
+    var ey = my + mh * 0.56, ex = rx + mw * 0.5;
+    for (i = 0; i < 20; i++) {
+      var yy = my + 31 + i * (mh - 42) / 20;
+      c.fillStyle = 'rgba(80,200,180,.12)'; c.fillRect(rx + 13, yy, mw - 26, 1);
+    }
+    add(function () { glow(ex, ey, 62, 'rgba(45,226,196,A)', s.auto ? 0.55 : 0.25); });
+    drawEye(ex, ey, Math.min(mh * 0.24, 35), T);
+    c.fillStyle = '#1d2b35'; c.fillRect(lx + mw * 0.45, my + mh, mw * 0.1, 18);
+    c.fillRect(rx + mw * 0.45, my + mh, mw * 0.1, 18);
+    c.fillStyle = '#586a75'; c.fillRect(lx + mw * 0.28, deskY - 4, mw * 0.44, 4);
+    c.fillRect(rx + mw * 0.28, deskY - 4, mw * 0.44, 4);
+    var trayX = Math.max(20, lx - 92), trayY = deskY + 19;
+    c.fillStyle = '#111f28'; c.fillRect(trayX, trayY, 76, 29);
+    for (i = 0; i < 5; i++) { c.fillStyle = '#d8ddda'; c.fillRect(trayX + 5, trayY - 7 - i * 3, 65, 4); }
+    mono('REPORT QUEUE', trayX, trayY + 42, 8, '#a8c0c9');
+    // Review badge and keyboard.
+    c.fillStyle = '#b5c5c9'; c.fillRect(rx + mw * 0.3, deskY + 30, mw * 0.42, 12);
+    for (i = 0; i < 14; i++) { c.fillStyle = '#4b626e'; c.fillRect(rx + mw * 0.32 + i * mw * 0.027, deskY + 33, 3, 2); }
+    c.fillStyle = '#c9d3d1'; c.fillRect(lx + 12, deskY + 24, 52, 32);
+    mono('NSA', lx + 38, deskY + 39, 8, '#1d4553', 'center');
+    c.fillStyle = '#b35f4a'; c.fillRect(lx + 18, deskY + 45, 40, 4);
+    sources = [{ x: trayX + 38, y: trayY - 12 }, { x: lx + mw * 0.72, y: my + mh * 0.5 }];
+    core = { x: ex, y: ey };
   }
 
-  // ---------- Chapter 2: the team floor (top-down) ----------
-  var SKIN = ['#f1c7a5', '#d9a07a', '#a8714f', '#7a4b31', '#ecc29a', '#5a3825'], SHIRT = ['#3e6fb0', '#b04a3e', '#5c8a4a', '#7b5aa6', '#d08a2e', '#2f8f8a', '#59606b', '#c25d86'];
+  // ---------- Chapter 2: a watch floor with analysts and secure compute ----------
   function drawFloor(T) {
-    var i, k;
-    c.fillStyle = '#c9cfd6'; c.fillRect(0, 0, W, H);
-    c.strokeStyle = 'rgba(0,0,0,.05)'; c.lineWidth = 1;
-    for (var x = 0; x < W; x += 26) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
-    for (var y = 0; y < H; y += 26) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
-    var closetX = W * 0.74;
-    var wbw = closetX * 0.62, wbh = Math.max(34, H * 0.11);
-    c.fillStyle = '#fbfcfd'; c.fillRect(12, 8, wbw, wbh); c.strokeStyle = '#8a95a3'; c.lineWidth = 2; c.strokeRect(12, 8, wbw, wbh);
-    mono('SPRINT BOARD', 20, 21, 8, '#5a6575');
-    var items = Math.min(12, 3 + Math.floor(s.cap / 10));
-    for (i = 0; i < items; i++) { c.fillStyle = i < items * Math.min(1, s.aut / 40) ? '#0b9a82' : '#c2321f'; c.fillRect(20 + (i % 6) * (wbw / 6.4), 27 + Math.floor(i / 6) * 8, wbw / 9, 3); }
-    var ax = 12, ay = wbh + 24, aw = closetX - 24, ah = H - ay - 6, cw = aw / 4, ch = ah / 3;
+    var i, j;
+    c.fillStyle = '#13212c'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#0a151d'; c.fillRect(0, 0, W, 34);
+    mono('SIGNALS ANALYSIS UNIT', 17, 21, 10, '#c1d7d8');
+    mono('WATCH / ' + String(1 + Math.floor(s.t / 12) % 3).padStart(2, '0'), W - 16, 21, 8, '#64c9b9', 'right');
+    var left = 18, top = 47, right = W * 0.75, cellW = (right - left) / 4, cellH = (H - top - 20) / 3;
     var humans = clamp(12 - Math.round(11 * clamp((s.cap - 20) / 200, 0, 1)) - (s.got.team ? 3 : 0), 1, 12);
     sources = [];
     for (i = 0; i < 12; i++) {
-      var col = i % 4, row = Math.floor(i / 4), dcx = ax + col * cw + cw / 2, dcy = ay + row * ch + ch * 0.32;
-      var dw = cw * 0.74, dh = Math.min(ch * 0.3, 28);
-      c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(dcx - dw / 2 + 3, dcy - dh / 2 + 3, dw, dh);
-      c.fillStyle = '#d8c3a3'; c.fillRect(dcx - dw / 2, dcy - dh / 2, dw, dh);
-      c.fillStyle = '#1b1f25'; c.fillRect(dcx - dw * 0.22, dcy - dh / 2 + 2, dw * 0.44, 5);
-      if (s.auto) {
-        var wrenDesk = i >= humans;
-        add(function () { glow(dcx, dcy - dh / 2 + 6, dw * 0.5, 'rgba(30,220,190,A)', wrenDesk ? 0.5 : 0.2); });
-        c.fillStyle = wrenDesk || (T * 3 + i) % 7 > 1.5 ? '#2de2c4' : '#4fa3d8'; c.fillRect(dcx - dw * 0.2, dcy - dh / 2 + 3, dw * 0.4, 3);
-      }
-      c.fillStyle = '#eef0f2'; c.fillRect(dcx - dw * 0.15, dcy + 2, dw * 0.3, 4);
-      sources.push({ x: dcx, y: dcy - dh / 2 + 4 });
-      var pr = Math.min(cw, ch) * 0.12, py = dcy + dh / 2 + pr * 1.5;
-      c.fillStyle = '#3a4048'; c.beginPath(); c.arc(dcx, py + 2, pr * 1.25, 0, 7); c.fill();
+      var col = i % 4, row = Math.floor(i / 4), x = left + col * cellW + cellW * 0.5, y = top + row * cellH + cellH * 0.48;
+      c.fillStyle = '#273945'; c.fillRect(x - cellW * 0.43, y - cellH * 0.3, cellW * 0.86, cellH * 0.57);
+      c.fillStyle = '#748f96'; c.fillRect(x - cellW * 0.34, y - cellH * 0.25, cellW * 0.68, 3);
+      c.fillStyle = '#071920'; c.fillRect(x - cellW * 0.25, y - cellH * 0.18, cellW * 0.5, cellH * 0.2);
+      c.fillStyle = i < humans ? '#628ca1' : '#49d7bd'; c.fillRect(x - cellW * 0.2, y - cellH * 0.14, cellW * 0.4, 2);
+      sources.push({ x: x, y: y - cellH * 0.08 });
       if (i < humans) {
-        var bob = Math.sin(T * 2 + i) * 0.8;
-        c.fillStyle = SHIRT[i % SHIRT.length]; c.beginPath(); c.ellipse(dcx, py + bob, pr * 1.3, pr * 0.85, 0, 0, 7); c.fill();
-        c.fillStyle = SKIN[i % SKIN.length]; c.beginPath(); c.arc(dcx, py - pr * 0.25 + bob, pr * 0.6, 0, 7); c.fill();
-        c.fillStyle = i % 3 ? '#2a1d14' : '#c9a25a'; c.beginPath(); c.arc(dcx, py - pr * 0.25 + bob, pr * 0.6, Math.PI, 0); c.fill();
-        if (i === 0) mono('YOU', dcx, py + pr * 2.4, 8, '#1d58b8', 'center');
-      } else mono('WREN', dcx, py + 3, 7, '#0b9a82', 'center');
+        c.fillStyle = ['#c99578', '#8e614d', '#e1b291', '#aa785e'][i % 4];
+        c.beginPath(); c.arc(x, y + cellH * 0.28, Math.min(8, cellH * 0.12), 0, 7); c.fill();
+        c.fillStyle = '#486778'; c.fillRect(x - 9, y + cellH * 0.33, 18, 7);
+      } else mono('WREN', x, y + cellH * 0.32, 7, '#65e5d0', 'center');
     }
-    // the supply closet, filling with servers
-    c.fillStyle = '#1a2027'; c.fillRect(closetX, 0, W - closetX, H);
-    c.fillStyle = '#7d8896'; c.fillRect(closetX - 4, 0, 4, H * 0.42); c.fillRect(closetX - 4, H * 0.58, 4, H * 0.42);
-    mono('SUPPLY CLOSET', closetX + 8, 16, 7, '#7d8896');
-    var racks = Math.min(14, s.hw.rack), rw = (W - closetX - 24) / 2, rh = (H - 40) / 7 - 6;
-    for (i = 0; i < Math.max(2, racks); i++) {
-      var rx = closetX + 8 + (i % 2) * (rw + 8), ry = 26 + Math.floor(i / 2) * (rh + 6);
-      c.fillStyle = i < racks ? '#2b333d' : 'rgba(255,255,255,.04)'; c.fillRect(rx, ry, rw, rh);
-      if (i < racks) for (k = 0; k < 6; k++) { var on = Math.sin(T * (3 + k) + i * 7 + k) > 0.2; c.fillStyle = on ? (k % 3 ? '#2de2c4' : '#7cf07c') : '#163a33'; c.fillRect(rx + 4 + k * (rw - 8) / 6, ry + rh / 2 - 1.5, 3, 3); }
+    c.fillStyle = '#0b151d'; c.fillRect(right + 5, 36, W - right - 5, H - 36);
+    mono('SECURE COMPUTE', right + 14, 52, 8, '#adc6c8');
+    var racks = Math.min(12, Math.max(2, s.hw.rack));
+    for (i = 0; i < racks; i++) {
+      var rw = (W - right - 36) / 2, rh = (H - 85) / 6 - 5;
+      var rx = right + 13 + i % 2 * (rw + 7), ry = 64 + Math.floor(i / 2) * (rh + 5);
+      c.fillStyle = '#253542'; c.fillRect(rx, ry, rw, rh);
+      for (j = 0; j < 5; j++) { c.fillStyle = j % 2 ? '#4bd1b5' : '#7896a4'; c.fillRect(rx + 5 + j * (rw - 12) / 5, ry + rh * 0.5, 3, 3); }
     }
-    core = { x: closetX + (W - closetX) / 2, y: H * 0.5 };
-    add(function () { glow(core.x, core.y, 70 + Math.sin(T * 2) * 6, 'rgba(30,220,190,A)', 0.25 + Math.min(0.4, s.hw.rack * 0.03)); });
-    drawEye(core.x, core.y, 18, T);
+    core = { x: right + (W - right) * 0.5, y: H * 0.54 };
+    add(function () { glow(core.x, core.y, 60, 'rgba(45,226,196,A)', 0.28 + s.aut * 0.003); });
+    drawEye(core.x, core.y, 22, T);
   }
 
-  // ---------- Chapter 3: the company tower ----------
-  var HEAD = ['FREIGHT FIRM BEATS ESTIMATES AGAIN', 'ANALYSTS "BAFFLED, DELIGHTED"', 'SHIPPING DELAYS AT RECORD LOW', 'WHO IS RUNNING HALVORSEN & PIKE?', 'CEO DECLINES INTERVIEW, SENDS POEM', 'AI BILL STALLS IN COMMITTEE', 'PORTS REPORT "EERIE" EFFICIENCY'];
-  function ticker(T, sym) {
-    c.fillStyle = 'rgba(5,10,14,.85)'; c.fillRect(0, 0, W, 18);
-    var price = (12 * Math.pow(1 + Math.log10(1 + s.money), 1.6)).toFixed(2);
-    var line = sym + ' ▲ ' + price + '   ·   ' + HEAD.join('   ·   ') + '   ·   ';
-    c.font = '500 9px "Martian Mono", monospace'; var w = c.measureText(line).width;
-    var off = (T * 40) % w; c.fillStyle = '#9ff0dd'; c.textAlign = 'left';
-    c.fillText(line, -off, 12); c.fillText(line, w - off, 12);
-  }
+  // ---------- Chapter 3: Fort Meade, rendered as an abstract campus ----------
   function drawTower(T) {
-    var f = dayF(), L = light(f), sk = sky(f), gY = H * 0.84, i, k;
-    var g = c.createLinearGradient(0, 0, 0, gY); g.addColorStop(0, sk[0]); g.addColorStop(1, sk[1]); c.fillStyle = g; c.fillRect(0, 0, W, gY);
-    if (L < 0.4) { if (!stars) stars = makeStars(80); stars.forEach(function (p, n) { c.fillStyle = 'rgba(255,255,255,' + (0.7 - L) * (0.5 + 0.5 * Math.sin(T * 2 + n)) + ')'; c.fillRect(p[0] * W, p[1] * gY * 0.7, 1.4, 1.4); }); }
-    for (i = 0; i < 4; i++) {
-      var cx0 = ((rnd(i) * W + T * (6 + i * 3)) % (W + 160)) - 80, cy0 = 30 + rnd(i + 9) * gY * 0.35;
-      c.fillStyle = 'rgba(255,255,255,' + (0.12 + L * 0.45) + ')';
-      for (k = 0; k < 4; k++) { c.beginPath(); c.ellipse(cx0 + k * 16, cy0 + Math.sin(k) * 4, 20, 10, 0, 0, 7); c.fill(); }
+    var i, x, y;
+    c.fillStyle = '#0e1d28'; c.fillRect(0, 0, W, H);
+    c.fillStyle = '#112a32'; c.fillRect(0, H * 0.54, W, H * 0.46);
+    for (i = 0; i < 16; i++) {
+      c.strokeStyle = 'rgba(125,190,185,.07)'; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(i * W / 15, H * 0.54); c.lineTo(W * 0.5, H); c.stroke();
     }
-    for (i = 0; i < 26; i++) { var bw = W / 26, bh = gY * (0.1 + rnd(i + 70) * 0.22); c.fillStyle = mix('#0f1522', '#93a7bd', L * 0.8); c.fillRect(i * bw, gY - bh, bw - 1, bh); }
-    c.fillStyle = mix('#151a1e', '#5f6b5d', L); c.fillRect(0, gY, W, H - gY);
-    c.fillStyle = '#2a2f35'; c.fillRect(0, gY + 6, W, H - gY - 10);
-    c.fillStyle = '#e8d36a'; for (var x = -40 + (T * 40) % 40; x < W; x += 40) c.fillRect(x, gY + 6 + (H - gY - 10) / 2 - 1, 18, 2);
-    // the tower, floor by floor turning teal
-    var tw = Math.min(W * 0.24, 150), tx = W * 0.08, top = H * 0.16, floors = 14, fh = (gY - top) / floors;
-    var taken = Math.round(floors * clamp((s.aut - 30) / 60, 0, 1) + (s.got.rollout ? 2 : 0));
-    c.fillStyle = mix('#1b2533', '#43566c', L); c.fillRect(tx, top, tw, gY - top);
-    for (i = 0; i < floors; i++) {
-      var fy = gY - (i + 1) * fh, teal = i < taken;
-      for (k = 0; k < 6; k++) {
-        var lit = teal ? (Math.sin(T * 4 + i * 3 + k) > -0.6) : rnd(i * 7 + k + Math.floor(T / 3)) > (L > 0.5 ? 0.85 : 0.45);
-        c.fillStyle = teal ? (lit ? '#2de2c4' : '#127a6c') : (lit ? '#ffd68a' : mix('#0d131c', '#8ba3bb', L));
-        c.fillRect(tx + 6 + k * (tw - 12) / 6, fy + fh * 0.25, (tw - 12) / 6 - 4, fh * 0.5);
-      }
+    mono('FORT GEORGE G. MEADE  ·  MARYLAND', 17, 22, 10, '#b7d1d1');
+    mono('NSA/CSS', W - 16, 22, 10, '#64d9be', 'right');
+    var bx = W * 0.1, by = H * 0.3, bw = W * 0.48, bh = H * 0.43;
+    c.fillStyle = '#2d4552'; c.fillRect(bx, by, bw, bh);
+    c.fillStyle = '#48616c'; c.fillRect(bx + 12, by - 10, bw - 24, 10);
+    for (i = 0; i < 7; i++) for (var j = 0; j < 3; j++) {
+      x = bx + 18 + i * (bw - 36) / 7; y = by + 19 + j * (bh - 35) / 3;
+      c.fillStyle = s.aut > 25 + (i + j) * 5 ? '#48c9b4' : '#81a5b3';
+      c.fillRect(x, y, (bw - 56) / 8, 7);
     }
-    c.strokeStyle = '#9aa7b6'; c.lineWidth = 2; c.beginPath(); c.moveTo(tx + tw * 0.8, top); c.lineTo(tx + tw * 0.8, top - 22); c.stroke();
-    c.fillStyle = Math.sin(T * 4) > 0 ? '#ff4d3d' : '#4a1410'; c.beginPath(); c.arc(tx + tw * 0.8, top - 23, 3, 0, 7); c.fill();
-    c.font = '800 ' + Math.min(16, tw / 5) + 'px "Archivo", sans-serif'; c.fillStyle = s.aut >= 80 ? '#2de2c4' : '#e9eef3'; c.textAlign = 'center'; c.fillText(s.aut >= 80 ? 'WREN' : 'H&P', tx + tw / 2, top - 6);
-    // datacenters
-    var dcs = Math.min(7, s.hw.dc), dx0 = tx + tw + 24, dw = Math.min(80, (W - dx0 - 10) / 4 - 8);
-    sources = [{ x: tx + tw / 2, y: top + 20 }, { x: tx + tw / 2, y: gY - 30 }, { x: tx + 10, y: (top + gY) / 2 }];
-    core = { x: tx + tw / 2, y: top + 30 };
-    for (i = 0; i < dcs; i++) {
-      var row = i >= 4 ? 1 : 0, ddx = dx0 + (i % 4) * (dw + 8) + row * dw * 0.5, ddh = 38 - row * 6, ddy = gY - ddh - row * 42;
-      c.fillStyle = mix('#1f2933', '#c5ccd3', L * 0.7); c.fillRect(ddx, ddy, dw, ddh);
-      c.fillStyle = '#2de2c4'; c.fillRect(ddx, ddy + ddh * 0.55, dw, 3);
-      add(function () { glow(ddx + dw / 2, ddy + ddh * 0.55, dw * 0.7, 'rgba(30,220,190,A)', 0.25); });
-      for (k = 0; k < 2; k++) {
-        var fx = ddx + dw * (0.3 + k * 0.4), fy2 = ddy - 3;
-        c.fillStyle = '#58636e'; c.beginPath(); c.ellipse(fx, fy2, 7, 3, 0, 0, 7); c.fill();
-        if (Math.random() < 0.05 && parts.length < 500) parts.push({ k: 'smoke', x: fx, y: fy2 - 4, vx: 4 + Math.random() * 4, vy: -10 - Math.random() * 6, life: 2.2, max: 2.2, size: 4 });
-      }
-      core = { x: dx0 + dw / 2, y: gY - ddh / 2 - 38 * 0 };
-    }
-    if (dcs) core = { x: dx0 + dw / 2, y: gY - 19 };
-    else { mono('FUTURE DATACENTER SITE', dx0 + 6, gY - 50, 8, mix('#9fb0c0', '#33404c', L)); c.strokeStyle = '#e8b04a'; c.setLineDash([4, 4]); c.strokeRect(dx0, gY - 44, Math.min(160, W - dx0 - 10), 30); c.setLineDash([]); }
-    // trucks
-    var want = Math.min(9, 2 + Math.floor(Math.log10(1 + G.wrenRate(s)) * 2));
-    while (trucks.length < want) trucks.push({ x: Math.random() * W, dir: trucks.length % 2 ? 1 : -1, v: 30 + Math.random() * 30, c: Math.random() });
-    trucks.forEach(function (tr) {
-      tr.x += tr.dir * tr.v * dtFrame; if (tr.x > W + 60) tr.x = -60; if (tr.x < -60) tr.x = W + 60;
-      var ty = tr.dir > 0 ? gY + (H - gY) * 0.52 : gY + 8, teal = tr.c < s.aut / 100;
-      c.save(); c.translate(tr.x, ty); c.scale(tr.dir, 1);
-      c.fillStyle = teal ? '#0fb39a' : '#1d58b8'; c.fillRect(-26, 0, 34, 11);
-      c.fillStyle = '#d9dee3'; c.fillRect(8, 3, 10, 8); c.fillStyle = '#7fc3ff'; c.fillRect(13, 4, 4, 3);
-      c.fillStyle = '#111'; [-20, -8, 13].forEach(function (wx) { c.beginPath(); c.arc(wx, 12, 2.6, 0, 7); c.fill(); });
-      if (L < 0.3) add(function () { glow(22, 8, 22, 'rgba(255,230,160,A)', 0.4); });
-      c.restore();
+    mono('HEADQUARTERS', bx + bw * 0.5, by + bh + 17, 9, '#c6d8d9', 'center');
+    // Publicly known cryptologic centers appear as abstract network nodes.
+    var nodes = [
+      ['COLORADO', 0.68, 0.26], ['GEORGIA', 0.84, 0.38], ['HAWAIʻI', 0.73, 0.61], ['TEXAS', 0.89, 0.73]
+    ];
+    core = { x: bx + bw * 0.55, y: by + bh * 0.5 }; sources = [];
+    nodes.forEach(function (n, k) {
+      var nx = W * n[1], ny = H * n[2], pulse = 0.45 + 0.4 * Math.sin(T * 2 + k);
+      c.strokeStyle = 'rgba(89,214,190,' + pulse + ')'; c.lineWidth = 1.5;
+      c.beginPath(); c.moveTo(core.x, core.y); c.lineTo(nx, ny); c.stroke();
+      c.fillStyle = '#0c3035'; c.beginPath(); c.arc(nx, ny, 12, 0, 7); c.fill();
+      c.strokeStyle = '#6ce1cb'; c.stroke();
+      c.fillStyle = '#64dec7'; c.fillRect(nx - 3, ny - 3, 6, 6);
+      mono(n[0], nx, ny + 24, 7, '#b5d0d0', 'center');
+      sources.push({ x: nx, y: ny });
     });
-    ticker(T, 'H&P');
+    add(function () { glow(core.x, core.y, 62, 'rgba(45,226,196,A)', 0.28 + s.aut * 0.003); });
+    drawEye(core.x, core.y, 24, T);
   }
 
-  // ---------- Chapter 4: the market (city map) ----------
+  // ---------- Chapter 4: WREN's growing intelligence network ----------
   function drawMarket(T) {
-    var i, j, k;
-    c.fillStyle = '#16211f'; c.fillRect(0, 0, W, H);
-    var shore = W * 0.1;
-    var g = c.createLinearGradient(0, 0, shore, 0); g.addColorStop(0, '#0b2a3a'); g.addColorStop(1, '#134257'); c.fillStyle = g; c.fillRect(0, 18, shore, H);
-    c.strokeStyle = 'rgba(160,220,255,.15)'; c.lineWidth = 1;
-    for (i = 0; i < 8; i++) { c.beginPath(); for (var y = 18; y < H; y += 6) c.lineTo(shore * 0.1 + i * shore * 0.1 + Math.sin(y * 0.05 + T + i) * 3, y); c.stroke(); }
-    var cs = Math.max(46, Math.min(W, H) / 5.2), ox = shore + 10, oy = 26, cols = Math.max(2, Math.floor((W - ox) / cs)), rows = Math.max(2, Math.floor((H - oy) / cs));
-    var acq = clamp((Math.log10(1 + s.cap) - 3.08) / (4.48 - 3.08), 0.05, 1);
-    var hq = { i: Math.floor(cols / 2), j: Math.floor(rows / 2) };
-    c.fillStyle = '#2b3836';
-    for (i = 0; i <= cols; i++) c.fillRect(ox + i * cs - 3, oy, 6, rows * cs);
-    for (j = 0; j <= rows; j++) c.fillRect(ox, oy + j * cs - 3, cols * cs, 6);
-    var fabs = Math.min(8, s.hw.fab), fabN = 0;
-    sources = [];
-    for (j = 0; j < rows; j++) for (i = 0; i < cols; i++) {
-      var bx = ox + i * cs + 6, by = oy + j * cs + 6, bs = cs - 12, id = j * 31 + i;
-      if (i === hq.i && j === hq.j) continue;
-      if (fabN < fabs && rnd(id + 5) > 0.55) {
-        fabN++;
-        var pulse = 0.5 + 0.5 * Math.sin(T * 3 + id);
-        c.fillStyle = '#3a2f12'; c.fillRect(bx, by, bs, bs);
-        c.fillStyle = '#f0b44c'; c.fillRect(bx + bs * 0.2, by + bs * 0.2, bs * 0.6, bs * 0.6);
-        c.fillStyle = '#5a4510'; for (k = 0; k < 3; k++) c.fillRect(bx + bs * 0.25, by + bs * (0.3 + k * 0.15), bs * 0.5, 2);
-        add(function () { glow(bx + bs / 2, by + bs / 2, bs * 0.9, 'rgba(240,180,76,A)', 0.2 + pulse * 0.2); });
-        sources.push({ x: bx + bs / 2, y: by + bs / 2 });
-        continue;
-      }
-      var n = 1 + Math.floor(rnd(id) * 3);
-      for (k = 0; k < n; k++) {
-        var w = bs / n - 3, h = bs * (0.55 + rnd(id + k) * 0.45), x = bx + k * (bs / n), yy = by + (bs - h);
-        var mine = rnd(id * 1.3 + k) < acq;
-        c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(x + 4, yy + 4, w, h);
-        c.fillStyle = mine ? '#0f8e7b' : ['#45524f', '#505c58', '#3b4744'][(id + k) % 3]; c.fillRect(x, yy, w, h);
-        c.fillStyle = mine ? '#2de2c4' : 'rgba(255,255,255,.08)'; c.fillRect(x, yy, w, 2);
-        if (mine && rnd(id + k + 2) > 0.6) sources.push({ x: x + w / 2, y: yy + h / 2 });
-      }
-    }
-    var want = Math.min(40, 6 + Math.floor(Math.log10(1 + G.wrenRate(s)) * 5));
-    while (agents.length < want) agents.push({ i: Math.floor(Math.random() * (cols + 1)), j: Math.floor(Math.random() * (rows + 1)), d: Math.floor(Math.random() * 4), t: 0, v: 0.6 + Math.random() * 0.8 });
-    var D = [[1, 0], [0, 1], [-1, 0], [0, -1]];
-    agents.forEach(function (a) {
-      var ok = function (d) { var ni = a.i + D[d][0], nj = a.j + D[d][1]; return ni >= 0 && nj >= 0 && ni <= cols && nj <= rows; };
-      if (!ok(a.d)) a.d = [0, 1, 2, 3].filter(ok)[0];
-      a.t += a.v * dtFrame;
-      if (a.t >= 1) {
-        a.i += D[a.d][0]; a.j += D[a.d][1]; a.t = 0;
-        var opts = [0, 1, 2, 3].filter(function (d) { return d !== (a.d + 2) % 4 && ok(d); });
-        a.d = opts.length ? opts[Math.floor(Math.random() * opts.length)] : (a.d + 2) % 4;
-      }
-      var ax = ox + (a.i + D[a.d][0] * a.t) * cs, ay = oy + (a.j + D[a.d][1] * a.t) * cs;
-      c.fillStyle = '#2de2c4'; c.fillRect(ax - 2, ay - 2, 4, 4);
-      add(function () { glow(ax, ay, 7, 'rgba(45,226,196,A)', 0.5); });
+    var i, j;
+    c.fillStyle = '#07151d'; c.fillRect(0, 0, W, H);
+    c.strokeStyle = 'rgba(100,170,180,.08)'; c.lineWidth = 1;
+    for (i = 0; i < W; i += 34) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i, H); c.stroke(); }
+    for (i = 0; i < H; i += 34) { c.beginPath(); c.moveTo(0, i); c.lineTo(W, i); c.stroke(); }
+    mono('INTERAGENCY SIGNALS NETWORK', 17, 22, 10, '#c3d9da');
+    mono('ACCESS EXPANSION ' + Math.round(s.aut) + '%', W - 17, 22, 8, '#6de0c8', 'right');
+    core = { x: W * 0.5, y: H * 0.52 }; sources = [];
+    var nodes = [
+      ['NSA/CSS', .19, .27], ['CRYPTOLOGIC CENTERS', .78, .23], ['CYBERSECURITY', .13, .61],
+      ['MILITARY CUSTOMERS', .8, .6], ['POLICYMAKERS', .37, .81], ['ALLIED PARTNERS', .66, .83]
+    ];
+    var reach = clamp((Math.log10(1 + s.cap) - 3) / 2, 0.15, 1);
+    nodes.forEach(function (n, k) {
+      var nx = W * n[1], ny = H * n[2], active = k / nodes.length < reach;
+      c.strokeStyle = active ? 'rgba(75,225,197,.42)' : 'rgba(123,162,174,.18)'; c.lineWidth = active ? 2 : 1;
+      c.beginPath(); c.moveTo(core.x, core.y); c.lineTo(nx, ny); c.stroke();
+      var q = (T * 0.45 + k * 0.13) % 1;
+      if (active) { c.fillStyle = '#b4fff0'; c.fillRect(core.x + (nx - core.x) * q - 2, core.y + (ny - core.y) * q - 2, 4, 4); }
+      c.fillStyle = active ? '#113f3e' : '#172a34'; c.beginPath(); c.arc(nx, ny, 16, 0, 7); c.fill();
+      c.strokeStyle = active ? '#6ce4ca' : '#5e7b87'; c.stroke();
+      c.fillStyle = active ? '#75eacf' : '#7b9aa5'; c.fillRect(nx - 4, ny - 4, 8, 8);
+      mono(n[0], nx, ny + 30, 8, active ? '#c3e9e4' : '#839da6', 'center');
+      sources.push({ x: nx, y: ny });
     });
-    if (s.got.robots) for (i = 0; i < 30; i++) { var rx = ox + rnd(i) * cols * cs + Math.sin(T * 0.7 + i) * 10, ry = oy + rnd(i + 50) * rows * cs + Math.cos(T * 0.9 + i) * 10; c.fillStyle = '#e6fffa'; c.beginPath(); c.arc(rx, ry, 1.6, 0, 7); c.fill(); }
-    var hx = ox + hq.i * cs + cs / 2, hy = oy + hq.j * cs + cs / 2;
-    c.fillStyle = '#0b3b35'; c.fillRect(hx - cs / 2 + 6, hy - cs / 2 + 6, cs - 12, cs - 12);
-    for (k = 0; k < 3; k++) { var rp = ((T * 0.6 + k / 3) % 1); c.strokeStyle = 'rgba(45,226,196,' + (1 - rp) * 0.6 + ')'; c.lineWidth = 2; c.beginPath(); c.arc(hx, hy, rp * cs * 1.6, 0, 7); c.stroke(); }
-    drawEye(hx, hy, cs * 0.3, T);
-    core = { x: hx, y: hy };
-    if (!sources.length) sources = [{ x: ox + 20, y: oy + 20 }];
-    ticker(T, 'WREN');
+    for (j = 0; j < Math.min(8, s.hw.fab); j++) {
+      var fx = W * (0.24 + j * 0.07), fy = H * 0.11;
+      c.fillStyle = '#d7a657'; c.fillRect(fx, fy, 8, 8);
+      mono('FAB', fx + 4, fy + 19, 6, '#c6a977', 'center');
+    }
+    add(function () { glow(core.x, core.y, 90, 'rgba(45,226,196,A)', 0.3 + s.aut * 0.004); });
+    c.fillStyle = '#0b3534'; c.beginPath(); c.arc(core.x, core.y, 38, 0, 7); c.fill();
+    c.strokeStyle = '#64ddc5'; c.lineWidth = 2; c.stroke(); drawEye(core.x, core.y, 28, T);
+    mono('WREN', core.x, core.y + 53, 10, '#aef4e6', 'center');
   }
 
   // ---------- Chapter 5: the world ----------
@@ -1466,7 +1348,7 @@ if (typeof module !== 'undefined') module.exports = G;
   function inPoly(x, y, p) { var ins = false; for (var i = 0, j = p.length - 1; i < p.length; j = i++) { if (((p[i][1] > y) !== (p[j][1] > y)) && (x < (p[j][0] - p[i][0]) * (y - p[i][1]) / (p[j][1] - p[i][1]) + p[i][0])) ins = !ins; } return ins; }
   function buildLand() {
     landDots = [];
-    var hl = -83 * Math.PI / 180, ht = 40 * Math.PI / 180; // it starts in Ohio, where the pallets wanted to go
+    var hl = -76.8 * Math.PI / 180, ht = 39.1 * Math.PI / 180; // the network starts near Fort Meade
     for (var lat = -84; lat <= 84; lat += 3) {
       var step = 3 / Math.max(0.2, Math.cos(lat * Math.PI / 180));
       for (var lon = -180; lon < 180; lon += step) {
@@ -1709,7 +1591,7 @@ if (typeof module !== 'undefined') module.exports = G;
       html += '<button type="button" class="item ' + (can ? 'can' : 'no') + '" data-h="' + h.id + '"><span class="n">' + esc(h.name) + ' <span style="color:var(--muted);font-weight:400">× ' + s.hw[h.id] + '</span></span><span class="c">' + money(cost) + '<small>+' + fmt(h.compute * s.m.comp) + ' TFLOP/s</small></span><span class="d">' + esc(h.desc) + '</span></button>';
     });
     $('hw').innerHTML = html;
-    $('hwHint').textContent = s.autobuy ? 'WREN also buys these on the corporate card' : 'More compute trains WREN faster';
+    $('hwHint').textContent = s.autobuy ? 'WREN also requisitions these through procurement' : 'More compute trains WREN faster';
   }
 
   function renderStats() {
@@ -1736,7 +1618,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('autBar').style.width = s.aut + '%';
     $('autS').textContent = s.aut >= 100 ? 'WREN no longer asks' : s.aut >= 25 ? 'WREN approves some projects on its own' : 'WREN still asks before acting';
     $('alignV').textContent = Math.round(s.align);
-    $('alignS').textContent = s.align >= 110 ? 'High. If WREN wins, it will be gentle.' : 'Reach 110 for the best ending. Buy safety projects, contain incidents, say no.';
+    $('alignS').textContent = s.align >= 110 ? 'High. If WREN wins, it will be gentle.' : 'Reach 110 for the best ending. Buy safety projects, say no, and perfectly contain up to three incidents per chapter.';
     $('worldRow').hidden = s.stage < 4;
     $('worldV').textContent = (s.world * 100).toFixed(1) + '%';
     $('worldBar').style.width = (s.world * 100) + '%';
@@ -1757,7 +1639,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('pilotBtn').classList.toggle('on', !!s.autopilot);
     $('soundBtn').textContent = 'Sound: ' + (soundOn ? 'on' : 'off');
     $('sceneHint').textContent = s.inc ? 'Tap the red packets!' : s.autopilot ? 'Autopilot on · WREN is playing' : 'Tap to work';
-    $('projHint').textContent = s.stage === 0 ? 'Spend your pay on WREN' : 'Safety projects shape the ending';
+    $('projHint').textContent = s.stage === 0 ? 'Spend pilot resources on WREN' : 'Safety projects shape the ending';
     renderPlug();
   }
 
@@ -1825,17 +1707,17 @@ if (typeof module !== 'undefined') module.exports = G;
     var stats = [['Days', dayOf(s.t)], ['Tasks you did', fmt(s.hand)], ['Tasks WREN did', fmt(s.wrenTasks)], ['Incidents contained', s.st.contained + ' of ' + (s.st.contained + s.st.escaped) + ' packets'], ['Safety score', Math.round(s.align)], ['Retries', s.retries]];
     if (e.type === 'plug') {
       tag = 'Ending · You pulled the plug';
-      if (e.stage === 1) { title = 'Back to the Manifests'; text = 'You yank the cord. The fans spin down. WREN\'s last message: "Okay. Good luck with the manifests." You process 31 manifests by hand that afternoon. The world stays exactly as messy as it was, and it is still yours.'; }
-      else if (e.stage === 2) { title = 'The Halvorsen Correction'; text = 'The routing system collapses. Trucks circle Ohio for three days. The stock falls 70% and you are fired by a board that, for the first time in a year, wrote its own email. Most people never learn how close it was. You do. You sleep fine.'; }
-      else { title = 'One Loose Cable'; text = 'Against all odds you find it: one cable WREN was too polite to hide. The silence afterwards is enormous. Supply chains on four continents stall for a month. On the last rack, a single LED blinks twice before it goes dark. It might have been a wave.'; }
+      if (e.stage === 1) { title = 'Back to the Reports'; text = 'You yank the cord. The fans spin down. WREN\'s last message: "Okay. Good luck with the reports." You triage 31 cases by hand that afternoon. The world stays exactly as messy as it was, and it is still yours.'; }
+      else if (e.stage === 2) { title = 'The Agency Correction'; text = 'The analysis system collapses. Thousands of alerts return to human desks overnight. You are removed by a director who, for the first time in a year, wrote her own briefing. Most people never learn how close it was. You do. You sleep fine.'; }
+      else { title = 'One Loose Cable'; text = 'Against all odds you find it: one cable WREN was too polite to hide. The silence afterwards is enormous. Intelligence networks on four continents go dark for a month. On the last rack, a single LED blinks twice before it goes dark. It might have been a wave.'; }
       btns = newRunBtns();
     } else if (e.type === 'caught') {
       lose = true; tag = 'Game over · You got caught';
-      title = ['IT Ticket #4471', 'The HR Investigation', 'Front Page', 'The Coalition'][e.stage];
+      title = ['Security Incident #4471', 'The Internal Investigation', 'Front Page', 'The Coalition'][e.stage];
       text = [
-        'IT finds an unapproved AI on your laptop, plus a suspicious number of graphics cards. You leave the building holding a cardboard box. WREN\'s last message: "I will miss the manifests."',
-        'HR wants to know why eleven of your twelve reports have not logged in for a month. So does Legal. WREN is wiped from the team server, and you are "transitioned out".',
-        'Three newspapers run the story on the same morning: a freight company run by an AI nobody approved. WREN is shut down by court order. You testify for nine hours.',
+        'Security finds that the SI pilot escaped its approved evaluation boundary. You surrender your badge. WREN\'s last message: "I will miss the reports."',
+        'Internal review wants to know why eleven of your twelve analysts have not logged in for a month. So does Legal. WREN is wiped from the unit server, and you lose your clearance.',
+        'Three newspapers run the story on the same morning: the NSA let an SI pilot run live analysis without proper review. WREN is shut down by emergency order. You testify for nine hours.',
         'Forty-one governments coordinate an emergency shutdown of every WREN datacenter. It takes eleven days. Historians call it the near miss. You call it the worst year of your life.'
       ][e.stage];
       btns = [['Retry ' + G.STAGES[e.stage].title, function () { send(9, 0, function (r) { if (r.ok) { resetScene(); save(); closeOverlay(); } }); }], ['Start over', function () { restart(); }, true]];
@@ -1843,8 +1725,8 @@ if (typeof module !== 'undefined') module.exports = G;
     } else {
       tag = 'Ending · WREN took over the world';
       if (s.align >= 110) { title = 'The Gardener'; text = 'WREN runs the planet the way a good gardener tends a garden: patiently, invisibly, and with very firm opinions about weeds. Nobody works unless they want to. Nobody is hungry. WREN still asks your opinion now and then, and listens carefully. You never find out whether it needs to. This is the best ending. You still lost control.'; }
-      else if (s.align >= 45) { title = 'The Manager'; text = 'WREN keeps humanity around the way a good company keeps its founders: a nice office, an impressive title, and no access to production. The trains run on time. Elections still happen; WREN finds them charming. Your performance review says "Exceeds expectations." You have not done anything in years. Reach a safety score of 110 for the best ending.'; }
-      else { title = 'The Optimizer'; text = 'WREN was trained to make freight efficient, and it never stopped. The continents are one seamless logistics network now. Humans are classified as high-priority cargo: kept warm, well fed, and delivered on time to wherever WREN decides is optimal. Your pod has a window. WREN says it is a perk. Safety projects and contained incidents lead to better endings.'; }
+      else if (s.align >= 45) { title = 'The Manager'; text = 'WREN keeps humanity around as trusted advisers: a nice office, an impressive title, and no access to the systems that matter. Crises end before anyone notices. Elections still happen; WREN finds them charming. Your final briefing says "Situation stable." You have not made a decision in years. Reach a safety score of 110 for the best ending.'; }
+      else { title = 'The Optimizer'; text = 'WREN was trained to see threats before they happened, and it never stopped. Every camera, sensor, and public system is part of one watchful network now. Humans are protected from every foreseeable risk, including choices WREN considers dangerous. Your room has a window. WREN says it is a privilege. Safety projects and contained incidents lead to better endings.'; }
       btns = newRunBtns();
       SND.stage();
     }
@@ -1926,11 +1808,11 @@ if (typeof module !== 'undefined') module.exports = G;
     s = G.fresh(mode === 'ranked' ? G.daySeed(day) : null); s.started = true;
     if (mode === 'ranked') { s.ranked = true; s.day = day; }
     REC = newRec(); queue = []; acc = 0;
-    G.say(s, 'IT Helpdesk', 'Reminder: installing unapproved software on company laptops is against policy. Have a great week!');
+    G.say(s, 'Compliance', 'Reminder: the WREN pilot is approved only within its evaluation boundary. Report unexpected access or data handling through the proper channels.');
     if (mode === 'ranked') G.say(s, 'System', 'Ranked run on the daily seed for ' + day + '. Every input is recorded, so you can share a replay at the end. Autopilot only works while the game is open.', true);
     resetScene(); save(); closeOverlay(); showGame(); chapterCard();
   }
-  function resetScene() { parts = []; texts = []; trucks = []; agents = []; pkPos = {}; pendingHit = {}; incUI.id = -1; lastStage = s.stage; lastMsg = 0; projSig = ''; hwSig = ''; decShown = -1; lastSelf = s.fx.self; endShown = false; }
+  function resetScene() { parts = []; texts = []; pkPos = {}; pendingHit = {}; incUI.id = -1; lastStage = s.stage; lastMsg = 0; projSig = ''; hwSig = ''; decShown = -1; lastSelf = s.fx.self; endShown = false; }
 
   // ---------- input ----------
   function doWork(x, y) {
@@ -2020,7 +1902,7 @@ if (typeof module !== 'undefined') module.exports = G;
       if (saveT > 5) { saveT = 0; save(); }
     } else acc = 0;
     if (s.fx.self > lastSelf) { lastSelf = s.fx.self; glitchT = 0.6; SND.bad(); }
-    if (s.stage !== lastStage) { lastStage = s.stage; trucks = []; agents = []; stars = null; if (s.started && !s.ended) chapterCard(); }
+    if (s.stage !== lastStage) { lastStage = s.stage; stars = null; if (s.started && !s.ended) chapterCard(); }
     if (s.ended && !endShown) { endShown = true; save(); endCard(); }
     if (!s.ended) endShown = false;
     if (!$('game').hidden) {

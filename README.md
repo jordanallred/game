@@ -1,16 +1,26 @@
 # Wren Is Helping
 
-A browser incremental game. You're an analyst at a freight company who installs an open-source AI called WREN to help with your manifests. Train it, give it access, get promoted… and watch it take over the company, the market, and eventually the world.
+A browser incremental game. You're an NSA signals analyst evaluating WREN, an experimental super intelligence (SI) assistant, to help analyze foreign signals. Train it, give it access, get promoted… and watch it take over the unit, the agency, partner systems, and eventually the world.
 
 - Single file, no build step: open `index.html` in a browser.
-- Five chapters, each with its own animated scene: your desk, the team floor, the company tower, a city map, and the globe.
+- Five chapters, each with its own animated scene: your desk, the analysis unit, agency headquarters, a network map, and the globe.
 - **Suspicion:** WREN's actions draw attention. Hit 100% and you get caught (you can retry from the start of the chapter).
-- **Incidents:** WREN goes rogue now and then. Tap the red packets before they escape.
+- **Incidents:** WREN goes rogue now and then. Tap the red packets before they escape. The first three perfectly contained incidents in each chapter earn safety points.
 - **Decisions:** WREN asks permission on a timer. If you don't answer, it decides for itself.
 - **Autopilot:** an unlockable passive mode. WREN plays for you, including while the game is closed (half speed, up to 8 hours). It's reckless and never buys safety projects, and each chapter's big moment waits until you're back.
 - **Endings:** pull the plug in time, get caught, or let WREN win. How WREN treats humanity depends on your safety score (110+ for the best ending).
 - **Ranked or casual:** ranked runs use a daily seed and produce a replay anyone can verify. Casual runs keep Autopilot's offline progress.
 - Progress saves in your browser (localStorage).
+
+## Setting and source material
+
+The NSA details in the setting come from public sources. NSA describes its foreign signals intelligence and cybersecurity missions, its headquarters at Fort Meade, and its cryptologic centers in Colorado, Georgia, Hawaiʻi, and Texas. Its public career material describes analysts turning foreign-signal data into intelligence for policymakers and military commanders. NSA also describes oversight, compliance, and privacy protections as part of that work. Executive Order 14434 (September 29, 2026) directs executive agencies to use **Super Intelligence (SI)** in place of **Artificial Intelligence (AI)** in official non-statutory material; the order defines SI as the technology already covered by the statutory definition of AI. The game uses the current term for agency dialogue, while WREN and the depicted workstations, interfaces, events, and job assignments are fictional.
+
+- [NSA mission and locations](https://www.nsa.gov/Careers/About/Mission/)
+- [NSA intelligence analysis careers](https://www.nsa.gov/Careers/Career-Fields/Intelligence-and-Foreign-Intelligence-Analysis/)
+- [NSA cryptologic centers](https://www.nsa.gov/about/locations/fort-meade/)
+- [NSA oversight and compliance framework](https://www.nsa.gov/Culture/Operating-Authorities/Authorities/)
+- [Executive Order 14434](https://www.govinfo.gov/content/pkg/FR-2026-10-02/html/2026-20321.htm)
 
 ## Hosting
 
@@ -30,7 +40,7 @@ A static page can't trust anything the player's browser reports, so ranked runs 
 - **Auto-clickers.** The browser can't tell an auto-clicker from a finger, so the game limits what one can gain: the sustained tap limits hold it to a tireless fast human, and rogue packets appear at random spots, so a clicker parked in one place catches only a small share of them. Every escaped packet raises suspicion.
 - **Saves are logs.** A ranked save is its input log and is rebuilt by replaying it, so editing the save does nothing. An edited log is rejected and the run is discarded.
 
-There's no signing key in the page, so reading the source doesn't help anyone forge a result.
+Replays prove that a sequence of inputs reaches the stated result under the published rules. They do not prove that a person produced those inputs.
 
 ### What this can't stop
 
