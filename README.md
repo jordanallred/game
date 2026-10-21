@@ -4,6 +4,7 @@ A browser incremental game. You're an NSA signals analyst evaluating WREN, an ex
 
 - Single file, no build step: open `index.html` in a browser.
 - Five chapters, each with its own animated scene: your desk, the analysis unit, agency headquarters, a network map, and the globe.
+- A simulated day passes every 12 seconds. The scene clock, 24-hour track, lighting, and midnight title show time moving without changing the game rules.
 - **Suspicion:** WREN's actions draw attention. Hit 100% and you get caught (you can retry from the start of the chapter).
 - **Incidents:** WREN goes rogue now and then. Tap the red packets before they escape. The first three perfectly contained incidents in each chapter earn safety points.
 - **Decisions:** WREN asks permission on a timer. If you don't answer, it decides for itself.

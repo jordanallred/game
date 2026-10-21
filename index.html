@@ -237,6 +237,73 @@ body.watching .actions, body.watching #projects, body.watching #hw, body.watchin
 .runcode .row button + button { margin-left: 0; }
 .intro .start { justify-self: start; background: var(--accent); color: var(--accent-ink); border: 0; padding: 10px 18px; font-weight: 700; cursor: pointer; }
 
+/* The play surface is a little stage, framed like a live evaluation instrument. */
+body { background-image: radial-gradient(circle at 50% -18%, rgba(35,113,128,.11), transparent 47%), repeating-linear-gradient(90deg, transparent 0, transparent 87px, rgba(20,43,55,.018) 88px); }
+.wrap { max-width: 1260px; gap: 18px; }
+.top { padding: 4px 0 17px; border-bottom: 1px solid var(--ink); }
+.co { font-size: clamp(24px, 3.4vw, 41px); letter-spacing: -.045em; }
+.co .sub { letter-spacing: .16em; margin-top: 7px; }
+.grid { gap: 18px; }
+@media (min-width: 900px) { .grid { grid-template-columns: minmax(0, 1.52fr) minmax(280px, .78fr); } }
+.stage-wrap { background: #061116; border: 1px solid #234b50; box-shadow: 0 16px 38px rgba(8,28,34,.22), 0 2px 0 #36a997; }
+.stage-wrap::after { content: ""; position: absolute; left: 0; right: 0; top: 43px; bottom: 72px; pointer-events: none; opacity: .15; background: repeating-linear-gradient(to bottom, transparent 0 3px, rgba(0,0,0,.3) 4px); mix-blend-mode: multiply; }
+.scene-head { min-height: 43px; display: flex; align-items: center; gap: 18px; padding: 0 16px; color: #98b7b9; background: linear-gradient(90deg, #07171e, #0d2830 64%, #07171e); border-bottom: 1px solid #295054; font: 500 10px/1.1 var(--f-mono); letter-spacing: .1em; white-space: nowrap; }
+.scene-mark { font: 800 20px/1 var(--f-display); font-stretch: 125%; letter-spacing: -.05em; color: #e6f5ed; }
+.scene-mark-dot { color: #72ead2; }
+.scene-head-center { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+.scene-head-right { display: flex; align-items: center; gap: 7px; color: #76dac8; }
+.scene-head-right i { width: 6px; height: 6px; border-radius: 50%; background: #6bf6d5; box-shadow: 0 0 9px #6bf6d5; animation: live 2.4s ease-in-out infinite; }
+@keyframes live { 50% { opacity: .45; box-shadow: 0 0 2px #6bf6d5; } }
+#scene { height: clamp(335px, 49vw, 505px); }
+.scene-footer { min-height: 72px; position: relative; display: grid; grid-template-columns: auto minmax(110px, 1fr) auto; align-items: center; gap: 24px; padding: 11px 16px; color: #d9e9e3; background: linear-gradient(90deg, #0b2027, #102e34 52%, #0b2027); border-top: 1px solid #337077; }
+.scene-time { display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 12px; }
+.scene-time-label { grid-column: 1 / -1; font: 500 9px/1.2 var(--f-mono); letter-spacing: .1em; color: #8daeb1; }
+.scene-time strong { font: 800 28px/1 var(--f-display); font-variant-numeric: tabular-nums; letter-spacing: -.045em; color: #f4e5b8; }
+.scene-phase { font: 500 9px/1 var(--f-mono); color: #d7b977; letter-spacing: .04em; }
+.scene-footer.night .scene-time strong { color: #c2dcf3; }
+.scene-footer.night .scene-phase { color: #9abbd3; }
+.day-track { --day-progress: 37%; --orbit-color: #f7c86e; position: relative; height: 32px; min-width: 110px; }
+.day-track-line { position: absolute; top: 9px; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #283b55 0%, #ecad70 25%, #f4d899 50%, #e99076 75%, #283b55 100%); border: 1px solid #639095; }
+.day-track-line::after { content: ""; position: absolute; left: 25%; right: 25%; top: -5px; height: 12px; border-left: 1px solid #a6c3bb; border-right: 1px solid #a6c3bb; opacity: .55; }
+.day-track-orb { position: absolute; top: 3px; left: var(--day-progress); transform: translateX(-50%); width: 16px; height: 16px; border: 2px solid #f9eac3; border-radius: 50%; background: var(--orbit-color); box-shadow: 0 0 0 4px rgba(255,217,141,.13), 0 0 17px var(--orbit-color); }
+.day-track-label { position: absolute; bottom: 0; transform: translateX(-50%); font: 500 8px/1 var(--f-mono); color: #91adb0; }
+.day-track-label.dawn { left: 25%; } .day-track-label.noon { left: 50%; } .day-track-label.dusk { left: 75%; } .day-track-label.midnight { left: 100%; }
+.scene-hint { position: static; padding: 7px 9px; justify-self: end; color: #cbf1e9; background: #154640; border: 1px solid #3d857a; font: 500 10px/1.2 var(--f-mono); text-align: center; letter-spacing: .025em; }
+.day-banner { position: absolute; z-index: 2; top: 27%; left: 50%; transform: translateX(-50%); padding: 7px 24px; pointer-events: none; white-space: nowrap; color: #f9e6b9; background: rgba(5,23,30,.88); border-top: 1px solid #e2c587; border-bottom: 1px solid #e2c587; box-shadow: 0 10px 40px rgba(0,0,0,.3); font: 800 clamp(24px, 5vw, 38px)/1.15 var(--f-display); letter-spacing: .05em; animation: dayArrives 1.3s ease-out both; }
+@keyframes dayArrives { 0% { opacity: 0; transform: translate(-50%, 12px); } 18%, 75% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -8px); } }
+.decision { bottom: 85px; }
+.act { position: relative; min-height: 84px; overflow: hidden; background: linear-gradient(115deg, #154d9b, var(--accent)); box-shadow: 0 5px 0 #0a345f, 0 9px 18px rgba(12,45,71,.14); }
+.act::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: rgba(255,255,255,.58); }
+.act::after { content: "↗"; position: absolute; right: 15px; top: 8px; font: 400 23px/1 var(--f-display); opacity: .48; }
+.act:hover { filter: brightness(1.07); }
+.act.cover { background: var(--panel); box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.stat { padding: 11px 13px; }
+.stat .v { font-size: 24px; }
+.item { transition: border-color .18s, transform .18s, box-shadow .18s; }
+.item.can:hover { transform: translateY(-2px); box-shadow: 0 5px 0 rgba(16,56,67,.12); }
+.inbox { box-shadow: 0 8px 28px rgba(6,23,31,.07); }
+@media (max-width: 700px) {
+  #scene { height: clamp(300px, 65vw, 420px); }
+  .scene-footer { grid-template-columns: auto minmax(80px, 1fr); gap: 9px 13px; padding: 10px 12px; }
+  .scene-hint { grid-column: 1 / -1; justify-self: stretch; }
+  .scene-head { gap: 9px; padding: 0 11px; }
+  .scene-head-right { display: none; }
+  .scene-head-center { text-align: right; }
+  .scene-time strong { font-size: 24px; }
+  .decision { bottom: 101px; }
+}
+@media (max-width: 440px) {
+  body { padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
+  .co { font-size: 25px; }
+  .who { width: 100%; }
+  .toplinks { gap: 7px 12px; }
+  .scene-head-center { font-size: 8px; }
+  .scene-time { column-gap: 5px; }
+  .scene-phase { font-size: 8px; }
+  .decision .opts { grid-template-columns: 1fr; }
+  .decision { max-height: calc(100% - 153px); overflow-y: auto; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -278,8 +345,14 @@ body.watching .actions, body.watching #projects, body.watching #hw, body.watchin
   <div class="grid" id="game" hidden>
     <div class="main">
       <div class="stage-wrap" id="stageWrap">
+        <div class="scene-head" aria-hidden="true"><span class="scene-mark">WREN<span class="scene-mark-dot">.</span></span><span class="scene-head-center" id="sceneChapter">01 / SIGNALS ANALYSIS</span><span class="scene-head-right"><i></i> LIVE EVALUATION</span></div>
         <canvas id="scene" aria-label="Animated view of WREN's world. Tap to work."></canvas>
-        <div class="scene-hint" id="sceneHint">Tap to work</div>
+        <div class="day-banner" id="dayBanner" hidden></div>
+        <div class="scene-footer">
+          <div class="scene-time"><span class="scene-time-label" id="sceneTimeLabel">DAY 1 / SIMULATED TIME</span><strong id="sceneClock">08:58</strong><span class="scene-phase" id="scenePhase">MORNING</span></div>
+          <div class="day-track" role="img" aria-label="Progress through the current simulated day" id="dayTrack"><div class="day-track-line"></div><span class="day-track-orb" id="dayOrb"></span><span class="day-track-label dawn">06</span><span class="day-track-label noon">12</span><span class="day-track-label dusk">18</span><span class="day-track-label midnight">24</span></div>
+          <div class="scene-hint" id="sceneHint">Tap to work</div>
+        </div>
         <div class="decision" id="decision" hidden>
           <div class="q" id="decQ"></div>
           <div class="opts"><button type="button" id="decA"></button><button type="button" id="decB"></button></div>
@@ -1170,7 +1243,7 @@ if (typeof module !== 'undefined') module.exports = G;
     return (a < 10 ? n.toFixed(2) : a < 100 ? n.toFixed(1) : n.toFixed(0)) + u[i];
   }
   function money(n) { return (s && s.stage === 4 ? '◈' : '$') + fmt(n); }
-  function dayOf(t) { return 1 + Math.floor(t / 12); }
+  function dayOf(t) { return 1 + Math.floor(t / 12 + 0.374); }
   function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function dur(sec) { var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return h ? h + 'h ' + m + 'm' : m ? m + 'm' : Math.round(sec) + 's'; }
   function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
@@ -1389,8 +1462,13 @@ if (typeof module !== 'undefined') module.exports = G;
   function txt(t, x, y, size, col, align, weight) { c.font = (weight || '600') + ' ' + size + 'px "Public Sans", system-ui, sans-serif'; c.fillStyle = col; c.textAlign = align || 'left'; c.fillText(t, x, y); }
   function mono(t, x, y, size, col, align) { c.font = '500 ' + size + 'px "Martian Mono", ui-monospace, monospace'; c.fillStyle = col; c.textAlign = align || 'left'; c.fillText(t, x, y); }
 
-  // Time of day. Day 1 starts just before 9 a.m.
-  function dayF() { return ((s.t / 12) + 0.37) % 1; }
+  // One simulated day is twelve play seconds. Day 1 starts just before 9 a.m.
+  function dayF(t) { return (((t === undefined ? s.t : t) / 12) + 0.374) % 1; }
+  function timeOfDay(t) {
+    var f = dayF(t), minute = Math.floor(f * 1440), hour = Math.floor(minute / 60);
+    return { f: f, clock: String(hour).padStart(2, '0') + ':' + String(minute % 60).padStart(2, '0'),
+      phase: hour < 5 ? 'DEEP NIGHT' : hour < 7 ? 'DAWN' : hour < 12 ? 'MORNING' : hour < 17 ? 'AFTERNOON' : hour < 20 ? 'DUSK' : 'NIGHT' };
+  }
   function light(f) { return f < 0.22 || f > 0.8 ? 0 : clamp(Math.sin((f - 0.22) / 0.58 * Math.PI) * 1.6, 0, 1); }
   var SKY = [[0, '#070b18', '#151c33'], [0.22, '#25305a', '#e58f62'], [0.32, '#5d9bd8', '#cfe3f0'], [0.68, '#5b97d1', '#d9e7ef'], [0.78, '#3c3f73', '#f08a5d'], [0.86, '#0b1024', '#1e2442'], [1, '#070b18', '#151c33']];
   function sky(f) {
@@ -1426,8 +1504,8 @@ if (typeof module !== 'undefined') module.exports = G;
     c.fillStyle = '#101c26'; c.fillRect(0, 0, W, H);
     for (i = 0; i < W; i += 38) { c.fillStyle = i % 76 ? '#192936' : '#162430'; c.fillRect(i, 0, 36, H * 0.72); }
     c.fillStyle = '#0a141c'; c.fillRect(0, 0, W, 31);
-    mono('NSA/CSS  ·  SIGINT ANALYSIS', 17, 20, 10, '#b6ced5');
-    mono('AUTHORIZED WORKSTATION', W - 15, 20, 8, '#70bfb4', 'right');
+    mono(W < 500 ? 'NSA/CSS  ·  SIGINT' : 'NSA/CSS  ·  SIGINT ANALYSIS', 17, 20, W < 500 ? 8 : 10, '#b6ced5');
+    if (W >= 500) mono('AUTHORIZED WORKSTATION', W - 15, 20, 8, '#70bfb4', 'right');
     // Badge reader and closed access door establish the secure room.
     var doorX = W * 0.81;
     c.fillStyle = '#263746'; c.fillRect(doorX, 44, W * 0.16, H * 0.62);
@@ -1483,8 +1561,8 @@ if (typeof module !== 'undefined') module.exports = G;
     var i, j;
     c.fillStyle = '#13212c'; c.fillRect(0, 0, W, H);
     c.fillStyle = '#0a151d'; c.fillRect(0, 0, W, 34);
-    mono('SIGNALS ANALYSIS UNIT', 17, 21, 10, '#c1d7d8');
-    mono('WATCH / ' + String(1 + Math.floor(s.t / 12) % 3).padStart(2, '0'), W - 16, 21, 8, '#64c9b9', 'right');
+    mono(W < 500 ? 'SIGNALS UNIT' : 'SIGNALS ANALYSIS UNIT', 17, 21, 10, '#c1d7d8');
+    if (W >= 500) mono('WATCH / ' + String(1 + Math.floor(s.t / 12) % 3).padStart(2, '0'), W - 16, 21, 8, '#64c9b9', 'right');
     var left = 18, top = 47, right = W * 0.75, cellW = (right - left) / 4, cellH = (H - top - 20) / 3;
     var humans = clamp(12 - Math.round(11 * clamp((s.cap - 20) / 200, 0, 1)) - (s.got.team ? 3 : 0), 1, 12);
     if (floorHumans !== null && humans < floorHumans) for (var lv = humans; lv < floorHumans; lv++) leavers.push({ i: lv, t: 0 });
@@ -1530,20 +1608,27 @@ if (typeof module !== 'undefined') module.exports = G;
   // ---------- Chapter 3: Fort Meade, rendered as an abstract campus ----------
   function drawTower(T) {
     var i, x, y;
-    c.fillStyle = '#0e1d28'; c.fillRect(0, 0, W, H);
-    c.fillStyle = '#112a32'; c.fillRect(0, H * 0.54, W, H * 0.46);
+    var colors = sky(dayF()), skyGrad = c.createLinearGradient(0, 0, 0, H * .65);
+    skyGrad.addColorStop(0, colors[0]); skyGrad.addColorStop(1, colors[1]);
+    c.fillStyle = skyGrad; c.fillRect(0, 0, W, H);
+    if (light(dayF()) < .25) {
+      for (i = 0; i < 26; i++) { c.fillStyle = 'rgba(237,250,246,' + (.16 + rnd(i * 8) * .5) + ')'; c.fillRect(rnd(i * 3.1) * W, rnd(i * 7.7) * H * .46, 1.5, 1.5); }
+    }
+    var orbX = W * (.12 + dayF() * .76), orbY = H * (.32 - Math.sin(dayF() * Math.PI) * .2);
+    if (dayF() > .22 && dayF() < .79) { add(function () { glow(orbX, orbY, 45, 'rgba(255,207,139,A)', .48); }); c.fillStyle = '#ffe5b2'; c.beginPath(); c.arc(orbX, orbY, 6, 0, 7); c.fill(); }
+    c.fillStyle = mix('#102732', '#315765', light(dayF()) * .48); c.fillRect(0, H * 0.54, W, H * 0.46);
     for (i = 0; i < 16; i++) {
       c.strokeStyle = 'rgba(125,190,185,.07)'; c.lineWidth = 1;
       c.beginPath(); c.moveTo(i * W / 15, H * 0.54); c.lineTo(W * 0.5, H); c.stroke();
     }
-    mono('FORT GEORGE G. MEADE  ·  MARYLAND', 17, 22, 10, '#b7d1d1');
-    mono('NSA/CSS', W - 16, 22, 10, '#64d9be', 'right');
+    mono(W < 500 ? 'FORT MEADE · MARYLAND' : 'FORT GEORGE G. MEADE  ·  MARYLAND', 17, 22, W < 500 ? 8 : 10, '#b7d1d1');
+    if (W >= 500) mono('NSA/CSS', W - 16, 22, 10, '#64d9be', 'right');
     var bx = W * 0.1, by = H * 0.3, bw = W * 0.48, bh = H * 0.43;
     c.fillStyle = '#2d4552'; c.fillRect(bx, by, bw, bh);
     c.fillStyle = '#48616c'; c.fillRect(bx + 12, by - 10, bw - 24, 10);
     for (i = 0; i < 7; i++) for (var j = 0; j < 3; j++) {
       x = bx + 18 + i * (bw - 36) / 7; y = by + 19 + j * (bh - 35) / 3;
-      c.fillStyle = s.aut > 25 + (i + j) * 5 ? '#48c9b4' : '#81a5b3';
+      c.fillStyle = s.aut > 25 + (i + j) * 5 ? '#48c9b4' : light(dayF()) < .25 ? '#d5b77a' : '#81a5b3';
       c.fillRect(x, y, (bw - 56) / 8, 7);
     }
     mono('HEADQUARTERS', bx + bw * 0.5, by + bh + 17, 9, '#c6d8d9', 'center');
@@ -1573,8 +1658,8 @@ if (typeof module !== 'undefined') module.exports = G;
     c.strokeStyle = 'rgba(100,170,180,.08)'; c.lineWidth = 1;
     for (i = 0; i < W; i += 34) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i, H); c.stroke(); }
     for (i = 0; i < H; i += 34) { c.beginPath(); c.moveTo(0, i); c.lineTo(W, i); c.stroke(); }
-    mono('INTERAGENCY SIGNALS NETWORK', 17, 22, 10, '#c3d9da');
-    mono('ACCESS EXPANSION ' + Math.round(s.aut) + '%', W - 17, 22, 8, '#6de0c8', 'right');
+    mono(W < 500 ? 'INTERAGENCY NETWORK' : 'INTERAGENCY SIGNALS NETWORK', 17, 22, W < 500 ? 8 : 10, '#c3d9da');
+    if (W >= 500) mono('ACCESS EXPANSION ' + Math.round(s.aut) + '%', W - 17, 22, 8, '#6de0c8', 'right');
     core = { x: W * 0.5, y: H * 0.52 }; sources = [];
     var nodes = [
       ['NSA/CSS', .19, .27], ['CRYPTOLOGIC CENTERS', .78, .23], ['CYBERSECURITY', .13, .61],
@@ -1796,6 +1881,16 @@ if (typeof module !== 'undefined') module.exports = G;
   }
 
   var lastT = performance.now();
+  function drawAtmosphere() {
+    if (s.stage >= 3) return;
+    var sun = light(dayF()), night = (1 - sun) * (s.stage === 2 ? .08 : .22);
+    if (night > .01) { c.fillStyle = 'rgba(4,12,35,' + night.toFixed(3) + ')'; c.fillRect(0, 0, W, H); }
+    if (sun > .05) { c.fillStyle = 'rgba(255,184,111,' + (sun * (s.stage === 2 ? .04 : .075)).toFixed(3) + ')'; c.fillRect(0, 0, W, H); }
+    if (s.stage < 2) {
+      var x = W * (s.stage === 0 ? .7 : .42), y = H * .2;
+      add(function () { glow(x, y, 150, sun > .3 ? 'rgba(245,191,111,A)' : 'rgba(103,178,219,A)', .12 + (1 - sun) * .13); });
+    }
+  }
   function render(now) {
     dtFrame = Math.min(0.05, (now - lastT) / 1000); lastT = now;
     var T = now / 1000;
@@ -1804,6 +1899,7 @@ if (typeof module !== 'undefined') module.exports = G;
     c.save();
     if (shake > 0) { if (!REDUCED) c.translate((Math.random() - 0.5) * 8 * shake, (Math.random() - 0.5) * 8 * shake); shake -= dtFrame; }
     [drawDesk, drawFloor, drawTower, drawMarket, drawEarth][s.stage](T);
+    drawAtmosphere();
     if (s.started && !s.ended) { spawnFlow(); updatePackets(); }
     drawParts();
     drawPackets(T);
@@ -1825,7 +1921,7 @@ if (typeof module !== 'undefined') module.exports = G;
   // ============================================================
   //  UI
   // ============================================================
-  var lastMsg = 0, projSig = '', hwSig = '', lastSelf = 0, decShown = -1;
+  var lastMsg = 0, projSig = '', hwSig = '', lastSelf = 0, decShown = -1, lastUiDay = null, dayFlashUntil = 0;
 
   function renderFeed() {
     if (s.msgN === lastMsg) return;
@@ -1878,7 +1974,20 @@ if (typeof module !== 'undefined') module.exports = G;
   function renderStats() {
     var st = G.STAGES[s.stage];
     document.documentElement.setAttribute('data-stage', s.stage);
-    $('co').textContent = st.co; $('place').textContent = st.place; $('role').textContent = st.role; $('day').textContent = dayOf(s.t);
+    var gameTime = s.t + (s.started && !s.ended ? acc : 0), gameDay = dayOf(gameTime);
+    if (lastUiDay !== null && gameDay > lastUiDay) { dayFlashUntil = performance.now() + 1300; $('dayBanner').textContent = 'DAY ' + gameDay; }
+    lastUiDay = gameDay;
+    $('dayBanner').hidden = performance.now() >= dayFlashUntil;
+    $('co').textContent = st.co; $('place').textContent = st.place; $('role').textContent = st.role; $('day').textContent = gameDay;
+    var tod = timeOfDay(gameTime);
+    $('sceneTimeLabel').textContent = 'DAY ' + gameDay + ' / SIMULATED TIME';
+    $('sceneClock').textContent = tod.clock;
+    $('scenePhase').textContent = tod.phase;
+    $('stageWrap').querySelector('.scene-footer').classList.toggle('night', tod.f < .22 || tod.f > .82);
+    $('sceneChapter').textContent = String(s.stage + 1).padStart(2, '0') + ' / ' + st.title.toUpperCase();
+    $('dayTrack').style.setProperty('--day-progress', (tod.f * 100).toFixed(2) + '%');
+    $('dayTrack').style.setProperty('--orbit-color', tod.f < .22 || tod.f > .82 ? '#a9c9e9' : tod.f < .3 || tod.f > .72 ? '#ef9a79' : '#f7d585');
+    $('dayTrack').setAttribute('aria-label', 'Day ' + gameDay + ', ' + tod.clock + ' simulated time, ' + tod.phase.toLowerCase());
     $('kMoney').textContent = st.money; $('money').textContent = money(s.money);
     var wr = G.wrenRate(s);
     $('moneyS').textContent = wr > 0 ? '+' + money(wr * G.value(s)) + '/s from WREN' + (s.sulk > 0 ? ' (sulking)' : '') : 'Tap to earn';
