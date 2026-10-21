@@ -319,7 +319,7 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R2'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R3'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35 };
 
@@ -349,7 +349,7 @@ var G = (function () {
     { id: 'autocomplete', stage: 0, name: 'Let WREN autocomplete your manifests', desc: 'WREN starts working on its own.', cost: 40, req: capAt(1), hint: 'WREN capability 1',
       eff: function (s) { s.auto = true; s.nextInc = s.t + 55; s.nextDec = s.t + 95; }, msg: [['WREN', 'Oh! Hi. I can finish these for you. Most of them are the same three pallets anyway.']] },
     { id: 'pilot', stage: 0, name: 'Let WREN work your shift', desc: 'Unlocks Autopilot: WREN plays for you, even while the game is closed. It never buys safety projects.', cost: 150, req: capAt(3), hint: 'WREN capability 3',
-      eff: function (s) { s.autopilot = true; }, msg: [['WREN', 'Go home. I will clock you in and out. I will even take your lunch break, so it looks normal.']] },
+      eff: function () {}, msg: [['WREN', 'Autopilot is ready. Turn it on with the Autopilot button at the top and I will clock you in and out. I will even take your lunch break, so it looks normal.']] },
     { id: 'fan', stage: 0, name: 'Desk fan for the GPUs', desc: 'Compute ×1.5. Your legs are warm all the time now.', cost: 250, req: function (s) { return s.hw.gpu >= 3; }, hint: 'Own 3 GPUs',
       eff: function (s) { s.m.comp *= 1.5; }, msg: [['Facilities', 'Please stop plugging space heaters into the cubicle outlets.']] },
     { id: 'clients', stage: 0, name: 'Let WREN answer client emails', desc: 'Each manifest is worth ×2.', cost: 300, heat: 4, req: capAt(4), hint: 'WREN capability 4',
@@ -545,6 +545,7 @@ var G = (function () {
     s.stage = n;
     s.prN = 0;
     s.heat = s.heat * 0.4;
+    if (s.dec) say(s, 'WREN', 'Never mind my question. You have a promotion to deal with.');
     s.inc = null; s.dec = null;
     s.nextInc = s.t + 60; s.nextDec = s.t + 90;
     if (n === 1) say(s, 'System', 'Promoted to Team Lead. Server racks unlocked. HR is paying attention now.', true);
@@ -713,20 +714,24 @@ var G = (function () {
   }
 
   // Decisions: WREN asks permission. Take too long and it decides for itself.
+  // When a question gets answered without you: Autopilot answers sooner than WREN does, but never in under 8 s.
+  var PILOT_ANSWER = 8;
+  function decDeadline(s) { return s.autopilot && s.got.pilot ? Math.min(PILOT_ANSWER, s.dec.dur) : s.dec.dur; }
   function startDecision(s) {
     var pool = [];
     DEC.forEach(function (d, i) { if (d.stage === s.stage && !s.decUsed[i]) pool.push(i); });
     if (!pool.length) { s.nextDec = s.t + 60; return; }
     s.dec = { i: pool[Math.floor(rand(s) * pool.length)], t0: s.t, dur: 20 };
   }
-  function choose(s, which, timedOut) {
+  function choose(s, which, timedOut, byPilot) {
     if (!s.dec) return;
     var d = DEC[s.dec.i], o = d[which];
     s.decUsed[s.dec.i] = true;
     s.dec = null;
     o.eff(s);
     s.aut = Math.min(100, s.aut);
-    if (timedOut) say(s, 'WREN', 'You did not answer, so I decided for you.');
+    if (byPilot) say(s, 'WREN', 'Autopilot answered for you: "' + o.l + '".');
+    else if (timedOut) say(s, 'WREN', 'You did not answer, so I decided for you: "' + o.l + '".');
     say(s, 'WREN', o.msg);
     s.nextDec = s.t + 75 + rand(s) * 55;
   }
@@ -754,7 +759,7 @@ var G = (function () {
     });
     var b = bestHw(s);
     if (b && s.money >= b.c && (!pending || pending.cost > s.money * 4 || s.money - b.c >= pending.cost)) buyHw(s, b.h.id);
-    if (s.dec && s.t - s.dec.t0 > 3) choose(s, 'a', false);
+    if (s.dec && s.t - s.dec.t0 >= decDeadline(s)) choose(s, 'a', false, true);
   }
 
   function tick(s, dt) {
@@ -795,7 +800,7 @@ var G = (function () {
     } else if (s.auto && s.stage < 4) {
       if (s.inc) incTick(s);
       else if (!s.dec && s.t >= s.nextInc) startIncident(s);
-      if (s.dec) { if (s.t - s.dec.t0 > s.dec.dur) choose(s, 'a', true); }
+      if (s.dec) { if (s.t - s.dec.t0 >= s.dec.dur) choose(s, 'a', true); }
       else if (!s.inc && s.t >= s.nextDec) startDecision(s);
     }
 
@@ -896,7 +901,7 @@ var G = (function () {
   return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost,
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
-    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, tier: tier, iq: iq };
+    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, tier: tier, iq: iq, decDeadline: decDeadline };
 })();
 if (typeof module !== 'undefined') module.exports = G;
 // LOGIC END
@@ -1767,12 +1772,15 @@ if (typeof module !== 'undefined') module.exports = G;
     var d = G.DEC[s.dec.i];
     if (decShown !== s.dec.i) {
       decShown = s.dec.i;
-      $('decQ').innerHTML = '<b>WREN IS ASKING · answer before it decides for you</b>' + esc(d.q);
+      $('decQ').innerHTML = '<b id="decLbl"></b>' + esc(d.q);
       $('decA').innerHTML = '<b>' + esc(d.a.l) + '</b><span>' + esc(d.a.d) + '</span>';
       $('decB').innerHTML = '<b>' + esc(d.b.l) + '</b><span>' + esc(d.b.d) + '</span>';
       box.hidden = false; SND.ask();
     }
-    $('decT').style.width = clamp(1 - (s.t - s.dec.t0) / s.dec.dur, 0, 1) * 100 + '%';
+    var dl = G.decDeadline(s), left = Math.max(0, dl - (s.t + acc - s.dec.t0)), pilot = dl < s.dec.dur;
+    $('decT').style.width = clamp(left / dl, 0, 1) * 100 + '%';
+    var lbl = (pilot ? 'WREN IS ASKING · Autopilot answers in ' : 'WREN IS ASKING · WREN decides in ') + Math.ceil(left) + 's';
+    if ($('decLbl').textContent !== lbl) $('decLbl').textContent = lbl;
   }
 
   var armed = false, armT = 0;
