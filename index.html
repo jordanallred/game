@@ -319,7 +319,7 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R1'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R2'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35 };
 
@@ -673,7 +673,8 @@ var G = (function () {
     var inc = s.inc;
     if (inc.spawned < inc.n && s.t >= inc.next) {
       inc.spawned++; inc.next += 0.8;
-      inc.pk.push({ id: inc.spawned, born: s.t, ang: rand(s) * Math.PI * 2, wob: rand(s) * 6, ap: null });
+      // Packets leak out at random spots (not one fixed point an auto-clicker could sit on).
+      inc.pk.push({ id: inc.spawned, born: s.t, x0: 0.12 + rand(s) * 0.76, y0: 0.3 + rand(s) * 0.55, ang: rand(s) * Math.PI * 2, wob: rand(s) * 6, ap: null });
     }
     for (var i = inc.pk.length - 1; i >= 0 && s.inc === inc; i--) {
       var p = inc.pk[i], age = s.t - p.born;
@@ -849,14 +850,20 @@ var G = (function () {
 
   // Rebuilds a ranked run from its inputs. taps[n] = taps before tick n; ev = [[tick, type, arg], ...].
   // Rejects anything a human couldn't have done: more than 14 taps in any second, impossible inputs, bad ordering.
+  // Tap limits, in ticks (0.1 s) and taps: a fast human burst, and what a human can keep up.
+  // An auto-clicker gets no more than a tireless fast human.
+  var TAP_LIMITS = [[10, 14, 'one second'], [600, 420, 'one minute'], [6000, 3000, 'ten minutes']];
   var MAX_TAPS = 14;
   function replayer(day, taps, ev, cur) {
     var s = fresh(daySeed(day)); s.started = true; s.ranked = true; s.day = day;
-    var n = 0, ei = 0, win = 0, N = taps.length;
+    var n = 0, ei = 0, win = TAP_LIMITS.map(function () { return 0; }), N = taps.length;
     function at(i) { var sec = i * STEP; return Math.floor(sec / 60) + 'm ' + Math.floor(sec % 60) + 's'; }
     function step(count, isLast) {
-      win += count - (n >= 10 ? taps[n - 10] : 0);
-      if (win > MAX_TAPS) return 'More than ' + MAX_TAPS + ' taps in one second at ' + at(n) + '.';
+      for (var w = 0; w < TAP_LIMITS.length; w++) {
+        var L = TAP_LIMITS[w];
+        win[w] += count - (n >= L[0] ? taps[n - L[0]] : 0);
+        if (win[w] > L[1]) return 'More than ' + L[1] + ' taps in ' + L[2] + ' at ' + at(n) + '.';
+      }
       for (var j = 0; j < count; j++) if (!click(s)) return 'A tap was recorded while the game was not running (' + at(n) + ').';
       while (ei < ev.length && ev[ei][0] === n) {
         var r = input(s, ev[ei][1], ev[ei][2]);
@@ -886,7 +893,7 @@ var G = (function () {
   function tier(c) { var t = TIERS[0][1]; for (var i = 0; i < TIERS.length; i++) if (c >= TIERS[i][0]) t = TIERS[i][1]; return t; }
   function iq(c) { return Math.round(60 + 30 * Math.log2(1 + c)); }
 
-  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost,
+  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost,
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
     heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, tier: tier, iq: iq };
@@ -947,11 +954,25 @@ if (typeof module !== 'undefined') module.exports = G;
 
   // Inputs. Taps apply immediately; everything else is queued and applied at the next tick boundary,
   // in the same order a replay uses: taps, then other inputs, then the tick.
-  var REC = { taps: [], cur: 0, ev: [], n: 0 }, queue = [];
+  function newRec(taps, cur, ev) {
+    var r = { taps: taps || [], cur: cur || 0, ev: ev || [], n: (taps || []).length, win: [] };
+    G.TAP_LIMITS.forEach(function (L, j) { var sum = 0; for (var i = Math.max(0, r.taps.length - (L[0] - 1)); i < r.taps.length; i++) sum += r.taps[i]; r.win[j] = sum; });
+    return r;
+  }
+  var REC = newRec(), queue = [], tiredT = 0;
   function trusted(e) { return !(e && e.isTrusted === false); }
-  function recentTaps() { var t = REC.taps, sum = REC.cur; for (var i = Math.max(0, t.length - 9); i < t.length; i++) sum += t[i]; return sum; }
+  // Which tap limit (if any) one more tap would break. REC.win[j] = taps in the last (window - 1) completed ticks.
+  function tapLimitHit() {
+    for (var j = 0; j < G.TAP_LIMITS.length; j++) if (REC.win[j] + REC.cur + 1 > G.TAP_LIMITS[j][1]) return j;
+    return -1;
+  }
   function tap() {
-    if (!s || !s.started || s.ended || recentTaps() >= G.MAX_TAPS) return null;
+    if (!s || !s.started || s.ended) return null;
+    var lim = tapLimitHit();
+    if (lim >= 0) {
+      if (lim > 0 && performance.now() - tiredT > 2000) { tiredT = performance.now(); floatText(W / 2, H * 0.45, 'Your wrist needs a break', '#ffd27a'); }
+      return null;
+    }
     var g = G.click(s);
     if (g) REC.cur++;
     return g;
@@ -965,8 +986,10 @@ if (typeof module !== 'undefined') module.exports = G;
       if (r.ok && s.ranked) REC.ev.push([REC.n, e.t, e.a]);
       if (e.cb) e.cb(r);
     });
-    REC.taps.push(Math.min(255, REC.cur)); REC.cur = 0; REC.n++;
-    if (!s.ranked && REC.taps.length > 50) REC.taps.splice(0, 40);
+    var c = Math.min(255, REC.cur), t = REC.taps;
+    t.push(c); REC.cur = 0; REC.n++;
+    G.TAP_LIMITS.forEach(function (L, j) { REC.win[j] += c; var drop = t.length - L[0]; if (drop >= 0) REC.win[j] -= t[drop]; });
+    if (!s.ranked && t.length > 7000) t.splice(0, 1000);
     G.tick(s, G.STEP);
   }
 
@@ -1030,7 +1053,7 @@ if (typeof module !== 'undefined') module.exports = G;
       var taps, rp, res;
       try { taps = unb64u(d.taps); rp = G.replayer(d.day, taps, d.ev || [], d.cur || 0); while (!(res = rp.run(50000))); } catch (e) { res = { error: 'unreadable' }; }
       if (res.error) { loadNote = 'Your saved ranked run did not replay correctly, so it was discarded.'; return null; }
-      REC = { taps: Array.from(taps), cur: d.cur || 0, ev: d.ev || [], n: taps.length };
+      REC = newRec(Array.from(taps), d.cur || 0, d.ev || []);
       return rp.state();
     }
     if (d && d.mode === 'casual') { var st = unpack(d.state); return st ? merge(st) : null; }
@@ -1556,10 +1579,10 @@ if (typeof module !== 'undefined') module.exports = G;
   var pkPos = {}, pendingHit = {};
   function packetXY(p) {
     var inc = s.inc, q = clamp((s.t + acc - p.born) / inc.travel, 0, 1);
-    var dx = Math.cos(p.ang), dy = Math.sin(p.ang);
-    var tx = dx > 0 ? (W - core.x) / dx : -core.x / dx, ty = dy > 0 ? (H - core.y) / dy : (60 - core.y) / dy;
+    var x0 = p.x0 * W, y0 = p.y0 * H, dx = Math.cos(p.ang), dy = Math.sin(p.ang);
+    var tx = dx > 0 ? (W - x0) / dx : -x0 / dx, ty = dy > 0 ? (H - y0) / dy : (60 - y0) / dy;
     var t = Math.max(30, Math.min(Math.abs(tx), Math.abs(ty))), perp = Math.sin(q * 9 + p.wob) * 14 * Math.sin(q * Math.PI);
-    return { x: core.x + dx * t * q - dy * perp, y: core.y + dy * t * q + dx * perp };
+    return { x: x0 + dx * t * q - dy * perp, y: y0 + dy * t * q + dx * perp, q: q };
   }
   function updatePackets() {
     var gone = s.fx.gone || [];
@@ -1593,6 +1616,7 @@ if (typeof module !== 'undefined') module.exports = G;
     s.inc.pk.forEach(function (p) {
       var pos = pkPos[s.inc.id + ':' + p.id];
       if (!pos || pendingHit[p.id]) return;
+      if (pos.q < 0.12) { var k = pos.q / 0.12; c.strokeStyle = 'rgba(255,90,60,' + (1 - k) + ')'; c.lineWidth = 2; c.beginPath(); c.arc(pos.x, pos.y, 8 + k * 30, 0, 7); c.stroke(); }
       add(function () { glow(pos.x, pos.y, 22, 'rgba(255,60,40,A)', 0.55); });
       var sz = 8 + Math.sin(T * 12) * 1.5;
       c.save(); c.translate(pos.x, pos.y); c.rotate(T * 3);
@@ -1901,7 +1925,7 @@ if (typeof module !== 'undefined') module.exports = G;
     var day = today();
     s = G.fresh(mode === 'ranked' ? G.daySeed(day) : null); s.started = true;
     if (mode === 'ranked') { s.ranked = true; s.day = day; }
-    REC = { taps: [], cur: 0, ev: [], n: 0 }; queue = []; acc = 0;
+    REC = newRec(); queue = []; acc = 0;
     G.say(s, 'IT Helpdesk', 'Reminder: installing unapproved software on company laptops is against policy. Have a great week!');
     if (mode === 'ranked') G.say(s, 'System', 'Ranked run on the daily seed for ' + day + '. Every input is recorded, so you can share a replay at the end. Autopilot only works while the game is open.', true);
     resetScene(); save(); closeOverlay(); showGame(); chapterCard();

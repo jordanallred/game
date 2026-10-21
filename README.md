@@ -26,14 +26,15 @@ A static page can't trust anything the player's browser reports, so ranked runs 
 - **Daily seed.** All randomness comes from a seed derived from the date (taken from the host's `Date` header when available). Everyone playing that day gets the same game, so there's nothing to reroll.
 - **Fixed ticks.** The game advances in exact 0.1 s steps, and every input goes through one function. Replaying the same inputs reproduces the run exactly.
 - **Replays, not scores.** At the end of a ranked run you get a replay code or `.wren` file (about 5 KB for a 40-minute run). Paste it into "Check a coworker's replay": your browser replays every input with the real rules and shows the result it actually reaches.
-- **Human limits.** Replays are rejected if they tap more than 14 times in any second, contain a packet less than 0.2 s after it appears, or answer a decision less than 0.5 s after it's shown. Any input that wasn't possible at that moment (buying something unaffordable, for example) also gets the replay rejected.
+- **Human limits.** Taps are capped at 14 in any second, 420 in any minute, and 3,000 in any ten minutes: a fast human burst, and what a human can keep up. Packets can't be contained less than 0.2 s after they appear, and decisions can't be answered in under 0.5 s. Replays that break any limit, or contain an input that wasn't possible at that moment (buying something unaffordable, for example), are rejected.
+- **Auto-clickers.** The browser can't tell an auto-clicker from a finger, so the game limits what one can gain: the sustained tap limits hold it to a tireless fast human, and rogue packets appear at random spots, so a clicker parked in one place catches only a small share of them. Every escaped packet raises suspicion.
 - **Saves are logs.** A ranked save is its input log and is rebuilt by replaying it, so editing the save does nothing. An edited log is rejected and the run is discarded.
 
 There's no signing key in the page, so reading the source doesn't help anyone forge a result.
 
 ### What this can't stop
 
-- **Bots.** A program that plays well while staying under the human limits produces a valid replay. No system can tell perfect inputs from a perfect human.
+- **Bots.** A program that plays well while staying under the human limits (for example, one that watches the screen and clicks each packet) produces a valid replay. No system can tell perfect inputs from a perfect human.
 - **Slow motion.** Someone who pauses or slows the game in DevTools gets more time to think and aim. The replay can't see real time.
 - **Seed shopping.** A player can set their clock to a different date to play a different seed. The checker shows each replay's seed date, so compare runs from the same day, and it warns about dates in the future.
 - **Casual runs** can't be verified at all.
