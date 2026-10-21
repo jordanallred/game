@@ -8,9 +8,14 @@ A browser incremental game. You're an analyst at a freight company who installs 
 - **Incidents:** WREN goes rogue now and then. Tap the red packets before they escape.
 - **Decisions:** WREN asks permission on a timer. If you don't answer, it decides for itself.
 - **Autopilot:** an unlockable passive mode. WREN plays for you, including while the game is closed (half speed, up to 8 hours). It's reckless and never buys safety projects, and each chapter's big moment waits until you're back.
-- **Endings:** pull the plug in time, get caught, or let WREN win. How WREN treats humanity depends on your safety score (110+ for the best ending).
+- **Endings and score:** eight endings. Pull the plug (worth the most if you do it late, after building WREN up), get caught, or let WREN win; how it treats humanity depends on your safety score (140+ for the best ending). Every ending shows a score.
+- **Decisions and events:** 40 decisions, 32 kinds of incidents, and 80+ lines of WREN chatter, drawn without repeats.
+- **Watch replays:** after checking a coworker's replay, watch it play out at 1× to 64×.
+- **Achievements and records:** 22 achievements and your best ranked score, kept in your browser.
+- **Light and dark mode:** follows your device setting.
 - **Ranked or casual:** ranked runs use a daily seed and produce a replay anyone can verify. Casual runs keep Autopilot's offline progress.
 - Progress saves in your browser (localStorage).
+- How every mechanism is balanced: see [DESIGN.md](DESIGN.md).
 
 ## Hosting
 
