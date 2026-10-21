@@ -26,14 +26,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      # Minify and mangle so the published page is harder to read and tamper with.
+          node-version: 22
+      # Minifying only shrinks the file (nothing in it is secret). If it fails, publish the page as-is.
       - name: Build
         run: |
           mkdir site
           npx --yes html-minifier-terser@7.2.0 --collapse-whitespace --remove-comments --minify-css true \
             --minify-js '{"mangle":{"toplevel":true},"compress":{"passes":2}}' \
-            -o site/index.html index.html
+            -o site/index.html index.html || cp index.html site/index.html
+          test -s site/index.html
           touch site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

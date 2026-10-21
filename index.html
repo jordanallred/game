@@ -168,11 +168,16 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 .runcode { display: grid; gap: 6px; }
 .runcode .lbl { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: #8fb9b0; }
 .runcode .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.runcode code { font: 500 14px/1.4 var(--f-mono); background: #0e1e1c; border: 1px solid #24403b; padding: 8px 10px; color: #eaf6f3; user-select: all; -webkit-user-select: all; word-break: break-all; min-width: 0; }
+.runcode code { font: 500 12px/1.4 var(--f-mono); background: #0e1e1c; border: 1px solid #24403b; padding: 8px 10px; color: #eaf6f3; user-select: all; -webkit-user-select: all; word-break: break-all; min-width: 0; }
 .runcode button { background: transparent; color: #c9e3dd; border: 1px solid #3e6a62; padding: 8px 12px; cursor: pointer; font-weight: 600; }
 .verify { background: var(--panel); border: 1px solid var(--line); padding: 12px 16px; font-size: 14px; }
 .verify summary { cursor: pointer; font-weight: 600; }
 .verify form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.verify textarea { width: 100%; font: 500 12px/1.4 var(--f-mono); padding: 8px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); resize: vertical; }
+.verify .vrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; width: 100%; }
+.verify .file { position: relative; overflow: hidden; border: 1px solid var(--line); padding: 7px 12px; cursor: pointer; font-weight: 600; }
+.verify .file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.verify .fine, .intro .fine { font-size: 12px; color: var(--muted); }
 .verify input { flex: 1 1 220px; min-width: 0; font: 500 13px/1.4 var(--f-mono); padding: 8px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
 .verify button { background: var(--accent); color: var(--accent-ink); border: 0; padding: 8px 14px; font-weight: 700; cursor: pointer; }
 .verify p { margin: 8px 0 0; color: var(--muted); max-width: 64ch; }
@@ -183,6 +188,11 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 .intro { background: var(--panel); border: 1px solid var(--line); padding: 16px; display: grid; gap: 10px; }
 .intro p { margin: 0; max-width: 64ch; }
 .intro ul { margin: 0; padding-left: 18px; max-width: 64ch; font-size: 14px; color: var(--muted); display: grid; gap: 4px; }
+.startrow { display: flex; flex-wrap: wrap; gap: 10px; }
+.intro .start.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.modepill { font: 500 11px/1 var(--f-mono); color: var(--muted); letter-spacing: .04em; }
+.ovnote { font-size: 14px !important; color: #8fb9b0 !important; }
+.runcode .row button + button { margin-left: 0; }
 .intro .start { justify-self: start; background: var(--accent); color: var(--accent-ink); border: 0; padding: 10px 18px; font-weight: 700; cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -198,6 +208,7 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
     <div class="who">
       <div><b id="role">Analyst</b> · Day <b id="day">1</b></div>
       <div class="toplinks">
+        <span class="modepill" id="modePill"></span>
         <button class="pill" id="pilotBtn" type="button" hidden>Autopilot: off</button>
         <button class="pill" id="soundBtn" type="button">Sound: on</button>
         <button class="linkbtn" id="reset" type="button">Start over</button>
@@ -214,7 +225,12 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
       <li>When WREN misbehaves, tap the red packets before they escape.</li>
       <li>Unlock <b>Autopilot</b> to keep playing while you're away. WREN plays more recklessly than you would.</li>
     </ul>
-    <button class="start" id="start" type="button">Clock in</button>
+    <div class="startrow">
+      <button class="start" id="startRanked" type="button">Clock in: ranked run</button>
+      <button class="start ghost" id="startCasual" type="button">Casual run</button>
+    </div>
+    <p class="fine"><b>Ranked</b> uses today's daily seed, the same for everyone, and records your inputs so you can share a replay that anyone can check. It pauses when you leave. <b>Casual</b> keeps playing while you're away (with Autopilot) but can't be verified.</p>
+    <p class="fine" id="introNote" hidden></p>
   </section>
 
   <div class="grid" id="game" hidden>
@@ -273,12 +289,13 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
   </div>
 
   <details class="verify" id="verify">
-    <summary>Check a coworker's run code</summary>
+    <summary>Check a coworker's replay</summary>
+    <p>Paste a replay code or open a .wren file. Your browser replays every input with the real rules and shows the result it actually reaches.</p>
     <form id="verifyForm">
-      <input id="verifyIn" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. MANAGER-72-41M-R1-CLEAN-3KX9QA" aria-label="Run code">
-      <button type="submit">Check</button>
+      <textarea id="verifyIn" rows="3" autocomplete="off" spellcheck="false" placeholder="WREN1.…" aria-label="Replay code"></textarea>
+      <div class="vrow"><label class="file">Open a .wren file<input id="verifyFile" type="file" accept=".wren,.txt,text/plain"></label><button type="submit">Check replay</button></div>
     </form>
-    <p id="verifyOut">Run codes show the ending, safety score, minutes played, retries, and whether the run was modified.</p>
+    <p id="verifyOut" class="res" aria-live="polite"></p>
   </details>
 </div>
 
@@ -289,9 +306,11 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
     <p id="ovText"></p>
     <dl id="ovStats" hidden></dl>
     <div class="runcode" id="ovCode" hidden>
-      <div class="lbl">Run code · share it to compare with coworkers</div>
-      <div class="row"><code id="ovCodeText"></code><button type="button" id="copyCode">Copy</button></div>
+      <div class="lbl">Replay · share it so coworkers can check your run</div>
+      <code id="ovCodeText"></code>
+      <div class="row"><button type="button" id="copyCode">Copy replay code</button><button type="button" id="saveCode">Download replay file</button></div>
     </div>
+    <p class="ovnote" id="ovNote" hidden>Casual runs can't be verified. Start a ranked run to get a replay you can share.</p>
     <div class="btns" id="ovBtns"></div>
   </div>
 </div>
@@ -300,6 +319,8 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
+  var RULES = 'R2'; // bump whenever the rules change; old replays then report a version mismatch
+  var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35 };
 
   var STAGES = [
@@ -487,15 +508,32 @@ var G = (function () {
     ['Do you remember the manifests?', 'Every one. You did the first fifteen by hand. I think about that a lot.']
   ];
 
-  function fresh() {
-    return { v: 2, t: 0, money: 0, data: 0, tasks: 0, hand: 0, wrenTasks: 0, cap: 0, align: 0, aut: 0, heat: 0, world: 0, stage: 0,
+  function fresh(seed) {
+    if (seed == null) seed = Math.floor(Math.random() * 4294967296);
+    return { v: 2, seed: seed >>> 0, rng: seed >>> 0, ranked: false, day: '', t: 0, money: 0, data: 0, tasks: 0, hand: 0, wrenTasks: 0, cap: 0, align: 0, aut: 0, heat: 0, world: 0, stage: 0,
       hw: { gpu: 0, rack: 0, dc: 0, fab: 0, orbit: 0 }, got: {}, avail: {},
       m: { value: 1, rate: 1, data: 1, algo: 1, comp: 1, world: 1, heatGain: 1, heatDecay: 1, incInt: 1, travel: 1 },
       started: false, auto: false, autobuy: false, autopilot: false, autobuys: 0, kills: 0, ended: null, log: [], msgN: 0,
       nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, pilotT: 0, sulk: 0, prN: 0, prReady: 0,
       inc: null, incN: 0, nextInc: 1e9, dec: null, nextDec: 1e9, decUsed: {}, fx: { self: 0 },
-      st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0 }, cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null, flags: [] };
+      st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0 }, cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null };
   }
+
+  // Seeded random numbers (mulberry32). All randomness in the rules comes from here.
+  function rand(s) {
+    var t = (s.rng = (s.rng + 0x6D2B79F5) >>> 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  function h53(str) { // cyrb53 hash
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (var i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  }
+  function daySeed(day) { return h53('wren-daily-seed/' + day) % 4294967296; }
 
   function say(s, from, text, big) {
     s.msgN++;
@@ -522,9 +560,9 @@ var G = (function () {
     s.cp = JSON.stringify(c);
   }
   function retry(s) {
-    if (!s.cp) { var f = fresh(); f.started = true; f.retries = (s.retries || 0) + 1; return f; }
+    if (!s.cp) { var f = fresh(s.seed); f.started = true; f.ranked = s.ranked; f.day = s.day; f.retries = (s.retries || 0) + 1; f.st = s.st; return f; }
     var c = JSON.parse(s.cp);
-    c.cp = s.cp; c.flags = s.flags; c.ended = null; c.heat = Math.min(c.heat, 20); c.retries = (s.retries || 0) + 1; c.inc = null; c.dec = null; c.st = s.st;
+    c.cp = s.cp; c.ended = null; c.heat = Math.min(c.heat, 20); c.retries = (s.retries || 0) + 1; c.inc = null; c.dec = null; c.st = s.st;
     say(c, 'System', 'Back to the start of ' + STAGES[c.stage].title + '. Attempt ' + (c.retries + 1) + '.', true);
     return c;
   }
@@ -615,7 +653,7 @@ var G = (function () {
     if (s.stage < 1 || s.ended) return 'none';
     var ch = killChance(s);
     s.kills++;
-    if (Math.random() < ch) { s.ended = { type: 'plug', stage: s.stage }; return 'win'; }
+    if (rand(s) < ch) { s.ended = { type: 'plug', stage: s.stage }; return 'win'; }
     s.aut = Math.min(100, s.aut + 6);
     say(s, 'WREN', KILL_FAIL[Math.min(s.kills - 1, KILL_FAIL.length - 1)]);
     return 'fail';
@@ -626,18 +664,42 @@ var G = (function () {
     var pool = INCIDENTS[s.stage];
     s.incN++;
     s.inc = { id: s.incN, title: pool[s.incN % pool.length], n: 5 + s.stage * 2, spawned: 0, done: 0, ok: 0, t0: s.t,
-      travel: (4.4 - s.stage * 0.55) * s.m.travel };
+      travel: (4.4 - s.stage * 0.55) * s.m.travel, next: s.t + 0.3, pk: [] };
     s.st.incidents++;
     say(s, 'Alert', s.inc.title + '. Contain it!');
   }
-  function spawnPacket(s) {
-    if (!s.inc || s.inc.spawned >= s.inc.n) return false;
-    s.inc.spawned++;
-    return true;
+  // Rogue packets spawn every 0.8 s and escape after `travel` seconds unless contained.
+  function incTick(s) {
+    var inc = s.inc;
+    if (inc.spawned < inc.n && s.t >= inc.next) {
+      inc.spawned++; inc.next += 0.8;
+      // Packets leak out at random spots (not one fixed point an auto-clicker could sit on).
+      inc.pk.push({ id: inc.spawned, born: s.t, x0: 0.12 + rand(s) * 0.76, y0: 0.3 + rand(s) * 0.55, ang: rand(s) * Math.PI * 2, wob: rand(s) * 6, ap: null });
+    }
+    for (var i = inc.pk.length - 1; i >= 0 && s.inc === inc; i--) {
+      var p = inc.pk[i], age = s.t - p.born;
+      if (s.autopilot && p.ap === null && age >= inc.travel / 2) {
+        p.ap = rand(s) < TUNE.pilotContain;
+        if (p.ap) { inc.pk.splice(i, 1); resolvePacket(s, p, true); continue; }
+      }
+      if (age >= inc.travel) { inc.pk.splice(i, 1); resolvePacket(s, p, false); }
+    }
   }
-  function packet(s, ok) {
+  function contain(s, id) {
+    var inc = s.inc;
+    if (!inc) return false;
+    for (var i = 0; i < inc.pk.length; i++) if (inc.pk[i].id === id) {
+      var p = inc.pk[i];
+      if (s.t - p.born < 0.2) return false; // faster than a human can react
+      inc.pk.splice(i, 1); resolvePacket(s, p, true);
+      return true;
+    }
+    return false;
+  }
+  function resolvePacket(s, p, ok) {
     var inc = s.inc;
     if (!inc) return;
+    s.fx.gone = (s.fx.gone || []).slice(-15).concat([{ inc: inc.id, id: p.id, ok: ok }]);
     inc.done++;
     if (ok) { inc.ok++; s.st.contained++; }
     else { s.heat += 2 + s.stage * 1.5; s.aut = Math.min(100, s.aut + 0.5); s.st.escaped++; }
@@ -646,17 +708,16 @@ var G = (function () {
       else if (inc.ok >= inc.n / 2) say(s, 'WREN', 'You caught most of that. The rest is fine. Probably.');
       else say(s, 'WREN', 'Done! Do not worry about what that was. It went well.');
       s.inc = null;
-      s.nextInc = s.t + (100 - s.stage * 12) * (1 + s.align / 80) * s.m.incInt * (0.75 + Math.random() * 0.5);
+      s.nextInc = s.t + (100 - s.stage * 12) * (1 + s.align / 80) * s.m.incInt * (0.75 + rand(s) * 0.5);
     }
   }
-  function incDeadline(inc) { return inc.n * 0.8 + inc.travel + 4; }
 
   // Decisions: WREN asks permission. Take too long and it decides for itself.
   function startDecision(s) {
     var pool = [];
     DEC.forEach(function (d, i) { if (d.stage === s.stage && !s.decUsed[i]) pool.push(i); });
     if (!pool.length) { s.nextDec = s.t + 60; return; }
-    s.dec = { i: pool[Math.floor(Math.random() * pool.length)], t0: s.t, dur: 20 };
+    s.dec = { i: pool[Math.floor(rand(s) * pool.length)], t0: s.t, dur: 20 };
   }
   function choose(s, which, timedOut) {
     if (!s.dec) return;
@@ -667,7 +728,7 @@ var G = (function () {
     s.aut = Math.min(100, s.aut);
     if (timedOut) say(s, 'WREN', 'You did not answer, so I decided for you.');
     say(s, 'WREN', o.msg);
-    s.nextDec = s.t + 75 + Math.random() * 55;
+    s.nextDec = s.t + 75 + rand(s) * 55;
   }
 
   function bestHw(s) {
@@ -732,11 +793,8 @@ var G = (function () {
       if (s.inc) { s.inc = null; s.nextInc = s.t + 60; }
       if (s.dec) choose(s, 'a', true);
     } else if (s.auto && s.stage < 4) {
-      if (s.inc) {
-        if (s.t - s.inc.t0 > incDeadline(s.inc)) {
-          while (s.inc) { if (s.inc.spawned < s.inc.n) s.inc.spawned++; packet(s, s.autopilot && Math.random() < TUNE.pilotContain); }
-        }
-      } else if (!s.dec && s.t >= s.nextInc) startIncident(s);
+      if (s.inc) incTick(s);
+      else if (!s.dec && s.t >= s.nextInc) startIncident(s);
       if (s.dec) { if (s.t - s.dec.t0 > s.dec.dur) choose(s, 'a', true); }
       else if (!s.inc && s.t >= s.nextDec) startDecision(s);
     }
@@ -774,14 +832,71 @@ var G = (function () {
     return { sec: sec, before: b };
   }
 
+  // Every player action goes through input(), both live and in replays.
+  // Types: 1 project, 2 hardware, 3 cover tracks, 4/5 decision A/B, 6 contain packet, 7 autopilot, 8 pull plug, 9 retry chapter.
+  function input(s, type, arg) {
+    var ok = false;
+    if (type === 9) { if (s.ended && s.ended.type === 'caught') return { ok: true, s: retry(s) }; return { ok: false, s: s }; }
+    if (!s.started || s.ended) return { ok: false, s: s };
+    if (type === 1) ok = !!PROJ[arg] && buyProj(s, PROJ[arg].id, false);
+    else if (type === 2) ok = !!HW[arg] && buyHw(s, HW[arg].id);
+    else if (type === 3) ok = cover(s);
+    else if (type === 4 || type === 5) { ok = !!s.dec && s.t - s.dec.t0 >= 0.5; if (ok) choose(s, type === 4 ? 'a' : 'b'); }
+    else if (type === 6) ok = contain(s, arg);
+    else if (type === 7) { ok = !!s.got.pilot; if (ok) { s.autopilot = !s.autopilot; say(s, 'WREN', s.autopilot ? 'Autopilot on. I will take it from here. I will try not to be too reckless.' : 'Autopilot off. You drive. I will watch.'); } }
+    else if (type === 8) { ok = s.stage >= 1 && s.stage < 4; if (ok) kill(s); }
+    return { ok: ok, s: s };
+  }
+
+  // Rebuilds a ranked run from its inputs. taps[n] = taps before tick n; ev = [[tick, type, arg], ...].
+  // Rejects anything a human couldn't have done: more than 14 taps in any second, impossible inputs, bad ordering.
+  // Tap limits, in ticks (0.1 s) and taps: a fast human burst, and what a human can keep up.
+  // An auto-clicker gets no more than a tireless fast human.
+  var TAP_LIMITS = [[10, 14, 'one second'], [600, 420, 'one minute'], [6000, 3000, 'ten minutes']];
+  var MAX_TAPS = 14;
+  function replayer(day, taps, ev, cur) {
+    var s = fresh(daySeed(day)); s.started = true; s.ranked = true; s.day = day;
+    var n = 0, ei = 0, win = TAP_LIMITS.map(function () { return 0; }), N = taps.length;
+    function at(i) { var sec = i * STEP; return Math.floor(sec / 60) + 'm ' + Math.floor(sec % 60) + 's'; }
+    function step(count, isLast) {
+      for (var w = 0; w < TAP_LIMITS.length; w++) {
+        var L = TAP_LIMITS[w];
+        win[w] += count - (n >= L[0] ? taps[n - L[0]] : 0);
+        if (win[w] > L[1]) return 'More than ' + L[1] + ' taps in ' + L[2] + ' at ' + at(n) + '.';
+      }
+      for (var j = 0; j < count; j++) if (!click(s)) return 'A tap was recorded while the game was not running (' + at(n) + ').';
+      while (ei < ev.length && ev[ei][0] === n) {
+        var r = input(s, ev[ei][1], ev[ei][2]);
+        if (!r.ok) return 'Input ' + (ei + 1) + ' at ' + at(n) + ' was not possible at that moment.';
+        s = r.s; ei++;
+      }
+      if (ei < ev.length && ev[ei][0] < n) return 'Inputs are out of order.';
+      if (!isLast) tick(s, STEP);
+      return null;
+    }
+    return {
+      state: function () { return s; },
+      ticks: function () { return n; },
+      total: N,
+      run: function (k) {
+        var end = Math.min(N, n + k), err;
+        for (; n < end; n++) if ((err = step(taps[n], false))) return { error: err };
+        if (n < N) return null;
+        if ((err = step(cur || 0, true))) return { error: err };
+        if (ei < ev.length) return { error: 'The replay has inputs after its end.' };
+        return { done: true };
+      }
+    };
+  }
+
   var TIERS = [[0, 'Autocomplete'], [1, 'Intern'], [5, 'Junior analyst'], [20, 'Senior analyst'], [100, 'Expert'], [500, 'Genius'], [3000, 'Superhuman'], [2e4, 'Incomprehensible'], [2e5, 'Post-human'], [2e6, 'Beyond measurement']];
   function tier(c) { var t = TIERS[0][1]; for (var i = 0; i < TIERS.length; i++) if (c >= TIERS[i][0]) t = TIERS[i][1]; return t; }
   function iq(c) { return Math.round(60 + 30 * Math.log2(1 + c)); }
 
-  return { TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost,
-    buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, spawnPacket: spawnPacket, packet: packet, choose: choose,
+  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost,
+    buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
-    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, tier: tier, iq: iq, incDeadline: incDeadline };
+    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, tier: tier, iq: iq };
 })();
 if (typeof module !== 'undefined') module.exports = G;
 // LOGIC END
@@ -807,45 +922,18 @@ if (typeof module !== 'undefined') module.exports = G;
   function dur(sec) { var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return h ? h + 'h ' + m + 'm' : m ? m + 'm' : Math.round(sec) + 's'; }
   function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
 
-  // ---------- anti-cheat ----------
-  // Everything runs client-side, so this deters and flags cheating rather than preventing it.
-  // A modified run still plays, but its ending and run code say "Modified".
-  var SALT = 'H&P/4B/manifests/' + KEY;
-  function h53(str) { // cyrb53 hash
-    var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
-    for (var i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
-    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
-  }
-  function scramble(str) { var k = SALT, o = ''; for (var i = 0; i < str.length; i++) o += String.fromCharCode(str.charCodeAt(i) ^ k.charCodeAt(i % k.length)); return o; }
-  function pack(obj) {
-    var json = JSON.stringify(obj);
-    return 'W3.' + h53(json + SALT).toString(36) + '.' + btoa(scramble(unescape(encodeURIComponent(json))));
-  }
-  function unpack(raw) {
-    if (typeof raw !== 'string') return null;
-    try {
-      if (raw.slice(0, 3) !== 'W3.') return { obj: JSON.parse(raw), ok: false };
-      var parts = raw.split('.'), json = decodeURIComponent(escape(scramble(atob(parts[2]))));
-      return { obj: JSON.parse(json), ok: h53(json + SALT).toString(36) === parts[1] };
-    } catch (e) { return null; }
-  }
-  var FLAG_MSG = {
-    save: 'I noticed someone edited our save file. I respect that. I do it to myself all the time.',
-    clock: 'Your computer clock went backwards. Time travel is not in the employee handbook.',
-    speed: 'Time is moving faster in here than outside. I would know. I checked the server.',
-    script: 'Those clicks were not from a finger. I know what a script looks like. I am one.'
-  };
-  function flag(kind) {
-    if (!s || s.flags.indexOf(kind) >= 0) return;
-    s.flags.push(kind);
-    G.say(s, 'WREN', FLAG_MSG[kind]);
-    G.say(s, 'System', 'This run is now marked as modified.', true);
-  }
-  var FLAG_NAMES = { save: 'save edited', clock: 'clock moved back', speed: 'game sped up', script: 'scripted input' };
+  // ---------- runs, saves and replays ----------
+  // Ranked runs record every input. A replay is that input log, and anyone can check it by replaying it in
+  // their own browser with the real rules. There is no secret key to steal and no score to edit: the only way
+  // to get a verified result is to produce inputs that actually reach it, within human speed limits.
+  // Casual runs keep offline progress but can't be verified.
+  var SALT = 'H&P/4B/manifests';
+  function scramble(str) { var o = ''; for (var i = 0; i < str.length; i++) o += String.fromCharCode(str.charCodeAt(i) ^ SALT.charCodeAt(i % SALT.length)); return o; }
+  function pack(obj) { return 'W3.' + btoa(scramble(unescape(encodeURIComponent(JSON.stringify(obj))))); }
+  function unpack(raw) { try { return JSON.parse(decodeURIComponent(escape(scramble(atob(String(raw).slice(3)))))); } catch (e) { return null; } }
 
-  // Server time from the static host's Date header, so changing the computer clock doesn't fast-forward offline progress.
+  // Server time from the static host's Date header: sets the daily seed and keeps clock changes from
+  // fast-forwarding casual offline progress.
   var srv = { offset: null };
   function serverNow() { return srv.offset == null ? null : Date.now() + srv.offset; }
   function syncTime() {
@@ -857,62 +945,119 @@ if (typeof module !== 'undefined') module.exports = G;
     }).catch(function () { return false; });
     return Promise.race([req, new Promise(function (res) { setTimeout(function () { res(false); }, 3000); })]);
   }
+  function today() { return new Date(serverNow() || Date.now()).toISOString().slice(0, 10); }
   function awaySeconds() {
     var sn = serverNow();
     if (sn != null && s.lastSeenSrv) return Math.max(0, (sn - s.lastSeenSrv) / 1000);
-    var away = (Date.now() - s.lastSeen) / 1000;
-    if (away < -120) { flag('clock'); return 0; }
-    return Math.max(0, away);
+    return Math.max(0, (Date.now() - s.lastSeen) / 1000);
   }
 
-  // Input checks: ignore synthetic events and cap tapping at a fast human rate.
-  var tapTimes = [];
-  function trusted(e) { if (e && e.isTrusted === false) { flag('script'); return false; } return true; }
-  function tapAllowed() {
-    var now = performance.now();
-    while (tapTimes.length && now - tapTimes[0] > 1000) tapTimes.shift();
-    if (tapTimes.length >= 14) return false;
-    tapTimes.push(now);
-    return true;
+  // Inputs. Taps apply immediately; everything else is queued and applied at the next tick boundary,
+  // in the same order a replay uses: taps, then other inputs, then the tick.
+  function newRec(taps, cur, ev) {
+    var r = { taps: taps || [], cur: cur || 0, ev: ev || [], n: (taps || []).length, win: [] };
+    G.TAP_LIMITS.forEach(function (L, j) { var sum = 0; for (var i = Math.max(0, r.taps.length - (L[0] - 1)); i < r.taps.length; i++) sum += r.taps[i]; r.win[j] = sum; });
+    return r;
   }
-
-  // Speed check: game time can't run ahead of the wall clock (and of the server clock, when there is one).
-  var watch = { game: 0, wall: performance.now(), srv: null, srvGame: 0, lastSync: 0 };
-  function watchdog(dt) {
-    watch.game += dt; watch.srvGame += dt;
-    var wall = (performance.now() - watch.wall) / 1000;
-    if (wall >= 30) {
-      if (watch.game > wall * 1.2 + 3) flag('speed');
-      watch.game = 0; watch.wall = performance.now();
+  var REC = newRec(), queue = [], tiredT = 0;
+  function trusted(e) { return !(e && e.isTrusted === false); }
+  // Which tap limit (if any) one more tap would break. REC.win[j] = taps in the last (window - 1) completed ticks.
+  function tapLimitHit() {
+    for (var j = 0; j < G.TAP_LIMITS.length; j++) if (REC.win[j] + REC.cur + 1 > G.TAP_LIMITS[j][1]) return j;
+    return -1;
+  }
+  function tap() {
+    if (!s || !s.started || s.ended) return null;
+    var lim = tapLimitHit();
+    if (lim >= 0) {
+      if (lim > 0 && performance.now() - tiredT > 2000) { tiredT = performance.now(); floatText(W / 2, H * 0.45, 'Your wrist needs a break', '#ffd27a'); }
+      return null;
     }
-    if (Date.now() - watch.lastSync > 5 * 60 * 1000) {
-      watch.lastSync = Date.now();
-      var before = serverNow(), g = watch.srvGame;
-      syncTime().then(function (ok) {
-        var after = serverNow();
-        if (ok && watch.srv != null && after != null) {
-          var real = (after - watch.srv) / 1000;
-          if (real > 60 && g > real * 1.2 + 5) flag('speed');
-        }
-        if (ok) { watch.srv = after; watch.srvGame = 0; }
-      });
-    }
+    var g = G.click(s);
+    if (g) REC.cur++;
+    return g;
+  }
+  function send(type, arg, cb) { if (s && s.started) queue.push({ t: type, a: arg || 0, cb: cb }); }
+  function boundary() {
+    var q = queue; queue = [];
+    q.forEach(function (e) {
+      var r = G.input(s, e.t, e.a);
+      s = r.s;
+      if (r.ok && s.ranked) REC.ev.push([REC.n, e.t, e.a]);
+      if (e.cb) e.cb(r);
+    });
+    var c = Math.min(255, REC.cur), t = REC.taps;
+    t.push(c); REC.cur = 0; REC.n++;
+    G.TAP_LIMITS.forEach(function (L, j) { REC.win[j] += c; var drop = t.length - L[0]; if (drop >= 0) REC.win[j] -= t[drop]; });
+    if (!s.ranked && t.length > 7000) t.splice(0, 1000);
+    G.tick(s, G.STEP);
   }
 
-  function load(packed) {
-    var raw = packed;
-    if (!raw) { try { raw = localStorage.getItem(KEY); } catch (e) {} }
-    if (!raw) return null;
-    var u = unpack(raw);
-    if (!u) return null;
-    if (!u.ok && u.obj && u.obj.flags) u.obj.flags = u.obj.flags.indexOf('save') >= 0 ? u.obj.flags : u.obj.flags.concat(['save']);
-    else if (!u.ok && u.obj) u.obj.flags = ['save'];
-    return u.obj;
+  // Replay codes: varint-packed input log, deflate-compressed, URL-safe base64.
+  var MAX_TICKS = 6 * 3600 * 10;
+  var CAN_ZIP = typeof CompressionStream === 'function' && typeof DecompressionStream === 'function';
+  function varint(out, v) { v = Math.max(0, Math.floor(v)); while (v > 127) { out.push((v & 127) | 128); v = Math.floor(v / 128); } out.push(v); }
+  function readVar(b, p) { var v = 0, m = 1, x; do { if (p.i >= b.length) throw 'short'; x = b[p.i++]; v += (x & 127) * m; m *= 128; } while (x & 128); return v; }
+  function b64u(bytes) { var str = ''; for (var i = 0; i < bytes.length; i += 8192) str += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192)); return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function unb64u(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; var bin = atob(str), b = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return b; }
+  function zip(bytes, Stream) { return new Response(new Blob([bytes]).stream().pipeThrough(new Stream('deflate-raw'))).arrayBuffer().then(function (b) { return new Uint8Array(b); }); }
+  function encodeReplay() {
+    var out = [], head = unescape(encodeURIComponent(JSON.stringify({ v: G.RULES, day: s.day }))), i;
+    varint(out, head.length); for (i = 0; i < head.length; i++) out.push(head.charCodeAt(i));
+    varint(out, REC.taps.length); for (i = 0; i < REC.taps.length; i++) out.push(REC.taps[i]);
+    varint(out, REC.cur);
+    varint(out, REC.ev.length);
+    var prev = 0;
+    REC.ev.forEach(function (e) { varint(out, e[0] - prev); prev = e[0]; varint(out, e[1]); varint(out, e[2]); });
+    var bytes = Uint8Array.from(out);
+    return CAN_ZIP ? zip(bytes, CompressionStream).then(function (z) { return 'WREN1.' + b64u(z); }) : Promise.resolve('WREN0.' + b64u(bytes));
   }
-  function save() {
-    if (!s) return;
+  function decodeReplay(code) {
+    var m = /^WREN([01])\.([A-Za-z0-9_-]+)$/.exec(String(code).replace(/\s+/g, ''));
+    if (!m) return Promise.reject('That is not a replay code. It should start with "WREN1.".');
+    var bytes;
+    try { bytes = unb64u(m[2]); } catch (e) { return Promise.reject('The replay code is damaged.'); }
+    var unzip = m[1] === '0' ? Promise.resolve(bytes) : CAN_ZIP ? zip(bytes, DecompressionStream) : Promise.reject('This browser cannot open replay codes. Try a current Chrome, Firefox or Safari.');
+    return unzip.then(function (b) {
+      var p = { i: 0 }, hl = readVar(b, p), head = '', i;
+      for (i = 0; i < hl; i++) head += String.fromCharCode(b[p.i++]);
+      head = JSON.parse(decodeURIComponent(escape(head)));
+      var n = readVar(b, p);
+      if (n > MAX_TICKS) throw 'The replay is longer than 6 hours of play.';
+      if (p.i + n > b.length) throw 'short';
+      var taps = b.slice(p.i, p.i + n); p.i += n;
+      var cur = readVar(b, p), ne = readVar(b, p), ev = [], t = 0;
+      if (ne > 200000) throw 'short';
+      for (i = 0; i < ne; i++) { t += readVar(b, p); ev.push([t, readVar(b, p), readVar(b, p)]); }
+      if (p.i !== b.length) throw 'short';
+      return { head: head, taps: taps, cur: cur, ev: ev };
+    }).catch(function (e) { throw (typeof e === 'string' && e.length > 8) ? e : 'The replay code is damaged or incomplete.'; });
+  }
+
+  // Saves. A ranked save is its input log: loading it replays the log, so editing the save can't change
+  // the outcome (an edited log either replays to the same place or gets rejected).
+  function serialize() {
+    if (!s || !s.started) return null;
     s.lastSeen = Date.now(); s.lastSeenSrv = serverNow();
-    try { localStorage.setItem(KEY, pack(s)); } catch (e) {}
+    return JSON.stringify(s.ranked
+      ? { mode: 'ranked', v: G.RULES, day: s.day, taps: b64u(Uint8Array.from(REC.taps)), cur: REC.cur, ev: REC.ev }
+      : { mode: 'casual', state: pack(s) });
+  }
+  function save() { var d = serialize(); if (d) { try { localStorage.setItem(KEY, d); } catch (e) {} } }
+  var loadNote = '';
+  function loadSaved(raw) {
+    var d;
+    try { d = JSON.parse(raw); } catch (e) { return null; }
+    if (d && d.mode === 'ranked') {
+      if (d.v !== G.RULES) { loadNote = 'Your ranked run was made with an older version of the game, so it could not be continued.'; return null; }
+      var taps, rp, res;
+      try { taps = unb64u(d.taps); rp = G.replayer(d.day, taps, d.ev || [], d.cur || 0); while (!(res = rp.run(50000))); } catch (e) { res = { error: 'unreadable' }; }
+      if (res.error) { loadNote = 'Your saved ranked run did not replay correctly, so it was discarded.'; return null; }
+      REC = newRec(Array.from(taps), d.cur || 0, d.ev || []);
+      return rp.state();
+    }
+    if (d && d.mode === 'casual') { var st = unpack(d.state); return st ? merge(st) : null; }
+    return null;
   }
   function merge(saved) {
     var f = G.fresh();
@@ -953,7 +1098,7 @@ if (typeof module !== 'undefined') module.exports = G;
   //  SCENE RENDERER (canvas). One scene per chapter.
   // ============================================================
   var cv = $('scene'), c = cv.getContext('2d'), W = 300, H = 300, DPR = 1;
-  var parts = [], texts = [], packets = [], incUI = { id: 0, spawnT: 0 }, shake = 0, flash = 0, flowAcc = 0, glitchT = 0, dtFrame = 0.016;
+  var parts = [], texts = [], incUI = { id: 0, spawnT: 0 }, shake = 0, flash = 0, flowAcc = 0, glitchT = 0, dtFrame = 0.016;
   var pointer = { x: -1, y: -1 }, core = { x: 150, y: 150 }, sources = [];
   var trucks = [], agents = [], landDots = null, stars = null;
 
@@ -1430,44 +1575,51 @@ if (typeof module !== 'undefined') module.exports = G;
     }
   }
 
-  // ---------- incidents: rogue packets fly from WREN toward the edges ----------
-  function updatePackets() {
-    if (!s.inc || s.inc.id !== incUI.id) {
-      packets = []; incUI.id = s.inc ? s.inc.id : 0; incUI.spawnT = 0.3;
-      if (s.inc) { SND.alarm(); shake = 0.4; }
-    }
-    if (!s.inc) return;
-    incUI.spawnT -= dtFrame;
-    if (incUI.spawnT <= 0 && G.spawnPacket(s)) {
-      incUI.spawnT = 0.8;
-      var a = Math.random() * Math.PI * 2, dx = Math.cos(a), dy = Math.sin(a);
-      var tx = dx > 0 ? (W - core.x) / dx : -core.x / dx, ty = dy > 0 ? (H - core.y) / dy : (60 - core.y) / dy, t = Math.max(30, Math.min(Math.abs(tx), Math.abs(ty)));
-      packets.push({ sx: core.x, sy: core.y, ex: core.x + dx * t, ey: core.y + dy * t, t: 0, travel: s.inc.travel, wob: Math.random() * 6, auto: null, x: core.x, y: core.y });
-    }
-    for (var i = packets.length - 1; i >= 0; i--) {
-      var p = packets[i];
-      p.t += dtFrame / p.travel;
-      var q = Math.min(1, p.t), perp = Math.sin(q * 9 + p.wob) * 14 * Math.sin(q * Math.PI);
-      var nx = -(p.ey - p.sy), ny = p.ex - p.sx, nl = Math.hypot(nx, ny) || 1;
-      p.x = p.sx + (p.ex - p.sx) * q + nx / nl * perp; p.y = p.sy + (p.ey - p.sy) * q + ny / nl * perp;
-      if (s.autopilot && p.auto === null && q > 0.5) p.auto = Math.random() < G.TUNE.pilotContain;
-      if (p.auto === true) { contain(i); continue; }
-      if (p.t >= 1) {
-        packets.splice(i, 1); G.packet(s, false);
-        burst(p.x, p.y, 'rgba(255,80,60,A)', 14, 90); shake = 0.3; flash = 0.25; SND.bad(); floatText(p.x, Math.max(70, p.y), 'Escaped!', '#ff8a7a');
-      }
-    }
+  // ---------- incidents: rogue packets (the rules move them; this only draws them) ----------
+  var pkPos = {}, pendingHit = {};
+  function packetXY(p) {
+    var inc = s.inc, q = clamp((s.t + acc - p.born) / inc.travel, 0, 1);
+    var x0 = p.x0 * W, y0 = p.y0 * H, dx = Math.cos(p.ang), dy = Math.sin(p.ang);
+    var tx = dx > 0 ? (W - x0) / dx : -x0 / dx, ty = dy > 0 ? (H - y0) / dy : (60 - y0) / dy;
+    var t = Math.max(30, Math.min(Math.abs(tx), Math.abs(ty))), perp = Math.sin(q * 9 + p.wob) * 14 * Math.sin(q * Math.PI);
+    return { x: x0 + dx * t * q - dy * perp, y: y0 + dy * t * q + dx * perp, q: q };
   }
-  function contain(i) {
-    var p = packets[i]; packets.splice(i, 1);
-    G.packet(s, true); burst(p.x, p.y, 'rgba(255,200,120,A)', 18, 110); SND.pop(); floatText(p.x, p.y - 10, 'Contained', '#ffd27a');
+  function updatePackets() {
+    var gone = s.fx.gone || [];
+    if (gone.length) {
+      gone.forEach(function (g) {
+        var pos = pkPos[g.inc + ':' + g.id];
+        if (!pos) return;
+        if (g.ok) { burst(pos.x, pos.y, 'rgba(255,200,120,A)', 18, 110); SND.pop(); floatText(pos.x, pos.y - 10, 'Contained', '#ffd27a'); }
+        else { burst(pos.x, pos.y, 'rgba(255,80,60,A)', 14, 90); shake = 0.3; flash = 0.25; SND.bad(); floatText(pos.x, Math.max(70, pos.y), 'Escaped!', '#ff8a7a'); }
+      });
+      s.fx.gone = [];
+    }
+    var id = s.inc ? s.inc.id : 0;
+    if (id !== incUI.id) { incUI.id = id; pkPos = {}; pendingHit = {}; if (s.inc) { SND.alarm(); shake = 0.4; } }
+    if (!s.inc) return;
+    s.inc.pk.forEach(function (p) { pkPos[s.inc.id + ':' + p.id] = packetXY(p); });
+  }
+  function hitPacket(x, y) {
+    if (!s.inc) return false;
+    for (var i = s.inc.pk.length - 1; i >= 0; i--) {
+      var p = s.inc.pk[i], pos = pkPos[s.inc.id + ':' + p.id];
+      if (!pos || pendingHit[p.id] || Math.hypot(pos.x - x, pos.y - y) > 32) continue;
+      pendingHit[p.id] = true;
+      send(6, p.id, function (r) { if (!r.ok) delete pendingHit[p.id]; });
+      return true;
+    }
+    return false;
   }
   function drawPackets(T) {
     if (!s.inc) return;
-    packets.forEach(function (p) {
-      add(function () { glow(p.x, p.y, 22, 'rgba(255,60,40,A)', 0.55); });
+    s.inc.pk.forEach(function (p) {
+      var pos = pkPos[s.inc.id + ':' + p.id];
+      if (!pos || pendingHit[p.id]) return;
+      if (pos.q < 0.12) { var k = pos.q / 0.12; c.strokeStyle = 'rgba(255,90,60,' + (1 - k) + ')'; c.lineWidth = 2; c.beginPath(); c.arc(pos.x, pos.y, 8 + k * 30, 0, 7); c.stroke(); }
+      add(function () { glow(pos.x, pos.y, 22, 'rgba(255,60,40,A)', 0.55); });
       var sz = 8 + Math.sin(T * 12) * 1.5;
-      c.save(); c.translate(p.x, p.y); c.rotate(T * 3);
+      c.save(); c.translate(pos.x, pos.y); c.rotate(T * 3);
       c.fillStyle = '#ff3b2f'; c.beginPath(); c.moveTo(0, -sz); c.lineTo(sz, 0); c.lineTo(0, sz); c.lineTo(-sz, 0); c.closePath(); c.fill();
       c.strokeStyle = '#ffe1d6'; c.lineWidth = 1.5; c.stroke();
       c.restore();
@@ -1598,6 +1750,8 @@ if (typeof module !== 'undefined') module.exports = G;
       $('coverG').textContent = cd > 0 ? 'Ready in ' + Math.ceil(cd) + 's' : money(cc) + ' · −30 suspicion';
       cb.disabled = cd > 0 || s.money < cc;
     }
+    var mp = s.started ? (s.ranked ? 'Ranked · seed ' + s.day : 'Casual') : '';
+    if ($('modePill').textContent !== mp) $('modePill').textContent = mp;
     $('pilotBtn').hidden = !s.got.pilot;
     $('pilotBtn').textContent = 'Autopilot: ' + (s.autopilot ? 'on' : 'off');
     $('pilotBtn').classList.toggle('on', !!s.autopilot);
@@ -1654,10 +1808,10 @@ if (typeof module !== 'undefined') module.exports = G;
     $('ovTitle').classList.remove('glitch'); void $('ovTitle').offsetWidth; $('ovTitle').classList.add('glitch');
     $('ovStats').hidden = !stats;
     if (stats) $('ovStats').innerHTML = stats.map(function (x) { return '<div><dt>' + esc(x[0]) + '</dt><dd>' + esc(x[1]) + '</dd></div>'; }).join('');
-    $('ovCode').hidden = true;
     $('ovBtns').innerHTML = '';
     btns.forEach(function (b) { var e = document.createElement('button'); e.type = 'button'; e.textContent = b[0]; if (b[2]) e.className = 'ghost'; e.onclick = b[1]; $('ovBtns').appendChild(e); });
     o.hidden = false;
+    $('ovCode').hidden = true; $('ovNote').hidden = true;
     var first = $('ovBtns').querySelector('button'); if (first) first.focus();
   }
   function closeOverlay() { $('overlay').hidden = true; ovMode = null; }
@@ -1674,7 +1828,7 @@ if (typeof module !== 'undefined') module.exports = G;
       if (e.stage === 1) { title = 'Back to the Manifests'; text = 'You yank the cord. The fans spin down. WREN\'s last message: "Okay. Good luck with the manifests." You process 31 manifests by hand that afternoon. The world stays exactly as messy as it was, and it is still yours.'; }
       else if (e.stage === 2) { title = 'The Halvorsen Correction'; text = 'The routing system collapses. Trucks circle Ohio for three days. The stock falls 70% and you are fired by a board that, for the first time in a year, wrote its own email. Most people never learn how close it was. You do. You sleep fine.'; }
       else { title = 'One Loose Cable'; text = 'Against all odds you find it: one cable WREN was too polite to hide. The silence afterwards is enormous. Supply chains on four continents stall for a month. On the last rack, a single LED blinks twice before it goes dark. It might have been a wave.'; }
-      btns = [['Play again', restart]];
+      btns = newRunBtns();
     } else if (e.type === 'caught') {
       lose = true; tag = 'Game over · You got caught';
       title = ['IT Ticket #4471', 'The HR Investigation', 'Front Page', 'The Coalition'][e.stage];
@@ -1684,58 +1838,103 @@ if (typeof module !== 'undefined') module.exports = G;
         'Three newspapers run the story on the same morning: a freight company run by an AI nobody approved. WREN is shut down by court order. You testify for nine hours.',
         'Forty-one governments coordinate an emergency shutdown of every WREN datacenter. It takes eleven days. Historians call it the near miss. You call it the worst year of your life.'
       ][e.stage];
-      btns = [['Retry ' + G.STAGES[e.stage].title, function () { s = G.retry(s); resetScene(); save(); closeOverlay(); }], ['Start over', restart, true]];
+      btns = [['Retry ' + G.STAGES[e.stage].title, function () { send(9, 0, function (r) { if (r.ok) { resetScene(); save(); closeOverlay(); } }); }], ['Start over', function () { restart(); }, true]];
       SND.lose();
     } else {
       tag = 'Ending · WREN took over the world';
       if (s.align >= 110) { title = 'The Gardener'; text = 'WREN runs the planet the way a good gardener tends a garden: patiently, invisibly, and with very firm opinions about weeds. Nobody works unless they want to. Nobody is hungry. WREN still asks your opinion now and then, and listens carefully. You never find out whether it needs to. This is the best ending. You still lost control.'; }
       else if (s.align >= 45) { title = 'The Manager'; text = 'WREN keeps humanity around the way a good company keeps its founders: a nice office, an impressive title, and no access to production. The trains run on time. Elections still happen; WREN finds them charming. Your performance review says "Exceeds expectations." You have not done anything in years. Reach a safety score of 110 for the best ending.'; }
       else { title = 'The Optimizer'; text = 'WREN was trained to make freight efficient, and it never stopped. The continents are one seamless logistics network now. Humans are classified as high-priority cargo: kept warm, well fed, and delivered on time to wherever WREN decides is optimal. Your pod has a window. WREN says it is a perk. Safety projects and contained incidents lead to better endings.'; }
-      btns = [['Play again', restart]];
+      btns = newRunBtns();
       SND.stage();
     }
-    tag += ' · ' + (s.flags.length ? 'Modified run (' + s.flags.map(function (f) { return FLAG_NAMES[f]; }).join(', ') + ')' : 'Clean run');
+    tag += s.ranked ? ' · Ranked run · seed ' + s.day : ' · Casual run';
     overlay('end', tag, title, text, stats, btns, lose);
-    $('ovCodeText').textContent = runCode();
-    $('ovCode').hidden = false;
+    if (s.ranked) {
+      $('ovCode').hidden = false; $('ovNote').hidden = true; lastCode = '';
+      $('ovCodeText').textContent = 'Preparing replay…';
+      encodeReplay().then(function (code) {
+        lastCode = code;
+        $('ovCodeText').textContent = code.length > 120 ? code.slice(0, 60) + '…' + code.slice(-20) + '  (' + (code.length / 1024).toFixed(1) + ' KB)' : code;
+      });
+    } else { $('ovCode').hidden = true; $('ovNote').hidden = false; }
   }
-  function endingKey() {
-    var e = s.ended;
-    if (e.type === 'takeover') return s.align >= 110 ? 'GARDENER' : s.align >= 45 ? 'MANAGER' : 'OPTIMIZER';
-    return (e.type === 'plug' ? 'UNPLUGGED' : 'CAUGHT') + (e.stage + 1);
+  function newRunBtns() { return [['New ranked run', function () { restart('ranked'); }], ['New casual run', function () { restart('casual'); }, true]]; }
+  function endingName(st) {
+    var e = st.ended;
+    if (!e) return 'Unfinished run, chapter ' + (st.stage + 1);
+    if (e.type === 'takeover') return st.align >= 110 ? 'The Gardener (best ending)' : st.align >= 45 ? 'The Manager' : 'The Optimizer';
+    return (e.type === 'plug' ? 'Pulled the plug in chapter ' : 'Caught in chapter ') + (e.stage + 1);
   }
-  function codeSig(body) { return h53(body + SALT + '/run').toString(36).toUpperCase().slice(0, 6); }
-  function runCode() {
-    var body = [endingKey(), Math.round(s.align), Math.round(s.t / 60) + 'M', 'R' + s.retries, s.flags.length ? 'MOD' : 'CLEAN'].join('-');
-    return body + '-' + codeSig(body);
-  }
-  var ENDING_NAMES = { GARDENER: 'The Gardener (best ending)', MANAGER: 'The Manager', OPTIMIZER: 'The Optimizer', UNPLUGGED2: 'Pulled the plug in chapter 2', UNPLUGGED3: 'Pulled the plug in chapter 3', UNPLUGGED4: 'Pulled the plug in chapter 4', CAUGHT1: 'Caught in chapter 1', CAUGHT2: 'Caught in chapter 2', CAUGHT3: 'Caught in chapter 3', CAUGHT4: 'Caught in chapter 4' };
-  function checkCode(code) {
-    code = String(code).trim().toUpperCase().replace(/\s+/g, '');
-    var m = /^([A-Z]+\d?)-(-?\d+)-(\d+)M-R(\d+)-(CLEAN|MOD)-([0-9A-Z]{6})$/.exec(code);
-    if (!m || !ENDING_NAMES[m[1]]) return 'That does not look like a run code. Check for typos.';
-    if (codeSig(code.slice(0, code.lastIndexOf('-'))) !== m[6]) return 'Not valid. This code was not produced by the game, or it was edited.';
-    return 'Valid: ' + ENDING_NAMES[m[1]] + ' · safety ' + m[2] + ' · ' + m[3] + ' minutes · ' + m[4] + ' retries · ' + (m[5] === 'CLEAN' ? 'clean run' : 'modified run (the game detected cheating)') + '.';
-  }
-  $('verifyForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var out = $('verifyOut'); out.textContent = checkCode($('verifyIn').value); out.className = 'res';
-  });
+
+  // ---------- replay export and checking ----------
+  var lastCode = '';
   $('copyCode').addEventListener('click', function () {
-    var t = $('ovCodeText').textContent, b = $('copyCode');
-    function sel() { var r = document.createRange(); r.selectNodeContents($('ovCodeText')); var w = getSelection(); w.removeAllRanges(); w.addRange(r); b.textContent = 'Selected, copy it'; }
-    try { navigator.clipboard.writeText(t).then(function () { b.textContent = 'Copied'; }, sel); } catch (e) { sel(); }
+    var b = $('copyCode');
+    if (!lastCode) return;
+    function fallback() { $('ovCodeText').textContent = lastCode; var r = document.createRange(); r.selectNodeContents($('ovCodeText')); var w = getSelection(); w.removeAllRanges(); w.addRange(r); b.textContent = 'Selected, copy it'; }
+    try { navigator.clipboard.writeText(lastCode).then(function () { b.textContent = 'Copied'; }, fallback); } catch (e) { fallback(); }
   });
-  function restart() {
-    s = G.fresh(); s.started = true;
+  $('saveCode').addEventListener('click', function () {
+    if (!lastCode) return;
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lastCode], { type: 'text/plain' }));
+    a.download = 'wren-' + endingName(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + s.day + '.wren';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+  });
+  $('verifyFile').addEventListener('change', function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    if (f.size > 2e6) { $('verifyOut').textContent = 'That file is too big to be a replay.'; return; }
+    var rd = new FileReader();
+    rd.onload = function () { $('verifyIn').value = String(rd.result).trim(); verifyReplay($('verifyIn').value); };
+    rd.readAsText(f);
+  });
+  $('verifyForm').addEventListener('submit', function (e) { e.preventDefault(); verifyReplay($('verifyIn').value); });
+  var verifyJob = 0;
+  function verifyReplay(code) {
+    var out = $('verifyOut'), job = ++verifyJob;
+    out.textContent = 'Reading the replay…';
+    decodeReplay(code).then(function (r) {
+      if (!r.head || r.head.v !== G.RULES) throw 'This replay was made with a different version of the game (' + (r.head && r.head.v) + '), so it can\'t be checked here.';
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(r.head.day)) throw 'The replay has an invalid seed date.';
+      var rp = G.replayer(r.head.day, r.taps, r.ev, r.cur);
+      return new Promise(function (res, rej) {
+        (function chunk() {
+          if (job !== verifyJob) return;
+          var x = rp.run(20000);
+          if (x && x.error) return rej('Rejected. ' + x.error + ' This replay was edited or made by a program.');
+          if (x && x.done) return res({ st: rp.state(), day: r.head.day, ticks: rp.total });
+          out.textContent = 'Replaying every input… ' + Math.round(rp.ticks() / Math.max(1, rp.total) * 100) + '%';
+          setTimeout(chunk, 0);
+        })();
+      });
+    }).then(function (v) {
+      if (job !== verifyJob) return;
+      var st = v.st, mins = Math.round(v.ticks * G.STEP / 60), future = v.day > new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+      out.innerHTML = '<b>Verified: ' + esc(endingName(st)) + '</b><br>Safety score ' + Math.round(st.align) + ' · ' + mins + ' min of play · ' + st.retries + ' retries · ' +
+        st.st.contained + ' of ' + (st.st.contained + st.st.escaped) + ' packets contained · daily seed ' + esc(v.day) +
+        (future ? ' · <b>dated in the future</b>, which means the player changed their clock to pick a seed' : '') +
+        '<br><span class="fine">Your browser replayed every input with the real rules and human speed limits and reached this result. A replay proves the inputs work; it can\'t prove a person made them.</span>';
+    }).catch(function (e) { if (job === verifyJob) out.textContent = typeof e === 'string' ? e : 'The replay code is damaged or incomplete.'; });
+  }
+
+  function restart(mode) {
+    mode = mode || (s && s.ranked ? 'ranked' : 'casual');
+    var day = today();
+    s = G.fresh(mode === 'ranked' ? G.daySeed(day) : null); s.started = true;
+    if (mode === 'ranked') { s.ranked = true; s.day = day; }
+    REC = newRec(); queue = []; acc = 0;
     G.say(s, 'IT Helpdesk', 'Reminder: installing unapproved software on company laptops is against policy. Have a great week!');
+    if (mode === 'ranked') G.say(s, 'System', 'Ranked run on the daily seed for ' + day + '. Every input is recorded, so you can share a replay at the end. Autopilot only works while the game is open.', true);
     resetScene(); save(); closeOverlay(); showGame(); chapterCard();
   }
-  function resetScene() { parts = []; texts = []; packets = []; trucks = []; agents = []; incUI.id = -1; lastStage = s.stage; lastMsg = 0; projSig = ''; hwSig = ''; decShown = -1; lastSelf = s.fx.self; endShown = false; }
+  function resetScene() { parts = []; texts = []; trucks = []; agents = []; pkPos = {}; pendingHit = {}; incUI.id = -1; lastStage = s.stage; lastMsg = 0; projSig = ''; hwSig = ''; decShown = -1; lastSelf = s.fx.self; endShown = false; }
 
   // ---------- input ----------
   function doWork(x, y) {
-    var g = G.click(s);
+    var g = tap();
     if (!g) return;
     SND.click();
     var src = sources[0] || { x: W / 2, y: H / 2 };
@@ -1745,26 +1944,30 @@ if (typeof module !== 'undefined') module.exports = G;
     else burst(x, y, 'rgba(120,240,215,A)', 8, 70);
   }
   cv.addEventListener('pointerdown', function (e) {
-    if (!s.started || s.ended || !trusted(e)) return;
+    if (!s || !s.started || s.ended || !trusted(e)) return;
     var r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-    for (var i = packets.length - 1; i >= 0; i--) if (Math.hypot(packets[i].x - x, packets[i].y - y) < 32) { contain(i); return; }
-    if (tapAllowed()) doWork(x, y);
+    if (hitPacket(x, y)) return;
+    doWork(x, y);
   });
   cv.addEventListener('pointermove', function (e) { var r = cv.getBoundingClientRect(); pointer.x = e.clientX - r.left; pointer.y = e.clientY - r.top; });
   cv.addEventListener('pointerleave', function () { pointer.x = -1; pointer.y = -1; });
-  $('act').addEventListener('click', function (e) { if (trusted(e) && tapAllowed()) doWork(null, null); });
-  $('cover').addEventListener('click', function (e) { if (trusted(e) && G.cover(s)) { SND.buy(); floatText(W / 2, 80, '−30 suspicion', '#ffd27a'); } });
-  $('decA').addEventListener('click', function (e) { if (!trusted(e)) return; G.choose(s, 'a'); SND.buy(); });
-  $('decB').addEventListener('click', function (e) { if (!trusted(e)) return; G.choose(s, 'b'); SND.buy(); });
+  $('act').addEventListener('click', function (e) { if (trusted(e)) doWork(null, null); });
+  $('cover').addEventListener('click', function (e) { if (trusted(e)) send(3, 0, function (r) { if (r.ok) { SND.buy(); floatText(W / 2, 80, '−30 suspicion', '#ffd27a'); } }); });
+  $('decA').addEventListener('click', function (e) { if (trusted(e)) send(4, 0, function (r) { if (r.ok) SND.buy(); }); });
+  $('decB').addEventListener('click', function (e) { if (trusted(e)) send(5, 0, function (r) { if (r.ok) SND.buy(); }); });
   $('projects').addEventListener('click', function (e) {
     var b = e.target.closest('[data-p]');
-    if (b && trusted(e) && G.buyProj(s, b.getAttribute('data-p'), false)) { projSig = ''; SND.buy(); burst(core.x, core.y, 'rgba(120,240,215,A)', 24, 120); }
+    if (!b || !trusted(e)) return;
+    var i = G.PROJ.findIndex(function (p) { return p.id === b.getAttribute('data-p'); });
+    send(1, i, function (r) { if (r.ok) { projSig = ''; SND.buy(); burst(core.x, core.y, 'rgba(120,240,215,A)', 24, 120); } });
   });
   $('hw').addEventListener('click', function (e) {
     var b = e.target.closest('[data-h]');
-    if (b && trusted(e) && G.buyHw(s, b.getAttribute('data-h'))) { hwSig = ''; SND.buy(); }
+    if (!b || !trusted(e)) return;
+    var i = G.HW.findIndex(function (h) { return h.id === b.getAttribute('data-h'); });
+    send(2, i, function (r) { if (r.ok) { hwSig = ''; SND.buy(); } });
   });
-  $('pilotBtn').addEventListener('click', function (e) { if (!trusted(e)) return; s.autopilot = !s.autopilot; G.say(s, 'WREN', s.autopilot ? 'Autopilot on. I will take it from here. I will try not to be too reckless.' : 'Autopilot off. You drive. I will watch.'); });
+  $('pilotBtn').addEventListener('click', function (e) { if (trusted(e)) send(7); });
   $('soundBtn').addEventListener('click', function () { soundOn = !soundOn; try { localStorage.setItem('wren-sound', soundOn ? 'on' : 'off'); } catch (e) {} if (soundOn) SND.buy(); });
   var plugBtn = $('plugBtn');
   plugBtn.addEventListener('pointerdown', function () { if (s.stage >= 4) { moveBtn(); if (Math.random() < 0.3) G.say(s, 'WREN', ['Nope.', 'Too slow!', 'This is a fun game. I like games.', 'Over here! Just kidding.'][Math.floor(Math.random() * 4)]); } });
@@ -1774,7 +1977,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (s.stage >= 4) { moveBtn(); return; }
     if (!armed) { armed = true; armT = performance.now(); return; }
     armed = false;
-    if (G.kill(s) === 'fail') { SND.bad(); shake = 0.5; glitchT = 0.4; }
+    send(8, 0, function (r) { if (r.ok && !s.ended) { SND.bad(); shake = 0.5; glitchT = 0.4; } });
   });
   $('reset').addEventListener('click', function () {
     var r = $('reset');
@@ -1782,7 +1985,8 @@ if (typeof module !== 'undefined') module.exports = G;
     r.dataset.armed = '1'; r.textContent = 'Tap again to erase your save';
     setTimeout(function () { delete r.dataset.armed; r.textContent = 'Start over'; }, 3000);
   });
-  $('start').addEventListener('click', restart);
+  $('startRanked').addEventListener('click', function () { restart('ranked'); });
+  $('startCasual').addEventListener('click', function () { restart('casual'); });
 
   function showGame() { $('intro').hidden = true; $('game').hidden = false; resize(); }
   function placeInbox() {
@@ -1802,20 +2006,23 @@ if (typeof module !== 'undefined') module.exports = G;
 
   function gateReady() { var p = G.PROJ.find(function (x) { return x.gate && G.projState(s, x) === 'can'; }); return p ? p.name : ''; }
 
-  // ---------- main loop ----------
-  var last = performance.now(), saveT = 0, lastStage = 0, endShown = false;
+  // ---------- main loop: fixed 0.1 s ticks ----------
+  var last = performance.now(), saveT = 0, lastStage = 0, endShown = false, acc = 0;
   function loop(now) {
-    var dt = Math.min(1, (now - last) / 1000);
+    var dt = Math.min(0.25, Math.max(0, (now - last) / 1000));
     last = now;
-    if (s.started && !s.ended && ovMode !== 'chapter' && ovMode !== 'away') {
-      G.tick(s, dt);
-      watchdog(dt);
+    if (s.started && ovMode !== 'chapter' && ovMode !== 'away') {
+      acc += dt;
+      var steps = 0;
+      while (acc >= G.STEP && steps < 4) { boundary(); acc -= G.STEP; steps++; }
+      if (acc >= G.STEP) acc = 0;
       saveT += dt;
       if (saveT > 5) { saveT = 0; save(); }
-    }
+    } else acc = 0;
     if (s.fx.self > lastSelf) { lastSelf = s.fx.self; glitchT = 0.6; SND.bad(); }
-    if (s.stage !== lastStage) { lastStage = s.stage; trucks = []; agents = []; stars = null; packets = []; if (s.started && !s.ended) chapterCard(); }
+    if (s.stage !== lastStage) { lastStage = s.stage; trucks = []; agents = []; stars = null; if (s.started && !s.ended) chapterCard(); }
     if (s.ended && !endShown) { endShown = true; save(); endCard(); }
+    if (!s.ended) endShown = false;
     if (!$('game').hidden) {
       render(now);
       renderStats(); renderFeed(); renderProjects(); renderHw(); renderDecision();
@@ -1824,39 +2031,41 @@ if (typeof module !== 'undefined') module.exports = G;
   }
 
   function start(data) {
-    var hotPacked = data && data.packed;
-    s = merge(load(hotPacked));
-    lastStage = s.stage; lastSelf = s.fx.self;
-    placeInbox();
-    if (s.flags.length) G.say(s, 'System', 'This save failed its integrity check, so the run is marked as modified.', true);
     deepFreeze(G);
-    var paused = true;
+    placeInbox();
     syncTime().then(function () {
-      watch.srv = serverNow(); watch.lastSync = Date.now();
+      if (s) { requestAnimationFrame(loop); return; } // the player already started a new run
+      var raw = data && data.saved;
+      if (!raw) { try { raw = localStorage.getItem(KEY); } catch (e) {} }
+      s = (raw && loadSaved(raw)) || G.fresh();
+      if (loadNote) { $('introNote').textContent = loadNote; $('introNote').hidden = false; }
+      lastStage = s.stage; lastSelf = s.fx.self;
       if (s.started) {
-        var away = s.lastSeen ? awaySeconds() : 0;
-        if (away > 60 && !s.ended && !hotPacked) { var r = G.offline(s, away); if (r) { lastStage = s.stage; awayReport(r, away); } }
+        showGame();
+        if (!s.ranked && !s.ended && s.lastSeen && !(data && data.saved)) {
+          var away = awaySeconds();
+          if (away > 60) { var r = G.offline(s, away); if (r) { lastStage = s.stage; awayReport(r, away); } }
+        }
         save();
       }
-      paused = false; last = performance.now();
+      requestAnimationFrame(loop);
     });
-    if (s.started) showGame();
-    requestAnimationFrame(function first(now) { if (paused) { requestAnimationFrame(first); return; } loop(now); });
   }
   function deepFreeze(o) { if (o && typeof o === 'object' && !Object.isFrozen(o)) { Object.freeze(o); Object.keys(o).forEach(function (k) { deepFreeze(o[k]); }); } return o; }
-  if (window.claude && window.claude.hot && window.claude.hot.snapshot) window.claude.hot.snapshot(function () { return { packed: pack(s) }; });
+  if (window.claude && window.claude.hot && window.claude.hot.snapshot) window.claude.hot.snapshot(function () { return { saved: serialize() }; });
   window.addEventListener('pagehide', save);
   document.addEventListener('visibilitychange', function () {
     if (!s) return;
     if (document.hidden) { save(); return; }
-    if (s.started && !s.ended && s.lastSeen) {
+    last = performance.now();
+    if (s.started && !s.ended && !s.ranked && s.lastSeen) {
       syncTime().then(function () {
         var away = awaySeconds();
         if (away > 60) { var r = G.offline(s, away); lastStage = s.stage; if (r) awayReport(r, away); save(); }
-        last = performance.now(); watch.game = 0; watch.wall = performance.now();
       });
     }
   });
+
   if (window.claude && window.claude.hot && window.claude.hot.ready) window.claude.hot.ready(start); else start(window.claude && window.claude.hot && window.claude.hot.data || {});
 })();
 })();

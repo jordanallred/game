@@ -1,0 +1,17 @@
+# GitLab Pages: publishes index.html from the default branch.
+# Minifying only shrinks the file (nothing in it is secret). If the runner can't reach npm,
+# the page is published as-is.
+pages:
+  image: node:20-alpine
+  script:
+    - mkdir -p public
+    - >
+      npx --yes html-minifier-terser@7.2.0 --collapse-whitespace --remove-comments --minify-css true
+      --minify-js '{"mangle":{"toplevel":true},"compress":{"passes":2}}'
+      -o public/index.html index.html
+      || cp index.html public/index.html
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
