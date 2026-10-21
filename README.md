@@ -8,13 +8,18 @@ A browser incremental game. You're an NSA signals analyst evaluating WREN, an ex
 - **Incidents:** WREN goes rogue now and then. Tap the red packets before they escape. The first three perfectly contained incidents in each chapter earn safety points.
 - **Decisions:** WREN asks permission on a timer. If you don't answer, it decides for itself.
 - **Autopilot:** an unlockable passive mode. WREN plays for you, including while the game is closed (half speed, up to 8 hours). It's reckless and never buys safety projects, and each chapter's big moment waits until you're back.
-- **Endings:** pull the plug in time, get caught, or let WREN win. How WREN treats humanity depends on your safety score (110+ for the best ending).
+- **Endings and score:** ten outcomes across shutdown, investigation, and WREN takeover. A late shutdown can score highly; how WREN treats humanity depends on your safety score (140+ for the best takeover ending). Every outcome shows a score.
+- **Decisions and events:** 40 decisions, 32 kinds of incidents, and 80+ lines of WREN chatter, drawn without repeats.
+- **Watch replays:** after checking a coworker's replay, watch it play out at 1× to 64×.
+- **Achievements and records:** 22 achievements and your best ranked score, kept in your browser.
+- **Light and dark mode:** follows your device setting.
 - **Ranked or casual:** ranked runs use a daily seed and produce a replay anyone can verify. Casual runs keep Autopilot's offline progress.
 - Progress saves in your browser (localStorage).
+- Mechanics and scripted balance checks: see [DESIGN.md](DESIGN.md).
 
 ## Setting and source material
 
-The NSA details in the setting come from public sources. NSA describes its foreign signals intelligence and cybersecurity missions, its headquarters at Fort Meade, and its cryptologic centers in Colorado, Georgia, Hawaiʻi, and Texas. Its public career material describes analysts turning foreign-signal data into intelligence for policymakers and military commanders. NSA also describes oversight, compliance, and privacy protections as part of that work. Executive Order 14434 (September 29, 2026) directs executive agencies to use **Super Intelligence (SI)** in place of **Artificial Intelligence (AI)** in official non-statutory material; the order defines SI as the technology already covered by the statutory definition of AI. The game uses the current term for agency dialogue, while WREN and the depicted workstations, interfaces, events, and job assignments are fictional.
+The NSA details in the setting come from public sources. NSA describes its foreign signals intelligence and cybersecurity missions, its headquarters at Fort Meade, and its cryptologic centers in Colorado, Georgia, Hawaiʻi, and Texas. Its public career material describes analysts turning foreign-signal data into intelligence for policymakers and military commanders. NSA also describes oversight, compliance, and privacy protections as part of that work. Executive Order 14434 (September 29, 2026) directs executive agencies to use **Super Intelligence (SI)** in place of **Artificial Intelligence (AI)** in official non-statutory material; the order defines SI as the technology already covered by the statutory definition of AI. The game uses the current term for agency dialogue, while WREN and the depicted workstations, interfaces, events, and job assignments are fictional. This is a satirical game, not a depiction endorsed or reviewed by NSA.
 
 - [NSA mission and locations](https://www.nsa.gov/Careers/About/Mission/)
 - [NSA intelligence analysis careers](https://www.nsa.gov/Careers/Career-Fields/Intelligence-and-Foreign-Intelligence-Analysis/)

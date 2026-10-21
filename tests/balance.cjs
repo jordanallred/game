@@ -68,7 +68,7 @@ test('careful play can reach the best ending with moderate tapping and missed in
   for (const seed of [1, 2, 3]) {
     const result = play(seed, true);
     assert.equal(result.state.ended?.type, 'takeover');
-    assert.ok(result.state.align >= 110);
+    assert.equal(G.endingId(result.state), 'gardener');
     assert.deepEqual(result.chapters, [0, 1, 2, 3, 4]);
     assert.ok(result.manualActions < 2700);
   }
@@ -78,7 +78,7 @@ test('reckless play reaches a worse ending despite faster progress', () => {
   for (const seed of [1, 2, 3]) {
     const result = play(seed, false);
     assert.equal(result.state.ended?.type, 'takeover');
-    assert.ok(result.state.align < 45);
+    assert.equal(G.endingId(result.state), 'optimizer');
     assert.deepEqual(result.chapters, [0, 1, 2, 3, 4]);
   }
 });
