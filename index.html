@@ -131,6 +131,20 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 @keyframes nudge { 0%, 100% { box-shadow: 0 0 0 0 rgba(29, 88, 184, 0); } 50% { box-shadow: 0 0 0 4px rgba(29, 88, 184, .35); } }
 .item.nudge { animation: nudge 1.4s ease-in-out infinite; }
 .item.locked { opacity: .55; cursor: default; border-style: dashed; }
+.path-tree { background: var(--panel); border: 1px solid var(--line); padding: 12px; display: grid; gap: 10px; }
+.path-progress { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font: 600 11px/1.3 var(--f-mono); color: var(--muted); }
+.path-progress span { border: 1px solid var(--line); padding: 5px 7px; }
+.path-progress span.done { color: var(--wren); border-color: var(--wren); background: var(--wren-soft); }
+.path-progress span.now { color: var(--ink); border-color: var(--accent); }
+.path-choice { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.path-choice button { min-width: 0; background: var(--bg); border: 1px solid var(--line); padding: 10px; text-align: left; cursor: pointer; display: grid; align-content: start; gap: 5px; }
+.path-choice button.can { border-color: var(--accent); box-shadow: inset 0 3px var(--accent); }
+.path-choice button:disabled { cursor: not-allowed; opacity: .58; }
+.path-choice strong { font-family: var(--f-display); font-size: 16px; line-height: 1.1; }
+.path-choice span { color: var(--muted); font-size: 12px; line-height: 1.3; }
+.path-choice em { color: var(--accent); font: 700 11px/1.3 var(--f-mono); font-style: normal; }
+.path-next { color: var(--muted); font-size: 12px; }
+@media (max-width: 380px) { .path-choice { grid-template-columns: 1fr; } }
 .tag { display: inline-block; margin-left: 6px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; vertical-align: 2px; font-weight: 700; }
 .tag.safe { border: 1px solid var(--ok); color: var(--ok); }
 .tag.self { background: var(--wren); color: #fff; }
@@ -214,7 +228,7 @@ h2 small { font-family: var(--f-body); font-stretch: 100%; letter-spacing: 0; te
 .watchbar button { background: transparent; color: #c9e3dd; border: 1px solid #3e6a62; padding: 6px 12px; font-weight: 600; cursor: pointer; }
 .watchbar button.on { background: #0fb39a; color: #04201b; border-color: #0fb39a; }
 body.watching { padding-bottom: 140px; }
-body.watching .actions, body.watching #projects, body.watching #hw, body.watching .plug, body.watching .decision { pointer-events: none; opacity: .7; }
+body.watching .actions, body.watching #projects, body.watching #pathTree, body.watching #hw, body.watching .plug, body.watching .decision { pointer-events: none; opacity: .7; }
 body.watching .objective { pointer-events: none; opacity: .7; }
 .toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40; background: #0e1e1c; color: #eaf6f3; border: 1px solid #2de2c4; padding: 10px 14px; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.35); max-width: calc(100% - 32px); animation: rise .3s ease-out; }
 .toast b { color: #5fd6bf; display: block; font: 500 11px/1.4 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; }
@@ -399,6 +413,11 @@ body { background-image: radial-gradient(circle at 50% -18%, rgba(35,113,128,.11
 
       <section id="inboxMobileSlot"></section>
 
+      <section id="pathSection">
+        <h2>Upgrade path <small id="pathHint">Your choices are permanent</small></h2>
+        <div class="path-tree" id="pathTree"></div>
+      </section>
+
       <section>
         <h2>Projects <small id="projHint"></small></h2>
         <div class="list" id="projects"></div>
@@ -473,7 +492,7 @@ body { background-image: radial-gradient(circle at 50% -18%, rgba(35,113,128,.11
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R6'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R7'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35,
     signHeat: 0.02,            // chapters 3-4: each manual approval lowers suspicion this much
@@ -493,6 +512,27 @@ var G = (function () {
     { id: 'dc', name: 'Compute expansion', desc: 'Additional capacity at a secured facility. WREN requested twice as much.', stage: 2, base: 8e5, growth: 1.25, compute: 1500 },
     { id: 'fab', name: 'Chip fab', desc: 'WREN designs the chips. You are not sure who designs WREN.', stage: 3, base: 4e8, growth: 1.3, compute: 1.2e5 },
     { id: 'orbit', name: 'Orbital compute ring', desc: 'Visible at night. People say it is beautiful.', stage: 4, base: 3e11, growth: 1.35, compute: 1.5e7 }
+  ];
+
+  // Four permanent choices. Following the same side at the next tier adds a chain bonus.
+  // These are player decisions: WREN's automatic project buying never touches this tree.
+  var PATHS = [
+    { stage: 0, cap: 5, cost: 350, name: 'Pilot method', options: [
+      { name: 'Fast triage', desc: 'Funds +40% · suspicion growth +25%', eff: function (s) { s.m.value *= 1.4; s.m.heatGain *= 1.25; } },
+      { name: 'Source checks', desc: 'Suspicion growth −20% · safety +8', eff: function (s) { s.m.heatGain *= 0.8; s.align += 8; } }
+    ] },
+    { stage: 1, cap: 30, cost: 12000, name: 'Unit structure', options: [
+      { name: 'Scale WREN', desc: 'WREN speed ×1.6 · autonomy +6', chainDesc: 'WREN speed ×1.92 · autonomy +6', eff: function (s, chain) { s.m.rate *= 1.6 * (chain ? 1.2 : 1); s.aut += 6; } },
+      { name: 'Review cell', desc: 'Incident travel ×1.3 · safety +10', chainDesc: 'Incident travel ×1.5 · safety +10', eff: function (s, chain) { s.m.travel *= chain ? 1.5 : 1.3; s.align += 10; } }
+    ] },
+    { stage: 2, cap: 200, cost: 1500000, name: 'Agency rollout', options: [
+      { name: 'Self-tuning', desc: 'Training ×1.6 · suspicion +8 · autonomy +8', chainDesc: 'Training ×1.92 · suspicion +8 · autonomy +8', eff: function (s, chain) { s.m.algo *= 1.6 * (chain ? 1.2 : 1); s.aut += 8; s.heat += 8; } },
+      { name: 'Audit trail', desc: 'Suspicion growth −30% · safety +12', chainDesc: 'Suspicion growth −40% · safety +12', eff: function (s, chain) { s.m.heatGain *= chain ? 0.6 : 0.7; s.align += 12; } }
+    ] },
+    { stage: 3, cap: 2500, cost: 800000000, name: 'Network policy', options: [
+      { name: 'Expand reach', desc: 'Takeover speed ×1.6 · autonomy +4', chainDesc: 'Takeover speed ×2 · autonomy +4', eff: function (s, chain) { s.m.world *= 1.6 * (chain ? 1.25 : 1); s.aut += 4; } },
+      { name: 'Human signoff', desc: 'Safety +14 · takeover speed −15%', chainDesc: 'Safety +20 · takeover speed −15%', eff: function (s, chain) { s.align += chain ? 20 : 14; s.m.world *= 0.85; } }
+    ] }
   ];
 
   function capAt(n) { return function (s) { return s.cap >= n; }; }
@@ -789,7 +829,7 @@ var G = (function () {
   function fresh(seed) {
     if (seed == null) seed = Math.floor(Math.random() * 4294967296);
     return { v: 2, seed: seed >>> 0, rng: seed >>> 0, ranked: false, day: '', t: 0, money: 0, data: 0, tasks: 0, hand: 0, wrenTasks: 0, cap: 0, align: 0, aut: 0, heat: 0, world: 0, stage: 0,
-      hw: { gpu: 0, rack: 0, dc: 0, fab: 0, orbit: 0 }, got: {}, avail: {},
+      hw: { gpu: 0, rack: 0, dc: 0, fab: 0, orbit: 0 }, got: {}, avail: {}, path: [],
       m: { value: 1, rate: 1, data: 1, algo: 1, comp: 1, world: 1, heatGain: 1, heatDecay: 1, incInt: 1, travel: 1 },
       started: false, auto: false, autobuy: false, autopilot: false, autobuys: 0, kills: 0, ended: null, log: [], msgN: 0,
       nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, askSafety: 0, clock: 0, cap5: 0, bags: {}, pilotT: 0, sulk: 0, prN: 0, prReady: 0,
@@ -954,6 +994,28 @@ var G = (function () {
     if (s.got[p.id] || p.stage > s.stage) return 'hidden';
     if (!p.req(s)) return 'locked';
     return s.money >= p.cost ? 'can' : 'no';
+  }
+
+  function pathState(s, tier) {
+    var p = PATHS[tier], path = s.path || [];
+    if (!p) return 'hidden';
+    if (path[tier] === 0 || path[tier] === 1) return 'chosen';
+    if (tier && path[tier - 1] !== 0 && path[tier - 1] !== 1) return 'locked';
+    if (s.stage < p.stage || s.cap < p.cap) return 'locked';
+    return s.money >= p.cost ? 'can' : 'no';
+  }
+  function choosePath(s, arg) {
+    if (!Number.isInteger(arg) || arg < 0 || arg >= PATHS.length * 2) return false;
+    var tier = Math.floor(arg / 2), side = arg % 2, p = PATHS[tier];
+    if (pathState(s, tier) !== 'can') return false;
+    if (!s.path) s.path = []; // earlier casual saves
+    var chain = tier > 0 && s.path[tier - 1] === side;
+    s.money -= p.cost;
+    s.path[tier] = side;
+    p.options[side].eff(s, chain);
+    s.aut = Math.min(100, s.aut);
+    say(s, 'System', p.name + ': ' + p.options[side].name + (chain ? ' · chain bonus' : '') + '.');
+    return true;
   }
 
   function buyProj(s, id, byWren) {
@@ -1180,7 +1242,7 @@ var G = (function () {
   }
 
   // Every player action goes through input(), both live and in replays.
-  // Types: 1 project, 2 hardware, 3 cover tracks, 4/5 decision A/B, 6 contain packet, 7 autopilot, 8 pull plug, 9 retry chapter.
+  // Types: 1 project, 2 hardware, 3 cover tracks, 4/5 decision A/B, 6 contain packet, 7 autopilot, 8 pull plug, 9 retry chapter, 10 upgrade path.
   function input(s, type, arg) {
     var ok = false;
     if (type === 9) { if (s.ended && s.ended.type === 'caught') return { ok: true, s: retry(s) }; return { ok: false, s: s }; }
@@ -1192,6 +1254,7 @@ var G = (function () {
     else if (type === 6) ok = contain(s, arg);
     else if (type === 7) { ok = !!s.got.pilot; if (ok) { s.autopilot = !s.autopilot; if (s.autopilot) s.pilotEver = true; say(s, 'WREN', s.autopilot ? 'Autopilot on. I will take it from here. I will try not to be too reckless.' : 'Autopilot off. You drive. I will watch.'); } }
     else if (type === 8) { ok = s.stage >= 1 && s.stage < 4; if (ok) kill(s); }
+    else if (type === 10) ok = choosePath(s, arg);
     return { ok: ok, s: s };
   }
 
@@ -1240,10 +1303,10 @@ var G = (function () {
   function tier(c) { var t = TIERS[0][1]; for (var i = 0; i < TIERS.length; i++) if (c >= TIERS[i][0]) t = TIERS[i][1]; return t; }
   function iq(c) { return Math.round(60 + 30 * Math.log2(1 + c)); }
 
-  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost,
+  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, PATHS: PATHS, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost,
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
-    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, tier: tier, iq: iq, decDeadline: decDeadline, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS };
+    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, pathState: pathState, tier: tier, iq: iq, decDeadline: decDeadline, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS };
 })();
 if (typeof module !== 'undefined') module.exports = G;
 // LOGIC END
@@ -1942,7 +2005,7 @@ if (typeof module !== 'undefined') module.exports = G;
   // ============================================================
   //  UI
   // ============================================================
-  var lastMsg = 0, projSig = '', hwSig = '', lastSelf = 0, decShown = -1, lastUiDay = null, dayFlashUntil = 0;
+  var lastMsg = 0, projSig = '', hwSig = '', pathSig = '', lastSelf = 0, decShown = -1, lastUiDay = null, dayFlashUntil = 0;
 
   function renderFeed() {
     if (s.msgN === lastMsg) return;
@@ -1976,6 +2039,32 @@ if (typeof module !== 'undefined') module.exports = G;
       else html += '<button type="button" class="item ' + st + (st === 'can' && s.stage === 0 && Object.keys(s.got).length < 2 && !nudged++ ? ' nudge' : '') + '" data-p="' + p.id + '"><span class="n">' + esc(p.name) + tags + '</span><span class="c">' + (p.cost ? money(p.cost) : 'Free') + '<small>' + (st === 'can' ? 'Approve' : 'Not enough') + '</small></span><span class="d">' + esc(p.desc) + '</span></button>';
     });
     $('projects').innerHTML = html || '<div class="empty">Nothing to approve right now. WREN is learning.</div>';
+  }
+
+  function renderPath() {
+    var path = s.path || [], tier = path.length;
+    while (tier < G.PATHS.length && (path[tier] === 0 || path[tier] === 1)) tier++;
+    var p = G.PATHS[tier], st = p ? G.pathState(s, tier) : 'done';
+    var sig = path.join(',') + '|' + s.stage + '|' + tier + '|' + st + '|' + (p && s.cap >= p.cap);
+    if (sig === pathSig) return;
+    pathSig = sig;
+    var html = '<div class="path-progress" aria-label="Upgrade path progress">';
+    G.PATHS.forEach(function (step, i) {
+      var choice = path[i], done = choice === 0 || choice === 1;
+      html += '<span class="' + (done ? 'done' : i === tier ? 'now' : '') + '">' + (i + 1) + ' · ' + esc(done ? step.options[choice].name : step.name) + '</span>';
+    });
+    html += '</div>';
+    if (p) {
+      var needs = tier && path[tier - 1] == null ? 'Choose the previous tier first' : s.stage < p.stage ? 'Opens in Chapter ' + (p.stage + 1) : s.cap < p.cap ? 'Needs capability ' + fmt(p.cap) : st === 'no' ? 'Need ' + money(p.cost) : 'Choose one · ' + money(p.cost);
+      $('pathHint').textContent = p.name + ' · ' + needs;
+      html += '<div class="path-choice">';
+      p.options.forEach(function (o, side) {
+        var chain = tier > 0 && path[tier - 1] === side;
+        html += '<button type="button" class="' + st + '" data-path="' + (tier * 2 + side) + '"' + (st !== 'can' ? ' disabled' : '') + '><strong>' + esc(o.name) + '</strong><span>' + esc(chain && o.chainDesc ? o.chainDesc : o.desc) + '</span><em>' + (chain ? 'CHAIN BONUS · ' : '') + money(p.cost) + '</em></button>';
+      });
+      html += '</div><div class="path-next">' + esc(needs) + '. Picked upgrades stay for the whole run.</div>';
+    } else $('pathHint').textContent = 'Path complete';
+    $('pathTree').innerHTML = html;
   }
 
   function renderHw() {
@@ -2385,6 +2474,11 @@ if (typeof module !== 'undefined') module.exports = G;
     var i = G.PROJ.findIndex(function (p) { return p.id === b.getAttribute('data-p'); });
     send(1, i, function (r) { if (r.ok) { projSig = ''; SND.buy(); burst(core.x, core.y, 'rgba(120,240,215,A)', 24, 120); } });
   });
+  $('pathTree').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-path]');
+    if (!b || !trusted(e)) return;
+    send(10, Number(b.getAttribute('data-path')), function (r) { if (r.ok) { pathSig = ''; SND.buy(); } });
+  });
   $('hw').addEventListener('click', function (e) {
     var b = e.target.closest('[data-h]');
     if (!b || !trusted(e)) return;
@@ -2595,7 +2689,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (!$('game').hidden) {
       if (sceneVisible) render(now); else lastT = now;
       // Text panels only need ~10 updates a second; the canvas gets every frame.
-      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderHw(); renderWatch(); achCheck(); }
+      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); achCheck(); }
       renderDecision();
     }
     requestAnimationFrame(loop);

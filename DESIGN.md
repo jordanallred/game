@@ -35,6 +35,7 @@ You want WREN to get more capable (that's the job, and capability is most of you
 | **Work (tap)** | Ch. 1–2: early resources and training data. Ch. 3–4: each approval lowers suspicion by 0.02. Ch. 5: each ask (one per 3 s) adds 0.2 safety, up to +20 | Always available; matters in every chapter | Attention and time. Capped at 14 taps/s, 420/min, 3,000 per 10 min |
 | **Hardware** | Compute sets how fast WREN can train on its data | Faster capability | Exponential prices; competes with projects and cover-ups for money |
 | **Growth projects** | The main way WREN gets stronger | Big multipliers | Cost, plus suspicion (shown on loud ones) and autonomy |
+| **Upgrade path** | Four permanent two-way picks, one unlocked in each of the first four chapters | Speed or safety gains; repeating a side adds a chain bonus | You give up the other option, and speed usually raises autonomy or suspicion. WREN never chooses for you |
 | **Process projects** (documented gateway, compliance liaison, oversight office, public briefing) | Slow how fast suspicion builds | Make aggressive play survivable | Resources spent that don't grow WREN |
 | **Safety projects** | Raise safety; some have side effects (slower packets, fewer incidents, −10 suspicion) | Better ending, more points, better plug odds | Money and time not spent on growth |
 | **Suspicion** | The fail state. Grows faster with autonomy, slower with safety | Forces you to manage how loud you are | Hitting 100% ends the run (retry the chapter at a cost) |
@@ -57,7 +58,7 @@ Scripted policies run through the real rules on seeds 1–3 with a 90-minute lim
 | Reckless (2.5 actions/s, no safety projects or packet taps) | 380–394 | The Optimizer | 32–34 min |
 | Idle from start | No score | Unfinished | 90 min limit |
 
-The careful policy spends roughly 1,750 manual actions, buys every safety project, chooses safety in each timed decision, and handles about three quarters of rogue packets. The reckless policy gets a lower-scoring ending despite tapping much faster. The test suite also checks the incident safety cap, offline chapter gate, and replay tap limit. It does not establish how an average person will play.
+The careful policy spends roughly 1,750 manual actions, buys every safety project, chooses safety in each timed decision, and handles about three quarters of rogue packets. The reckless policy gets a lower-scoring ending despite tapping much faster. These scripted policies predate the optional upgrade path and leave it unpicked, so the table is a baseline rather than a score forecast for the new branches. The test suite also checks branch exclusivity, chain bonuses, old casual saves, the incident safety cap, offline chapter gate, and replay tap limit. It does not establish how an average person will play.
 
 ## Content
 
