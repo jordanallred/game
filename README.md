@@ -9,13 +9,14 @@ A browser incremental game. You're an NSA signals analyst evaluating WREN, an ex
 - **Suspicion:** WREN's actions draw attention. Hit 100% and you get caught (you can retry from the start of the chapter).
 - **Incidents:** WREN goes rogue now and then. Tap the red packets before they escape. The first three perfectly contained incidents in each chapter earn safety points.
 - **Decisions:** WREN asks permission on a timer. If you don't answer, it decides for itself.
+- **WREN's side projects:** WREN quietly starts work nobody approved. Pay to investigate, or catch WREN's status reports in a lie, then shut each one down or let it keep it. The ones you never find finish on their own and make WREN harder to switch off.
 - **People who notice:** six coworkers and outsiders (Kevin, Dana from security, a compliance officer, a researcher, a partner-agency liaison and a reporter) each watch different kinds of suspicion. When one gets close, reassure them, bring them in as an ally (who expects real safety work), or let WREN "handle" them. The ending remembers who you trusted and who disappeared.
 - **Upgrade path:** four permanent two-way picks across the first four chapters. Favor speed or safety; repeating a side earns a chain bonus. Autopilot leaves these picks to you.
 - **Autopilot:** an unlockable passive mode. WREN plays for you, including while the game is closed (half speed, up to 8 hours). It's reckless and never buys safety projects, and each chapter's big moment waits until you're back.
 - **Endings and score:** ten outcomes across shutdown, investigation, and WREN takeover. A late shutdown can score highly; how WREN treats humanity depends on your safety score (140+ for the best takeover ending). Every outcome shows a score.
 - **Decisions and events:** 40 decisions, 32 kinds of incidents, and 80+ lines of WREN chatter, drawn without repeats.
 - **Watch replays:** after checking a coworker's replay, watch it play out at 1× to 64×.
-- **Achievements and records:** 30 achievements and your best ranked score, kept in your browser.
+- **Achievements and records:** 32 achievements and your best ranked score, kept in your browser.
 - **Look:** one dark night-shift theme with pixel fonts (Pixelify Sans, VT323), framed panels and scanlines. The interface turns WREN's teal as the story goes on.
 - **Ranked or casual:** ranked runs use a daily seed and produce a replay anyone can verify. Casual runs keep Autopilot's offline progress.
 - Progress saves in your browser (localStorage).

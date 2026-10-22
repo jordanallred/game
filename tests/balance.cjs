@@ -57,6 +57,12 @@ function play(seed, careful, pathSide = null, opts = {}) {
       if (careful) G.input(state, 12, 1);
       else if (opts.people === 'reassure') G.input(state, 12, 0);
     }
+    // side projects: careful players investigate, flag lies, then shut down (or allow once safety stops scoring)
+    if (careful && step % 10 === 0 && state.sp) {
+      if (G.hiddenSide(state).length && state.money >= G.lookCost(state) * 2) G.input(state, 13, 0);
+      for (const p of state.sp) if (p.found && !p.done) G.input(state, 14, p.id * 2 + (wantSafe && state.align < G.TUNE.safetyCap ? 0 : 1));
+      if (state.lie) G.input(state, 15, state.lie.msg);
+    }
     if (state.heat > 58 && state.money >= G.coverCost(state)) G.input(state, 3, 0);
     if (step % 10 === 0) {
       if (pathSide !== null) {
@@ -373,4 +379,78 @@ test('answering a coworker is a checked input, and autopilot lets WREN handle th
   const piloted = withPrompt(6, s => { s.got.pilot = true; s.autopilot = true; });
   for (let i = 0; i < 90; i++) G.tick(piloted, 0.1);
   assert.equal(piloted.w.kevin.st, 'gone');
+});
+
+function sideState(seed) {
+  const state = G.fresh(seed);
+  state.started = true;
+  state.auto = true;
+  state.nextDec = state.nextInc = 1e9;
+  state.nextSide = 0;
+  state.nextTruth = 1e9;
+  state.money = 1e6;
+  state.cap = 50;
+  state.stage = 1;
+  state.hw.rack = 5;
+  G.tick(state, 0.1);
+  return state;
+}
+
+test('WREN starts hidden side projects that grow, and investigating finds the biggest', () => {
+  const state = sideState(1);
+  assert.equal(G.hiddenSide(state).length, 1);
+  for (let i = 0; i < 1000; i++) G.tick(state, 0.1);
+  assert.ok(G.hiddenSide(state)[0].size > 1, 'it grows while hidden');
+  const money = state.money, cost = G.lookCost(state);
+  assert.equal(G.input(state, 13, 0).ok, true);
+  assert.equal(state.money, money - cost);
+  assert.ok(state.sp.some(p => p.found && !p.done), 'found and waiting for a decision');
+  state.got.interp = true;
+  assert.ok(G.lookCost(state) < cost, 'interpretability makes investigating cheaper');
+});
+
+test('shutting down trades capability for safety; allowing trades autonomy for a bonus', () => {
+  const shut = sideState(2), allow = sideState(2);
+  for (const s of [shut, allow]) { for (let i = 0; i < 1800; i++) G.tick(s, 0.1); G.input(s, 13, 0); }
+  const ps = shut.sp.find(p => p.found), pa = allow.sp.find(p => p.found);
+  const cap = shut.cap, align = shut.align, aut = allow.aut;
+  assert.equal(G.input(shut, 14, ps.id * 2).ok, true);
+  assert.ok(shut.cap < cap && shut.align > align && shut.sulk > 0);
+  assert.equal(G.input(shut, 14, ps.id * 2 + 1).ok, false, 'already decided');
+  assert.equal(G.input(allow, 14, pa.id * 2 + 1).ok, true);
+  assert.ok(allow.aut > aut);
+  const kind = G.SIDE[pa.i].kind;
+  assert.ok(allow.m[kind] > 1, 'its bonus applies');
+});
+
+test('hidden side projects hurt the off switch and finish at the next chapter', () => {
+  const state = sideState(3);
+  state.aut = 50;
+  const ch = G.killChance(state);
+  state.sp = [];
+  assert.ok(G.killChance(state) > ch, 'unknown copies make the plug less likely to work');
+  state.sp = [{ id: 9, i: 0, t0: 0, size: 4, found: false }, { id: 10, i: 1, t0: 0, size: 1, found: false }];
+  const aut = state.aut, align = state.align;
+  state.cap = 200; state.money = 1e7;
+  assert.equal(G.buyProj(state, 'demo', false), true);
+  assert.equal(state.stage, 2);
+  assert.equal(state.st.finished, 1, 'only the big one finishes');
+  assert.equal(state.aut, aut + G.TUNE.sideDoneAut);
+  assert.equal(state.align, align - G.TUNE.sideDoneSafety);
+  assert.equal(G.hiddenSide(state).length, 1);
+});
+
+test('flagging a lying status report reveals a side project; a wrong flag makes WREN sulk', () => {
+  let state, seed = 0;
+  do { state = sideState(++seed); } while (!state.lie && seed < 50);
+  assert.ok(state.lie, 'some side projects come with a false status report');
+  const msg = state.lie.msg;
+  assert.equal(G.input(state, 15, msg).ok, true);
+  assert.equal(state.st.lies, 1);
+  assert.equal(G.hiddenSide(state).length, 0);
+  assert.equal(G.input(state, 15, msg).ok, false, 'only once');
+  G.say(state, 'WREN', 'Status report: honest.'); state.log[0].chk = true;
+  assert.equal(G.input(state, 15, state.log[0].id).ok, true);
+  assert.ok(state.sulk > 0);
+  assert.equal(G.input(state, 15, 99999).ok, false, 'no such report');
 });
