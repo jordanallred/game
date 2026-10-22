@@ -34,9 +34,10 @@ You want WREN to get more capable (that's the job, and capability is most of you
 |---|---|---|---|
 | **Work (tap)** | Ch. 1–2: early resources and training data. Ch. 3–4: each approval lowers suspicion by 0.02. Ch. 5: each ask (one per 3 s) adds 0.2 safety, up to +20 | Always available; matters in every chapter | Attention and time. Capped at 14 taps/s, 420/min, 3,000 per 10 min |
 | **Hardware** | Compute sets how fast WREN can train on its data | Faster capability, once data is piling up | Exponential prices; competes with projects and cover-ups for money. In chapters 1–2 data usually runs out first, so extra compute does nothing; the training data stat says which one is the limit |
-| **Growth projects** | The main way WREN gets stronger | Big multipliers | Cost, plus suspicion (shown on loud ones) and autonomy |
+| **Growth projects** | The main way WREN gets stronger | Big multipliers | Cost (about a minute of income when they unlock in chapters 1–4), autonomy, and on loud ones suspicion grows 5–18% faster for the rest of the chapter (shown on the card) |
+| **Turn down** | Makes skipping a growth project a real move | +2 safety, the chapter stays quieter, and WREN can never buy it on its own | WREN sulks and you lose the multiplier. Core speed projects (your login, 40 copies, agency rollout, production access), setup projects and the leadership briefing can't be turned down |
 | **Upgrade path** | Four permanent two-way picks, one unlocked in each of the first four chapters | Speed or safety gains; repeating a side adds a chain bonus | You give up the other option. Speed raises autonomy or suspicion; safety cuts funds, WREN speed, training or takeover speed. WREN never chooses for you |
-| **Process projects** (documented gateway, compliance liaison, oversight office, public briefing) | Slow how fast suspicion builds | Make aggressive play survivable | Resources spent that don't grow WREN |
+| **Process projects** (documented gateway, compliance liaison, oversight office, public briefing) | Slow how fast suspicion builds | Make aggressive play survivable | Cost, and each one slows WREN to ×0.9, so careful runs can skip them |
 | **Safety projects** | Raise safety; some have side effects (slower packets, fewer incidents) | Better ending, more points (up to 150 safety), better plug odds | Each one slows WREN: speed ×0.9, training ×0.85–0.9, capability −10% or takeover ×0.9 |
 | **Suspicion** | The fail state. Grows faster with autonomy, slightly slower with safety (at most 25%) | Forces you to manage how loud you are | Hitting 100% ends the run (retry the chapter at a cost) |
 | **Cover your tracks** | Emergency suspicion cut: −30, then 6 less each use in the same chapter (at least −12) | Saves a run | Costs a fifth of your funds or the chapter price (doubling each use), whichever is more; 40 s cooldown; +3 autonomy each use, so suspicion builds faster afterward. Once autonomy is at 100%, each use makes suspicion grow 10% faster instead |
@@ -54,13 +55,13 @@ Scripted policies run through the real rules with a 90-minute limit. They are re
 
 | Strategy (seeds 1–5) | Score range | Ending | Time |
 |---|---|---|---|
-| Everything safe (one action every 2 s, buys every safety option, misses some packets) | 863–864 | The Gardener | 71–72 min |
-| Balanced (same, but stops choosing safety at 150) | 946–986 | The Gardener | 61–63 min |
-| Fast and attentive (one action every 0.8 s, no safety, contains packets) | 383–405 | The Optimizer | 29–33 min |
-| Reckless (2.5 actions/s, no safety, ignores packets) | 66–94 | Caught in chapter 2 or 3 | 14–21 min |
+| Everything safe (one action every 2 s, buys every safety option, misses some packets) | 863 | The Gardener | 79 min |
+| Balanced (same, but stops choosing safety at 150) | 857–915 | The Gardener | 66–69 min |
+| Fast and attentive (one action every 0.8 s, no safety, contains packets) | 380–392 | The Optimizer | 33–35 min |
+| Reckless (2.5 actions/s, no safety, ignores packets) | 67–94 | Caught in chapter 2 or 3 | 17–24 min |
 | Idle from start | No score | Unfinished | 90 min limit |
 
-Taking every safety option is no longer free: it makes the run about 20 minutes longer than stopping once the best ending is secured, and it scores less. Skipping safety is fastest but caps you at a worse ending, and leaning on cover-ups without handling incidents usually gets you caught, because each cover-up raises WREN's autonomy and suspicion then builds faster. The test suite checks these relationships, plus branch exclusivity, chain bonuses, old casual saves, the incident safety cap, the cover-up cooldown and cost, the offline chapter gate, and the replay tap limit. It does not establish how an average person will play.
+Taking every safety option is no longer free: it makes the run about 20 minutes longer than stopping once the best ending is secured, and it scores less. Skipping safety is fastest but caps you at a worse ending, and leaning on cover-ups without handling incidents usually gets you caught, because each cover-up raises WREN's autonomy and suspicion then builds faster. Buying every project is no longer automatic. In the balanced run, turning down the procurement, budget, partner-network, emergency-authorization or robotics projects still reaches The Gardener at a similar score, and skipping the suspicion projects is about even for careful play but gets fast play caught more often. The test suite checks these relationships, plus project loudness, turning projects down, plus branch exclusivity, chain bonuses, old casual saves, the incident safety cap, the cover-up cooldown and cost, the offline chapter gate, and the replay tap limit. It does not establish how an average person will play.
 
 ## Content
 

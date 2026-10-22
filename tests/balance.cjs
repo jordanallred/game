@@ -59,6 +59,11 @@ function play(seed, careful, pathSide = null, opts = {}) {
           if (G.pathState(state, tier) === 'can') G.input(state, 10, tier * 2 + (pathSide === 'auto' ? (wantSafe ? 1 : 0) : pathSide));
         }
       }
+      for (const id of (opts.decline || [])) {
+        const i = G.PROJ.findIndex(p => p.id === id);
+        const st = G.projState(state, G.PROJ[i]);
+        if (st === 'can' || st === 'no') G.input(state, 11, i);
+      }
       for (const id of priorities) {
         const project = G.PROJ.find(p => p.id === id);
         if (project && (wantSafe || !project.align) && G.projState(state, project) === 'can') G.buyProj(state, id, false);
@@ -160,6 +165,54 @@ test('the chapter 1 gate only needs capability', () => {
   state.started = true;
   state.cap = 18; state.tasks = 0;
   assert.equal(G.PROJ.find(p => p.id === 'promo').req(state), true);
+});
+
+test('loud projects make suspicion grow faster until the next chapter', () => {
+  const state = G.fresh(2);
+  state.started = true;
+  const team = G.PROJ.find(p => p.id === 'team');
+  state.stage = 1; state.cap = 100; state.money = 1e6;
+  const before = G.heatGain(state);
+  assert.equal(G.buyProj(state, 'team', false), true);
+  state.aut = 0; // compare loudness alone
+  assert.ok(Math.abs(G.heatGain(state) / before - (1 + team.loud)) < 1e-9);
+  state.cap = 200;
+  assert.equal(G.buyProj(state, 'demo', false), true);
+  assert.equal(state.stage, 2);
+  assert.equal(state.loud, 0);
+});
+
+test('suspicion projects slow WREN down', () => {
+  const state = G.fresh(2);
+  state.started = true;
+  state.cap = 10; state.money = 1e6;
+  G.buyProj(state, 'vpn', false);
+  assert.equal(state.m.rate, 0.9);
+});
+
+test('turning a project down gives safety, makes WREN sulk and stops WREN buying it', () => {
+  const state = G.fresh(2);
+  state.started = true;
+  state.auto = true;
+  state.stage = 1; state.cap = 100; state.money = 1e6; state.aut = 50;
+  const i = G.PROJ.findIndex(p => p.id === 'card');
+  assert.equal(G.input(state, 11, i).ok, true);
+  assert.equal(state.align, G.TUNE.declineSafety);
+  assert.ok(state.sulk > 0);
+  assert.equal(G.projState(state, G.PROJ[i]), 'hidden');
+  for (let t = 0; t < 600; t++) G.tick(state, 0.1);
+  assert.ok(!state.got.card, 'WREN cannot approve a project you turned down');
+  const core = G.PROJ.findIndex(p => p.id === 'team');
+  assert.equal(G.input(state, 11, core).ok, false, 'core projects cannot be turned down');
+  assert.equal(G.input(state, 11, G.PROJ.findIndex(p => p.id === 'demo')).ok, false, 'chapter gates cannot be turned down');
+});
+
+test('turning down optional projects is a real alternative, not a dead end', () => {
+  const quiet = ['slack', 'card', 'budget', 'acquire', 'lobby', 'robots'];
+  for (const id of quiet) {
+    const result = play(1, true, 'auto', { safeUntil: 150, decline: [id] });
+    assert.equal(G.endingId(result.state), 'gardener', 'declining ' + id + ' still reaches the best ending');
+  }
 });
 
 test('offline autopilot cannot end a run or cross a chapter gate', () => {
