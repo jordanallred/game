@@ -6,7 +6,7 @@ function explore(G, strategy, seed, opts = {}) {
   const points = [];
   const maxPoints = opts.maxPoints || 80;
   const base = createRun(G, strategy, seed, {
-    light: true,
+    light: true, setup: opts.setup,
     onChoice(run, c) {
       if (points.length >= maxPoints) return undefined;
       // every answer, the player's own included, gets the same treatment: copy now, answer on the copy's next tick
@@ -32,6 +32,8 @@ function explore(G, strategy, seed, opts = {}) {
 function reopen(b, c) {
   if (c.kind === 'decision') b.bot.dec.done = false;
   else if (c.kind === 'coworker') b.bot.wq.done = false;
+  else if (c.kind === 'rival') b.bot.rv.done = false;
+  else if (c.kind === 'route') delete b.bot.offered['route:' + c.key];
   else { b.bot.nextLook = 0; if (c.kind === 'project') delete b.bot.offered[c.key]; }
 }
 

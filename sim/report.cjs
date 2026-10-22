@@ -195,7 +195,7 @@ function renderHtml(G, A, data, S) {
 <style>${CSS}</style>`;
   const body = `<div class="wrap">
 <header><span class="eyebrow">Simulated playtest · rules ${esc(m.rules)}</span><h1>WREN Playtest Report</h1>
-<p class="lede">${data.runs.length} full runs by ${m.players.length} simulated players over seeds ${m.seeds[0]}–${m.seeds[m.seeds.length - 1]}, plus ${data.explorations.reduce((a, e) => a + e.points.length, 0)} replayed choices. They play through the same rules as the real game, with human reaction times and the ranked tap limits.</p>
+<p class="lede">${data.runs.length} full runs by ${m.players.length} simulated players over seeds ${m.seeds[0]}–${m.seeds[m.seeds.length - 1]}${m.mandates ? ' (mandates: ' + [...new Set(m.mandates)].join(', ') + ')' : ''}, plus ${data.explorations.reduce((a, e) => a + e.points.length, 0)} replayed choices. They play through the same rules as the real game, with human reaction times and the ranked tap limits.</p>
 <div class="meta"><span>${esc(m.when.slice(0, 16).replace('T', ' '))} UTC</span><span>${esc(m.game)}</span><span>${m.seconds} s to run</span></div></header>
 <section><h2>Things to look at</h2><div class="tally"><span class="t-bug">${counts.bug} bugs</span><span class="t-warn">${counts.warn} to look at</span><span class="t-note">${counts.note} notes</span></div>${findingsHtml(A)}</section>
 <section><h2>How each player did</h2><p class="lede">Score is the median over seeds, with the range underneath; each dot is one seed (hover for details). Caught counts runs that were caught at least once, including ones that retried and finished.</p>${playersHtml(G, A)}</section>
@@ -213,7 +213,7 @@ ${A.tapRows.length ? `<section><h2>How much tapping matters</h2><p class="lede">
 
 function renderMd(G, A, data) {
   const m = data.meta, L = [];
-  L.push('# WREN playtest (' + data.runs.length + ' runs, rules ' + m.rules + ', seeds ' + m.seeds[0] + '–' + m.seeds[m.seeds.length - 1] + ')', '');
+  L.push('# WREN playtest (' + data.runs.length + ' runs, rules ' + m.rules + ', seeds ' + m.seeds[0] + '–' + m.seeds[m.seeds.length - 1] + (m.mandates ? ', mandates ' + [...new Set(m.mandates)].join(', ') : '') + ')', '');
   L.push('## Things to look at', '');
   if (!A.findings.length) L.push('Nothing flagged.');
   A.findings.forEach((f) => L.push('- **' + SEV[f.sev] + '** (' + f.area + '): ' + f.title + '. ' + f.detail));

@@ -118,7 +118,7 @@ test('sulking stacks up to a cap and tracks lost funds', () => {
   state.cap = 10;
   G.addSulk(state);
   for (let i = 0; i < 100; i++) G.tick(state, 0.1);
-  assert.ok(state.sulk > 49 && state.sulk < 51);
+  assert.ok(state.sulk > G.TUNE.sulkTime - 11 && state.sulk < G.TUNE.sulkTime - 9);
   assert.ok(state.sulkLost > 0, 'lost funds are counted while sulking');
   G.addSulk(state); G.addSulk(state); G.addSulk(state);
   assert.equal(state.sulk, G.TUNE.sulkMax);

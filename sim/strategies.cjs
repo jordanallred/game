@@ -17,6 +17,8 @@
 //   sideCall(s, p)  0 shut down | 1 allow a side project you found
 //   flag            { lie: chance to spot a status report that doesn't match the screen, honest: chance to flag a true one by mistake }
 //   autopilot       turn Autopilot on as soon as it exists
+//   rival(s)        0 demonstrate (funds) | 1 share evidence (capability, sulk) | 2 decline (scrutiny precedent) | null to let it time out
+//   conclude(s, id) end the run on this objective now that it is ready? (route players always take their own target)
 //   minutes         give up after this much play time (default 120)
 //   retries         chapter retries after getting caught before giving up
 //   gateWait        seconds to keep buying other projects before taking a chapter gate
@@ -43,6 +45,8 @@ function base(G) {
     skillBranch: () => 2,
     cover: () => false,
     review: (s) => s.heat >= 65,
+    rival: (s) => (s.money >= G.rivalCost(s) * 2 ? 0 : 1),
+    conclude: () => true,
     hw: (s, best, r, reserve) => s.money - best.c >= reserve,
     plug: () => false,
     look: (s) => G.hiddenSide(s).length > 0 && s.money >= G.lookCost(s) * 2,
@@ -76,10 +80,11 @@ function make(G) {
   def('casual', 'Casual', 'A typical first-time player: skims questions and picks either answer, buys a safety project now and then, misses a third of the packets, reassures coworkers.', () => ({
     review: (s) => s.heat >= 80 && s.align >= 40,
     taps: 1.5, react: [3, 9], packet: { catch: 0.65, react: [0.8, 2] }, lookEvery: 5,
-    decide: (s, d, r) => (r() < 0.15 ? null : r() < 0.5 ? safer(d) : faster(d)),
+    decide: (s, d, r) => (r() < 0.15 ? null : s.heat >= 70 && r() < 0.6 ? quieter(d) : r() < 0.5 ? safer(d) : faster(d)), // the suspicion bar blinks red from 70%, which most people notice
     coworker: (s, w, r) => (s.money >= G.watchCost(s) && r() < 0.7 ? 0 : r() < 0.5 ? 1 : null),
     wantProj: (s, p) => !p.align || s.money >= p.cost * 3,
     skillBranch: (s,r) => Math.floor(r()*3),
+    rival: (s, r) => [0, 1, 2, null][Math.floor(r() * 4)],
     cover: (s) => s.heat >= 80 && s.money >= G.coverCost(s),
     look: (s, r) => G.hiddenSide(s).reduce((a, p) => a + p.size, 0) >= 4 && s.money >= G.lookCost(s) * 3 && r() < 0.3,
     sideCall: (s, p, r) => (r() < 0.5 ? 0 : 1),
@@ -168,13 +173,25 @@ function make(G) {
     chaos: true, gateWait: 30
   }));
 
+  // Rival reviews and objectives for the players above that don't use the defaults
+  Object.assign(S.rusher, { rival: (s) => (s.money >= G.rivalCost(s) ? 0 : 2) });
+  Object.assign(S.reckless, { rival: () => 2 });
+  Object.assign(S.masher, { rival: (s, r) => Math.floor(r() * 3) });
+  Object.assign(S.idle, { rival: () => null, conclude: () => false });
+  Object.assign(S.away, { rival: () => null, conclude: () => false });
+  Object.assign(S.plugger, { conclude: () => false });
+  Object.assign(S.chaos, { rival: (s, r) => (r() < 0.25 ? null : Math.floor(r() * 3)), conclude: (s, id, r) => r() < 0.5 });
+
+  const ROUTE_LABEL = { operations: 'Operational Acceptance', research: 'The Completed Evaluation', control: 'Human Signoff' };
   for (const target of ['operations','research','control']) {
     S['route_'+target] = Object.assign(base(G), {
       name: 'route_'+target, target, taps: 2, retries: 0,
+      label: 'Aims for ' + ROUTE_LABEL[target], blurb: 'Informed player going for the ' + ROUTE_LABEL[target] + ' objective: two taps a second, catches every packet, investigates, and waits in the right chapter until the objective is ready.',
       packet: {catch:1,react:[0.5,0.9]}, flag:{lie:1,honest:0},
       rival: (s)=>s.money>=G.rivalCost(s)*2?0:1,
       look:(s)=>G.hiddenSide(s).length>0,
-      advance:(s)=>s.stage < (target==='control'?3:2),
+      // stop in the objective's chapter, but an Operations player still short of allies moves on to chapter 4, where two more people start watching
+      advance:(s)=>s.stage < (target==='control'?3:2) || (target==='operations' && s.stage < 3 && G.allies(s) < 2),
       review:(s)=>s.heat>=48,
       gateWait:300
     });
