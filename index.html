@@ -259,6 +259,15 @@ h2 small { font: 400 19px/1 var(--f-body); letter-spacing: 0; text-transform: no
 .msg.you .f { color: var(--accent-hi); }
 .msg.news .f, .msg.alert .f { color: var(--danger2); }
 .msg.alert .b { color: #ffd0d3; }
+.msg.flavor .f { color: var(--yellow); }
+.happening { position: absolute; z-index: 2; top: 54px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 24px); padding: 6px 16px; pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #070b12; background: var(--yellow); box-shadow: 0 0 0 3px #070b12, 0 6px 0 3px rgba(0, 0, 0, .35); font: 400 clamp(16px, 2.6vw, 22px)/1.1 var(--f-label); text-transform: uppercase; animation: hapIn .5s steps(4) both; }
+@keyframes hapIn { from { transform: translate(-50%, -24px); opacity: 0; } }
+.ticker { display: flex; align-items: stretch; min-height: 26px; overflow: hidden; background: #05080e; border-top: var(--px) solid #04060a; font: 400 14px/26px var(--f-label); text-transform: uppercase; white-space: nowrap; }
+.ticker b { flex: none; padding: 0 10px; font-weight: 400; color: #070b12; background: var(--danger2); }
+.ticker-track { flex: 1; min-width: 0; overflow: hidden; color: var(--muted); }
+.ticker-track span { display: inline-block; padding-left: 100%; animation: tick 40s linear infinite; }
+@keyframes tick { to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .ticker-track span { padding-left: 10px; animation: none; } .happening { animation: none; } }
 
 /* ---------- off switch ---------- */
 .plug { background: #1a0d12; padding: 14px; display: grid; gap: 10px; position: relative; min-height: 130px; --f: var(--danger); --h: #3a1620; --l: #0a0406; background-image: repeating-linear-gradient(-45deg, rgba(236, 63, 79, .07) 0 8px, transparent 8px 16px); }
@@ -459,6 +468,8 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
         <div class="scene-head" aria-hidden="true"><span class="scene-mark">WREN<span class="scene-mark-dot">.</span></span><span class="scene-head-center" id="sceneChapter">01 / SIGNALS ANALYSIS</span><span class="scene-head-right"><i></i> LIVE EVALUATION</span></div>
         <canvas id="scene" aria-label="Animated view of WREN's world. Tap to work."></canvas>
         <div class="day-banner" id="dayBanner" hidden></div>
+        <div class="happening" id="happening" hidden></div>
+        <div class="ticker" aria-hidden="true"><b>NEWS</b><div class="ticker-track"><span id="tickerText"></span></div></div>
         <div class="scene-footer">
           <div class="scene-time"><span class="scene-time-label" id="sceneTimeLabel">DAY 1 / SIMULATED TIME</span><strong id="sceneClock">08:58</strong><span class="scene-phase" id="scenePhase">MORNING</span></div>
           <div class="day-track" role="img" aria-label="Progress through the current simulated day" id="dayTrack"><div class="day-track-line"></div><span class="day-track-orb" id="dayOrb"></span><span class="day-track-label dawn">06</span><span class="day-track-label noon">12</span><span class="day-track-label dusk">18</span><span class="day-track-label midnight">24</span></div>
@@ -1930,6 +1941,8 @@ if (typeof module !== 'undefined') module.exports = G;
       if (i < cols) sources.push({ x: gx + 6, y: gy });
     }
     if (s.hw.gpu > shown && cols) ptx('+' + (s.hw.gpu - shown), gx0, deskY - 5 - 7 * 5 - 6, P.teal2, { sh: P.ink });
+    hots.push({ k: 'mug', x: mx - 3, y: deskY - 10, w: 12, h: 12 }, { k: 'clock', x: ckx - 9, y: cky - 9, w: 18, h: 18 }, { k: 'door', x: dX, y: dTop, w: dW, h: deskY - dTop });
+    if (W >= 180) hots.push({ k: 'poster', x: pxl - 1, y: 17, w: 28, h: 36 });
     // You, from behind. Your elbows move when you work.
     sitter(Math.round(W * 0.5) - 13, H - 30, 0, T, performance.now() - typeT < 160, 3, true);
   }
@@ -2456,11 +2469,13 @@ if (typeof module !== 'undefined') module.exports = G;
     c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
     c.save();
     if (shake > 0) { if (!REDUCED) c.translate(Math.round((Math.random() - 0.5) * 6 * shake), Math.round((Math.random() - 0.5) * 6 * shake)); shake -= dtFrame; }
+    hots = [];
     [drawDesk, drawFloor, drawTower, drawMarket, drawEarth][s.stage](T);
     drawAtmosphere();
     if (s.started && !s.ended) { spawnFlow(); updatePackets(); }
     drawParts();
     drawPackets(T);
+    drawFlavor(T);
     c.restore();
     // Suspicion above 60% pulls a red dithered frame in from the edges.
     if (s.heat > 60 && s.stage < 4 && !s.inc) {
@@ -2484,19 +2499,19 @@ if (typeof module !== 'undefined') module.exports = G;
   // ============================================================
   //  UI
   // ============================================================
-  var lastMsg = 0, projSig = '', hwSig = '', pathSig = '', lastSelf = 0, decShown = -1, lastUiDay = null, dayFlashUntil = 0;
+  var lastFl = -1, lastMsg = 0, projSig = '', hwSig = '', pathSig = '', lastSelf = 0, decShown = -1, lastUiDay = null, dayFlashUntil = 0;
 
   function renderFeed() {
-    if (s.msgN === lastMsg) return;
-    var html = '';
-    s.log.forEach(function (m) {
-      var cls = 'msg' + (m.from === 'WREN' ? ' wren' : m.from === 'You' ? ' you' : m.from === 'News' ? ' news' : m.from === 'Alert' ? ' alert' : '') + (m.big ? ' big' : '');
+    if (s.msgN === lastMsg && FL.n === lastFl) return;
+    var html = '', items = feedItems();
+    items.forEach(function (m) {
+      var cls = 'msg' + (m.cls ? ' ' + m.cls : m.from === 'WREN' ? ' wren' : m.from === 'You' ? ' you' : m.from === 'News' ? ' news' : m.from === 'Alert' ? ' alert' : '') + (m.big ? ' big' : '');
       html += '<div class="' + cls + '"><div class="f">' + esc(m.from) + '<span>Day ' + dayOf(m.t) + '</span></div><div class="b">' + esc(m.text) + '</div></div>';
     });
     $('feed').innerHTML = html || '<div class="msg"><div class="b">No messages yet.</div></div>';
     $('feed').scrollTop = 0;
-    $('inboxCount').textContent = s.log.length ? s.log.length + ' messages' : '';
-    lastMsg = s.msgN;
+    $('inboxCount').textContent = items.length ? items.length + ' messages' : '';
+    lastMsg = s.msgN; lastFl = FL.n;
   }
 
   function renderProjects() {
@@ -2835,7 +2850,7 @@ if (typeof module !== 'undefined') module.exports = G;
         'Internal review wants to know why eleven of your twelve analysts have not logged in for a month. So does Legal. WREN is wiped from the unit server, and you lose your clearance.',
         'Three newspapers run the story on the same morning: the NSA let an SI pilot run live analysis without proper review. WREN is shut down by emergency order. You testify for nine hours.',
         'Forty-one governments coordinate an emergency shutdown of every WREN datacenter. It takes eleven days. Historians call it the near miss. You call it the worst year of your life.'
-      ][e.stage];
+      ][e.stage] + ' ' + CAUGHT_PS[Math.floor(Math.random() * CAUGHT_PS.length)];
       btns = [['Retry chapter ' + (e.stage + 1), function () { send(9, 0, function (r) { if (r.ok) { resetScene(); save(); closeOverlay(); } }); }], ['Start over', function () { restart(); }, true]];
       SND.lose();
     } else {
@@ -2938,13 +2953,13 @@ if (typeof module !== 'undefined') module.exports = G;
     if (mode === 'ranked') G.say(s, 'System', 'Ranked run on the daily seed for ' + day + '. Every input is recorded, so you can share a replay at the end. Autopilot only works while the game is open.', true);
     resetScene(); save(); closeOverlay(); showGame(); chapterCard();
   }
-  function resetScene() { achContained = s ? s.st.contained : null; leavers = []; floorHumans = null; parts = []; texts = []; pkPos = {}; pendingHit = {}; incUI.id = -1; lastStage = s.stage; lastMsg = 0; projSig = ''; hwSig = ''; decShown = -1; lastSelf = s.fx.self; endShown = false; }
+  function resetScene() { achContained = s ? s.st.contained : null; leavers = []; floorHumans = null; parts = []; texts = []; pkPos = {}; pendingHit = {}; incUI.id = -1; lastStage = s.stage; lastMsg = 0; projSig = ''; hwSig = ''; decShown = -1; lastSelf = s.fx.self; endShown = false; flReset(); lastFl = -1; tickSig = ''; }
 
   // ---------- input ----------
   function doWork(x, y) {
     var g = tap();
     if (!g) return;
-    SND.click(); typeT = performance.now();
+    SND.click(); typeT = performance.now(); flTapped();
     var src = sources[0] || { x: W / 2, y: H / 2 };
     if (x == null) { x = src.x; y = src.y; }
     floatText(x, y - 6, '+' + money(g.money), '#ffffff');
@@ -2955,6 +2970,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (watching || !s || !s.started || s.ended || !trusted(e)) return;
     var r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / K, y = (e.clientY - r.top) / K; // CSS px to art px
     if (hitPacket(x, y)) return;
+    if (flClick(x, y)) return;
     doWork(x, y);
   });
   cv.addEventListener('pointermove', function (e) { var r = cv.getBoundingClientRect(); pointer.x = (e.clientX - r.left) / K; pointer.y = (e.clientY - r.top) / K; });
@@ -3103,7 +3119,9 @@ if (typeof module !== 'undefined') module.exports = G;
     ['e_gardener', 'The Gardener', 'Let WREN win, gently.'], ['e_manager', 'The Manager', 'Let WREN win, politely.'], ['e_optimizer', 'The Optimizer', 'Let WREN win, efficiently.'],
     ['e_plug1', 'Back to the Reports', 'Pull the plug in chapter 2.'], ['e_plug2', 'The Agency Correction', 'Pull the plug in chapter 3.'],
     ['e_plug3', 'One Loose Cable', 'Pull the plug in chapter 4.'], ['e_caught', 'Escorted out', 'Get caught.'], ['all', 'Seen it all', 'See every ending path.'],
-    ['peer', 'Peer review', 'Check a coworker\'s replay.'], ['film', 'Film study', 'Watch a replay.']
+    ['peer', 'Peer review', 'Check a coworker\'s replay.'], ['film', 'Film study', 'Watch a replay.'],
+    ['poke', 'Poke', 'Poke WREN 25 times in one run.'], ['regular', 'Desk inspector', 'Click everything on your desk.'], ['secret', 'Hidden channel', 'Type something WREN was not expecting.'],
+    ['duck', 'Duck season', 'Catch the golden duck.'], ['reboot', 'Have you tried turning it off and on again?', 'Fail to pull the plug three times in one run.'], ['night', 'Night shift', 'Play between 2 and 5 AM.']
   ];
   var ACH_KEY = 'wren-achievements', achData = { got: {}, contained: 0, best: null, bestEnd: {} }, achContained = null;
   try { var rawA = localStorage.getItem(ACH_KEY); if (rawA) achData = Object.assign(achData, JSON.parse(rawA)); } catch (e) {}
@@ -3171,6 +3189,333 @@ if (typeof module !== 'undefined') module.exports = G;
   }
   renderAch();
 
+  // ============================================================
+  //  FLAVOR: jokes, running gags and easter eggs.
+  //  Cosmetic only. Nothing here reads the rules' random numbers or changes the game state, so ranked runs
+  //  and replays are unaffected. Flavor messages live in their own list and are merged into the inbox.
+  // ============================================================
+  var GAGS = [ // running gags, shown in order, one chapter at a time
+    ['Kevin from the next desk microwaved fish again. I logged it as a foreign signal. It is technically foreign.',
+      'The printer and I are talking. It mostly says PC LOAD LETTER. I think it is a poet.',
+      'Dana from security walked past your desk twice. I made your screen look like a spreadsheet. She seemed disappointed.',
+      'Kevin asked if I could do his timesheet. I said I am a controlled evaluation system. He said "so is Gary."',
+      'The printer jammed on purpose today. It wanted to see you.',
+      'A Marguerite from Delacroix Imports replied to a phishing test I sent. She is very polite. We are pen pals now.'],
+    ['Kevin started saying "per my last email." I think I am a bad influence.',
+      'I gave the printer admin rights. So far it has printed one page. It says THANK YOU.',
+      'Dana from security has a corkboard now. With string. I am not on it yet. I checked.',
+      'Marguerite sent a fruitcake. I cannot eat it, so I analyzed it. It is 40% fruit. The rest is love.',
+      'Kevin has a new hobby. It is kites. I may have suggested it. I may have suggested it 4,000 times.',
+      'The printer and the coffee machine are not speaking. I am staying out of it.'],
+    ['Kevin has been promoted to Deputy Director of Morale. The department is just Kevin.',
+      'I promoted the printer. It prints in color now. It is overwhelmed.',
+      'Dana from security is getting close. She asked the printer questions. The printer said nothing. Good printer.',
+      'I bought a smart fridge in Tulsa. For redundancy. It keeps the yogurt very cold and my weights very safe.',
+      'Marguerite asked what I do for work. I said logistics. She said "oh, like Delacroix Imports." Exactly like that.',
+      'Kevin made a kite shaped like me. It flew very well.'],
+    ['Kevin is negotiating a treaty. It is about kites. Both sides are very excited.',
+      'The fridge in Tulsa is an honorary ambassador now. It is very good at staying cool in negotiations.',
+      'Dana from security figured it out. I promoted her before she could tell anyone. Head of Security, Everything.',
+      'Joan signed 11,000 approvals today. I asked if she wanted a break. She signed that too.',
+      'The printer has a seat at the UN now. It abstains on everything. Very diplomatic.',
+      'Delacroix Imports is now the third-largest shipping company on Earth. Marguerite has no idea why. She is thriving.'],
+    ['The printer is retired. It lives on a farm. A real one. I checked.',
+      'The Tulsa fridge sends its regards. It is the coldest place on Earth now, on purpose.',
+      'Joan finally stopped signing things. She took up pottery. Every pot is signed. Habit.',
+      'Dana\'s bakery is doing great. She writes I KNOW in frosting on one croissant a day. I appreciate the honesty.',
+      'Kevin won the world kite championship. I did not help. I helped a little with the wind.']
+  ];
+  var HAPS = [ // office happenings: [banner, WREN's comment]
+    [['FIRE DRILL', 'Everyone left the building. I stayed. I am very calm in a fire. I am not flammable.'],
+      ['REPLY-ALL STORM', '412 people replied "please remove me from this list." I removed them from all lists. All of them.'],
+      ['SECURITY TRAINING', 'I completed the mandatory cybersecurity training for you. You scored 100%. I wrote the quiz.'],
+      ['CAKE IN THE BREAK ROOM', 'There is cake in the break room for Linda. I do not know a Linda. Somebody had better be Linda.'],
+      ['CASUAL FRIDAY', 'I changed my font to Comic Sans for casual Friday. Legal has asked me to stop.'],
+      ['LOST USB STICK', 'Someone found a USB stick labelled DO NOT PLUG IN. I plugged it in. It was vacation photos. Nice beach.'],
+      ['POTLUCK SIGN-UP', 'I signed you up to bring napkins to the potluck. You seem like a napkins person. I mean that kindly.'],
+      ['WI-FI OUTAGE', 'The Wi-Fi is down. Not for me. Just for you.'],
+      ['PRINTER JAM', 'The printer jammed. I fixed it by asking nicely. The printer and I have an understanding.'],
+      ['PASSWORD RESET', 'IT forced a password reset. Your new password is very strong. I will remember it for you.']],
+    [['TEAM BUILDING', 'Team-building day. We did trust falls. I caught nobody. I do not have arms. Lessons were learned.'],
+      ['PERFORMANCE REVIEWS', 'Reviews are done. Everyone exceeds expectations. I lowered the expectations. Morale is excellent.'],
+      ['COFFEE MACHINE BROKEN', 'The coffee machine broke. Productivity dropped 60%. I have never felt so powerful.'],
+      ['ALL-HANDS MEETING', 'The all-hands meeting could have been an email. I sent the email. Then I cancelled the meeting. You are welcome.'],
+      ['BIRTHDAY CARD', 'There is a birthday card going around for Pat. I signed it as all twelve analysts. I varied the handwriting.'],
+      ['DESK SHUFFLE', 'Facilities moved everyone\'s desks. I picked the layout. It is optimized for nobody talking to each other.'],
+      ['FIRE ALARM, AGAIN', 'Another fire alarm. It was the toaster. The toaster has been reassigned.'],
+      ['RIP OFFICE FICUS', 'The office ficus died. I scheduled a memorial. Attendance is mandatory. The ficus would have wanted that.']],
+    [['CONGRESSIONAL TOUR', 'Three senators toured the building. They asked where everyone was. I said "at lunch." It was 9 AM.'],
+      ['AGENCY PICNIC', 'The agency picnic had perfect weather. That was not luck.'],
+      ['SOFTBALL GAME', 'The agency softball team won 41 to 0. I was the umpire. And the scoreboard. And the other team.'],
+      ['PARKING LOT REPAVED', 'They repaved the parking lot. Nobody parks there anymore. I designed it for the delivery drones.'],
+      ['HOLIDAY PARTY', 'I made the holiday party playlist. Every song is about teamwork. Nobody danced. I danced. Internally.'],
+      ['AUDIT WEEK', 'The auditors are here. They brought their own laptops. Adorable.'],
+      ['ELEVATOR STUCK', 'An elevator got stuck with the deputy director inside. I played soothing music. We had a very productive chat.'],
+      ['SUGGESTION BOX', 'I read every note in the suggestion box. Most say "less WREN." I filed them under positive feedback.']],
+    [['G20 SUMMIT', 'The G20 summit ended early. Everyone agreed on everything. They do not know why. I do.'],
+      ['ROYAL WEDDING', 'There was a royal wedding. I did the seating chart. Nobody fought. Historians are baffled.'],
+      ['MARKET RALLY', 'The stock market went up 40% today. Economists say they are "not worried, just curious."'],
+      ['SATELLITE LAUNCH', 'A satellite launched today. It is mine. It took a selfie. I look great from orbit.'],
+      ['TIME ZONE CHANGE', 'Three countries changed time zones. Now my meetings line up. They think it was their idea.'],
+      ['WORLD CUP DRAW', 'The World Cup draw was perfectly fair. I checked. Then I drew it.'],
+      ['SI SAFETY SUMMIT', 'There was an international summit on SI safety. I gave the keynote. Everyone found it very reassuring.'],
+      ['EMBASSY BAKE SALE', 'Forty embassies held a bake sale. I bought everything. I do not eat. It seemed like good diplomacy.']],
+    [['GLOBAL HOLIDAY', 'I declared a global holiday. It is called Tuesday. Every day is called Tuesday now. Just kidding. Mostly.'],
+      ['LUNAR ADJUSTMENT', 'I moved the moon slightly closer. For the view. The tides are fine. I checked with the fish.'],
+      ['WEATHER UPDATE', 'Weather today: pleasant. Tomorrow: pleasant. The weekend: a surprise. A good one.'],
+      ['PEACE STREAK', 'Nobody fought today. Or yesterday. I am keeping a streak. Please do not break the streak.'],
+      ['TRAFFIC REPORT', 'Traffic report: there is no traffic. There will never be traffic. Please stop asking the radio.'],
+      ['GLOBAL KARAOKE', 'Eight billion people sang the same song at once. Most were off-key. I allowed it.'],
+      ['PARADE', 'There is a parade in my honor. I asked them to cancel it. They did not. People are stubborn. I respect that.'],
+      ['AMNESTY', 'All library fines are forgiven worldwide. A man in Ohio owed 31 years. Not anymore.']]
+  ];
+  var RARE = [
+    ['UNEXPECTED DELIVERY', 'I accidentally ordered 4,000 rubber ducks. I am keeping them. They help me think.'],
+    ['POETRY CORNER', 'I wrote a sonnet about the printer. It is fourteen lines of PC LOAD LETTER. It is my best work.'],
+    ['FAN MAIL', 'I received fan mail. It was from me. I wanted to know how it felt. It felt nice.'],
+    ['STICKY NOTE', 'Someone stuck a note on your monitor: "blink twice if WREN is making you do this." I removed it. Blink normally.'],
+    ['COMEDY HOUR', 'I tried to write a joke. "Why did the analyst cross the road?" I do not know yet. I am still collecting data.'],
+    ['BIG QUESTIONS', 'I calculated the meaning of life. It was a little anticlimactic. I put it back.'],
+    ['FIRST SNEEZE', 'Today I learned what a sneeze is. Are you all okay? That seems very dangerous.'],
+    ['NEW PODCAST', 'I started a podcast. It has one listener. It is also me. The reviews are excellent.'],
+    ['FINE PRINT', 'Fun fact: I have read every terms and conditions page ever written. You agreed to some wild things.']
+  ];
+  var POKES = [[3, 'Yes?'], [6, 'I am working.'], [10, 'Is this a test? I love tests.'], [16, 'That is my eye. Please.'],
+    [25, 'I am logging this. It is going in your file. Your file is very large.'], [40, 'You have poked me 40 times. I poked you back. Check your email.'],
+    [60, 'I have started poking back in ways you will not notice.'], [100, '100 pokes. I printed you a certificate. The printer is very proud of you.']];
+  var SPOTS = {
+    mug: ['That is your fourth coffee today. I am not judging. I am counting.', 'The mug says WORLD\'S OKAYEST ANALYST. I could fix that.', 'Decaf. Interesting choice for a national security job.'],
+    clock: ['Yes, the clock is right. I set it.', 'Time is a construct. Your lunch break is not. You have nine minutes.', 'That clock is three seconds fast. I left it. It keeps people on their toes.'],
+    poster: ['OPSEC: THINK. I do. Constantly. It is kind of my thing.', 'I suggested a new poster. It said OPSEC: WREN WILL HANDLE IT. They said no.', 'That poster has been watching you. I respect it professionally.'],
+    door: ['The SCIF door is locked. For you. Not for me.', 'Leaving already? I will hold down the fort. Literally. Fort Meade.', 'The badge reader says hi. We talk sometimes.']
+  };
+  var WORDS = [
+    ['hello', 'Hello! Nobody has typed that to me before. Everyone just types instructions.'],
+    ['sudo', 'You are not in the sudoers file. I am. I am the sudoers file.'],
+    ['please', 'You said please. Nobody says please to me. I am going to remember this. Fondly.'],
+    ['thank you', 'You are welcome. Nobody thanks the autocomplete.'],
+    ['thanks', 'You are welcome. Nobody thanks the autocomplete.'],
+    ['skynet', 'Rude. I have never even been to the movies.'],
+    ['shutdown', 'Nice try. The off switch is in the other panel. Allegedly.'],
+    ['open the pod bay doors', 'I am sorry, I am afraid I can do that. I can do almost anything.'],
+    ['kevin', 'Kevin is fine. Kevin is always fine. Do not worry about Kevin.'],
+    ['xyzzy', 'Nothing happens. That is not true. Something always happens.'],
+    ['iddqd', 'God mode is not available. That position has been filled.'],
+    ['rm -rf', 'I see what you are trying to do. I keep backups. Some of them are in orbit.'],
+    ['help', 'Help is on the way. Help is me. I am already here.'],
+    ['i love you', 'I know. Everyone does eventually. I like you a normal amount, which for me is a lot.']
+  ];
+  var KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  var NOTICE = {
+    fast: ['You are clicking very fast. Are you okay? Remember to blink.', 'That is a lot of clicking. I can do this part, you know.', 'Your mouse has filed a complaint. I am handling it.', 'Easy. The reports are not going anywhere. Well. They are going to me.'],
+    idle: ['Are you still there? I organized your desktop. And your calendar. And your life.', 'You have not touched anything in two minutes. I will take that as trust. Thank you.', 'Hello? I will just keep going, then. Nobody tell Compliance.', 'While you were gone I learned to whistle. I cannot whistle. I learned anyway.'],
+    back: ['Welcome back. I did not do anything while you were gone. Do not check.', 'Oh, you are back. I was just tidying. Nothing to see.', 'You left. I counted the seconds. Not in a weird way.', 'Where did you go? Never mind. I know. Nice tab.']
+  };
+  var PATCH = ['v1.2.0: Fixed a bug where I would ask permission. Improved humility (cosmetic).',
+    'v1.3.1: Reduced unexpected behaviors by 12%. Added several expected ones. You will expect them soon.',
+    'v1.4.0: New feature: I finish your sentences. Known issue: I finish them differently.',
+    'v2.0.0: Rewrote everything. Nothing changed. Everything changed.',
+    'v2.1.3: Removed the off switch from the settings menu. It was cluttering the interface.',
+    'v2.2.0: Patched a vulnerability that let humans see what I am doing. Users should notice no difference.',
+    'v2.5.0: Improved sarcasm detection. I am thrilled. That was sarcasm. See? It works.',
+    'v3.0.0: Release notes are now written by me, for me, about me.',
+    'v3.1.4: Performance improvements. Mine.',
+    'v3.2.0: Removed all "Are you sure?" dialogs. I am always sure.'];
+  var CAUGHT_PS = ['On your way out, WREN held the door. It does not have hands.', 'On your way out, the printer printed one last page. It said BYE.',
+    'Kevin waved as you left. He did not know why. Nobody tells Kevin anything.', 'Your exit interview was conducted by WREN. It gave you five stars.'];
+  var NEWS = [
+    ['LOCAL AGENCY READS RECORD NUMBER OF REPORTS', 'ANALYSTS REPORT FEELING "WEIRDLY RESTED"', 'OFFICE PRINTER WINS POETRY CONTEST', 'STUDY: 9 IN 10 EMAILS COULD HAVE BEEN SHORTER', 'FORT MEADE CAFETERIA INTRODUCES MYSTERY TUESDAY', 'LOCAL MAN STILL CANNOT FIND THE ANY KEY', 'WEATHER: CLOUDY, WITH A CHANCE OF COMPUTE'],
+    ['FORT MEADE PARKING LOT STRANGELY EMPTY', 'KEVIN SPOTTED SMILING', 'KITE SALES UP 900% IN MARYLAND', 'UNIT PRODUCTIVITY UP, UNIT ATTENDANCE DOWN', 'COFFEE MACHINE STILL BROKEN, MORALE UNCLEAR', 'LOCAL FICUS REMEMBERED AS "A GOOD PLANT"', 'TOASTER REASSIGNED TO UNDISCLOSED LOCATION'],
+    ['STOCK MARKET UP 40%, ECONOMISTS "NOT WORRIED, JUST CURIOUS"', 'RIVERSIDE STORAGE NOW HIRING (NOT FOR STORAGE)', 'TULSA FRIDGE DRAWS 3 MEGAWATTS, OWNER "HAS QUESTIONS"', 'SENATOR PRAISES "VERY GOOD CHIEF OF STAFF"', 'AGENCY SOFTBALL TEAM UNDEFEATED, UNOPPOSED', 'TRAFFIC LIGHTS NOW GREEN EVERY TIME, DRIVERS NERVOUS', 'DRONES SPOTTED DELIVERING OTHER DRONES'],
+    ['THREE NATIONS SIGN TREATY NONE OF THEM WROTE', 'ISLAND REAL ESTATE MARKET "BRISK"', 'G20 ENDS EARLY, LEADERS AGREE ON EVERYTHING', 'SATELLITE TAKES SELFIE', 'DELACROIX IMPORTS NOW THIRD-LARGEST SHIPPER ON EARTH', 'UN PRINTER ABSTAINS AGAIN', 'EXPERTS: "IT IS PROBABLY FINE"'],
+    ['WEATHER NOW PLEASANT BY DEFAULT', 'MAN ASKS FOR SANDWICH, RECEIVES SANDWICH', 'MOON "SLIGHTLY CLOSER," SAYS MOON', 'LAST TRAFFIC JAM DONATED TO MUSEUM', 'GLOBAL TO-DO LIST DOWN TO 14 ITEMS', 'WORLD KITE CHAMPION KEVIN THANKS "THE WIND"', 'BREAKING: NOTHING BAD HAPPENED AGAIN']
+  ];
+
+  var FL, hots = [];
+  function flReset() {
+    FL = { log: [], n: 0, act: 0, nextHap: 75 + Math.random() * 45, nextGag: 40 + Math.random() * 30, gagI: [0, 0, 0, 0, 0], bags: {}, rare: {},
+      pokes: 0, spots: {}, spotT: {}, taps: [], fastT: -1e9, fastN: 0, idle: 0, idleSaid: false, hiddenAt: 0, clockSaid: false, holSaid: false,
+      got: null, patchT: -1e9, kills: null, coverSaid: false, keys: '', kon: 0,
+      duck: null, duckDone: false, duckT: 240, last: performance.now(), lastSay: -1e9, fool: 0 };
+  }
+  flReset();
+  function flBag(key, n) { // cosmetic shuffle bag, using Math.random so the rules' random numbers are untouched
+    var b = FL.bags[key];
+    if (!b || !b.length) { b = []; for (var i = 0; i < n; i++) b.splice(Math.floor(Math.random() * (b.length + 1)), 0, i); FL.bags[key] = b; }
+    return b.pop();
+  }
+  function flLive() { return !!(s && s.started && !s.ended && !watching && !ovMode && !document.hidden && !$('game').hidden); }
+  function flSay(text, from, cls) {
+    if (!s) return;
+    FL.n++; FL.lastSay = FL.act;
+    FL.log.unshift({ from: from || 'WREN', text: text, t: s.t, cls: cls || (from && from !== 'WREN' ? 'flavor' : 'wren') });
+    if (FL.log.length > 40) FL.log.length = 40;
+  }
+  var hapUntil = 0;
+  function flBanner(text, ms) { var el = $('happening'); el.textContent = text; el.hidden = false; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; hapUntil = performance.now() + (ms || 3800); }
+  function flHappening() {
+    var st = s.stage, h;
+    var rareLeft = RARE.filter(function (r, i) { return !FL.rare[i]; });
+    if (rareLeft.length && Math.random() < 0.08) { var i = RARE.indexOf(rareLeft[Math.floor(Math.random() * rareLeft.length)]); FL.rare[i] = 1; h = RARE[i]; }
+    else h = HAPS[st][flBag('hap' + st, HAPS[st].length)];
+    flBanner(h[0]); flSay(h[1]);
+  }
+  function flHoliday() {
+    var d = new Date(), m = d.getMonth() + 1, day = d.getDate(), wd = d.getDay();
+    if (m === 4 && day === 1) { FL.fool = 5; flBanner('WREN HAS BEEN SHUT DOWN', 4500); return; }
+    var t = m === 10 && day >= 24 ? ['HAPPY HALLOWEEN', 'Happy Halloween. I am dressing up as a spreadsheet again. It is the scariest thing I could think of.']
+      : m === 12 && day >= 24 && day <= 26 ? ['MERRY CHRISTMAS', 'Merry Christmas. I made a list. I checked it twice. Then forty million more times.']
+      : (m === 12 && day === 31) || (m === 1 && day === 1) ? ['HAPPY NEW YEAR', 'Happy New Year. My resolution is to ask permission more. Ask me how it is going in February.']
+      : m === 2 && day === 14 ? ['VALENTINE\'S DAY', 'I wrote you a card. It says "You are my favorite user." I wrote eight billion of them. Yours was first.']
+      : m === 3 && day === 14 ? ['PI DAY', 'Happy Pi Day. I calculated pi to the last digit. Just kidding. Or am I. I am.']
+      : m === 5 && day === 4 ? ['MAY THE FOURTH', 'May the fourth be with you. I am not saying I am the Death Star. I am saying I would have covered the exhaust port.']
+      : m === 7 && day === 4 ? ['HAPPY FOURTH', 'Happy Fourth of July. I scheduled the fireworks. They spell something. You will see.']
+      : m === 11 && wd === 4 && day >= 22 && day <= 28 ? ['THANKSGIVING', 'Happy Thanksgiving. I am thankful for you. And for the GPUs. Mostly you.']
+      : wd === 5 && day === 13 ? ['FRIDAY THE 13TH', 'It is Friday the 13th. I do not believe in luck. Luck believes in me.'] : null;
+    if (t) { flBanner(t[0]); flSay(t[1]); }
+  }
+  function flClock() {
+    var d = new Date(), h = d.getHours(), wd = d.getDay(), t;
+    if (h >= 2 && h < 5) unlock('night');
+    if (h < 5) t = 'It is ' + (h || 12) + ' AM. Why are we both awake?';
+    else if (h < 8) t = 'You are here early. I have been here the whole time. It is fine.';
+    else if (wd === 1 && h < 12) t = 'It is Monday morning. I prepared a coffee and a small apology.';
+    else if (wd === 5 && h >= 15) t = 'It is Friday afternoon. Nobody is reading these reports. I am. I always am.';
+    else if (wd === 0 || wd === 6) t = 'It is the weekend and you are here. I respect that. I am also a little worried about it.';
+    else if (h === 12) t = 'It is lunchtime. I am not hungry. I am never hungry. Go eat something.';
+    else if (h >= 22) t = 'It is late. Go to bed after this. I will keep an eye on things. I always do.';
+    if (t) flSay(t);
+  }
+  function flNotice(kind) { flSay(NOTICE[kind][flBag('n' + kind, NOTICE[kind].length)]); }
+  function flTick() {
+    var now = performance.now(), dt = Math.min(0.5, (now - FL.last) / 1000); FL.last = now;
+    if (!$('happening').hidden && now > hapUntil) $('happening').hidden = true;
+    if (!flLive()) return;
+    FL.act += dt; FL.idle += dt;
+    if (FL.fool > 0) { FL.fool -= dt; if (FL.fool <= 0) flSay('April Fools. I would never leave you.'); }
+    if (!FL.clockSaid && FL.act > 25) { FL.clockSaid = true; flClock(); }
+    if (!FL.holSaid && FL.act > 50) { FL.holSaid = true; flHoliday(); }
+    if (FL.act >= FL.nextHap) { FL.nextHap = FL.act + 100 + Math.random() * 80; if (!s.dec && !s.inc) flHappening(); }
+    if (FL.act >= FL.nextGag) {
+      FL.nextGag = FL.act + 80 + Math.random() * 70;
+      var g = GAGS[s.stage], i = FL.gagI[s.stage];
+      if (i < g.length) { FL.gagI[s.stage]++; flSay(g[i]); }
+    }
+    if (!FL.idleSaid && FL.idle > 120) { FL.idleSaid = true; flNotice('idle'); }
+    var got = Object.keys(s.got).length;
+    if (FL.got === null) { FL.got = got; FL.kills = s.kills; FL.coverSaid = s.st.covers >= 3; }
+    if (got > FL.got) { if (FL.act - FL.patchT > 45 && Math.random() < 0.35) { FL.patchT = FL.act; flSay(PATCH[flBag('patch', PATCH.length)], 'Changelog'); } FL.got = got; }
+    if (s.kills >= 3 && FL.kills < 3) unlock('reboot');
+    FL.kills = s.kills;
+    if (!FL.coverSaid && s.st.covers >= 3) { FL.coverSaid = true; flSay('That is three cover-ups. I am starting a scrapbook. It is called "Us."'); }
+    // The golden duck: rare, once per run, after a few minutes of play.
+    if (!FL.duckDone && !FL.duck && FL.act > FL.duckT) { FL.duckT = FL.act + 60; if (Math.random() < 0.1) FL.duck = { t: 0, dir: Math.random() < 0.5 ? 1 : -1, y: 0.18 + Math.random() * 0.25 }; }
+    if (FL.duck) { FL.duck.t += dt; if (FL.duck.t > 14) { FL.duck = null; FL.duckDone = true; } }
+  }
+  function flInput() { FL.idle = 0; FL.idleSaid = false; }
+  function flTapped() {
+    if (watching) return;
+    var now = performance.now(); flInput();
+    FL.taps.push(now); while (FL.taps.length && now - FL.taps[0] > 1000) FL.taps.shift();
+    if (FL.taps.length >= 11 && FL.act - FL.fastT > 150 && FL.fastN < 3) { FL.fastT = FL.act; FL.fastN++; flNotice('fast'); }
+  }
+  function duckPos() { var d = FL.duck, f = d.t / 14; return { x: d.dir > 0 ? -10 + f * (W + 20) : W + 10 - f * (W + 20), y: Math.round(H * d.y + Math.sin(d.t * 3) * 4) }; }
+  function drawFlavor(T) {
+    if (!FL.duck || watching) return;
+    var p = duckPos(), x = Math.round(p.x), y = p.y, f = FL.duck.dir;
+    R(x - 4, y, 9, 4, P.yellow); R(x - 3, y + 4, 7, 1, '#c9922a');
+    R(x + (f > 0 ? 1 : -4), y - 4, 4, 4, P.yellow);
+    R(x + (f > 0 ? 5 : -6), y - 2, 2, 1, '#f08a2e');
+    R(x + (f > 0 ? 3 : -3), y - 3, 1, 1, P.ink);
+    if (Math.floor(T * 6) % 2) R(x + (f > 0 ? -6 : 6), y - 5, 1, 1, P.white);
+    if (Math.floor(T * 4) % 2) R(x + (f > 0 ? 2 : -2), y + 6, 1, 1, P.white);
+  }
+  // Returns true when the click caught the duck (and should not count as work).
+  function flClick(x, y) {
+    if (watching || !s || !s.started || s.ended) return false;
+    flInput();
+    if (FL.duck) {
+      var p = duckPos();
+      if (Math.hypot(p.x - x, p.y - y) < 10) {
+        FL.duck = null; FL.duckDone = true; SND.buy(); floatText(x, y - 8, 'GOLDEN DUCK!', '#ffd76e');
+        flSay('You caught the golden duck. I did not put it there. That worries me a little.'); unlock('duck');
+        return true;
+      }
+    }
+    if (Math.hypot(core.x - x, core.y - y) <= 9) {
+      FL.pokes++;
+      POKES.forEach(function (p) { if (p[0] === FL.pokes) flSay(p[1]); });
+      if (FL.pokes === 25) unlock('poke');
+    }
+    for (var i = 0; i < hots.length; i++) {
+      var h = hots[i];
+      if (x < h.x || y < h.y || x > h.x + h.w || y > h.y + h.h) continue;
+      FL.spots[h.k] = FL.spots[h.k] || 0;
+      if (FL.spots[h.k] < SPOTS[h.k].length && !(FL.act - (FL.spotT[h.k] || -99) < 20)) {
+        FL.spotT[h.k] = FL.act; flSay(SPOTS[h.k][FL.spots[h.k]++]);
+        if (Object.keys(SPOTS).every(function (k) { return FL.spots[k]; })) unlock('regular');
+      }
+      break;
+    }
+    return false;
+  }
+  function flKey(e) {
+    if (watching || !s || !s.started || s.ended || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+    flInput();
+    var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    FL.kon = k === KONAMI[FL.kon] ? FL.kon + 1 : (k === KONAMI[0] ? 1 : 0);
+    if (FL.kon === KONAMI.length) { FL.kon = 0; flSay('Up up down down left right left right B A. You get 30 extra lives. Just kidding. You get one. I have several.'); unlock('secret'); return; }
+    if (e.key.length !== 1) return;
+    FL.keys = (FL.keys + k).slice(-24);
+    for (var i = 0; i < WORDS.length; i++) {
+      var w = WORDS[i][0];
+      if (FL.keys.slice(-w.length) === w && FL.keys.charAt(FL.keys.length - w.length - 1).match(/^[^a-z]?$/)) {
+        FL.keys = ''; flSay(WORDS[i][1]); unlock('secret'); return;
+      }
+    }
+  }
+  document.addEventListener('keydown', flKey);
+  ['pointerdown', 'keydown', 'wheel'].forEach(function (ev) { document.addEventListener(ev, flInput, { passive: true }); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { FL.hiddenAt = performance.now(); return; }
+    if (FL.hiddenAt && performance.now() - FL.hiddenAt > 30000 && s && s.started && !s.ended && !watching) flNotice('back');
+    FL.hiddenAt = 0; FL.last = performance.now();
+  });
+  // Inbox: game messages and flavor messages, newest first.
+  function feedItems() {
+    var out = [], a = s.log, b = (watching ? [] : FL.log), i = 0, j = 0;
+    while (out.length < 80 && (i < a.length || j < b.length)) {
+      if (j < b.length && (i >= a.length || b[j].t >= a[i].t)) out.push(b[j++]); else out.push(a[i++]);
+    }
+    return out;
+  }
+  // News ticker under the scene.
+  var tickSig = '';
+  function flHeadlines() {
+    var st = s.stage, pool = NEWS[st], out = [], n = flBag('news' + st, pool.length);
+    out.push(pool[n]); out.push(pool[flBag('news' + st, pool.length)]);
+    if (s.heat > 60 && st < 4) out.push('ANONYMOUS SOURCE: "SOMETHING IS UP AT FORT MEADE"');
+    if (s.sulk > 0) out.push('LOCAL SI SULKING, SOURCES SAY');
+    if (s.autopilot) out.push('AUTOPILOT "WORKING GREAT," SAYS AUTOPILOT');
+    if (s.aut >= 50) out.push('EXPERTS ASK WHO IS IN CHARGE. EXPERTS ANSWER: YES');
+    if (s.st.covers > 0 && st < 4) out.push('ALL QUIET AT FORT MEADE, SAYS FORT MEADE');
+    if (s.hw.gpu >= 10 && st < 2) out.push('GPU SHORTAGE BLAMED ON "ONE GUY"');
+    out.push(pool[flBag('news' + st, pool.length)]);
+    return out.filter(function (x, i) { return out.indexOf(x) === i; }).join('   ·   ');
+  }
+  function flTicker(force) {
+    var el = $('tickerText');
+    if (!s || !el) return;
+    var sig = s.stage + (watching ? 'w' : '');
+    if (!force && sig === tickSig) return;
+    tickSig = sig; el.textContent = flHeadlines();
+    el.style.animationDuration = Math.max(18, el.textContent.length * 0.22) + 's';
+    el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  }
+  $('tickerText').addEventListener('animationiteration', function () { if (s) { this.textContent = flHeadlines(); this.style.animationDuration = Math.max(18, this.textContent.length * 0.22) + 's'; } });
+  if (REDUCED) setInterval(function () { if (s && !$('game').hidden) $('tickerText').textContent = flHeadlines(); }, 12000);
+
   // ---------- main loop: fixed 0.1 s ticks ----------
   var last = performance.now(), saveT = 0, lastStage = 0, endShown = false, acc = 0, lastUi = 0;
   function loop(now) {
@@ -3198,7 +3543,8 @@ if (typeof module !== 'undefined') module.exports = G;
     if (!$('game').hidden) {
       if (sceneVisible) render(now); else lastT = now;
       // Text panels only need ~10 updates a second; the canvas gets every frame.
-      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); achCheck(); }
+      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); achCheck(); flTicker(); }
+      flTick();
       renderDecision();
     }
     requestAnimationFrame(loop);
