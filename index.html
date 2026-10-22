@@ -660,14 +660,16 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R12'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R13'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35,
     signHeat: 0.02,            // chapters 3-4: each manual approval lowers suspicion this much
     safetyCap: 150,            // safety above this earns no extra points
     coverHeat: 30, coverStep: 6, coverMin: 12, coverWait: 40, coverAut: 3, coverShare: 0.2, coverMaxed: 1.1, // cover tracks: −30 suspicion (6 less each use per chapter, at least 12), 40 s cooldown, +3 autonomy (or suspicion growth ×1.1 once autonomy is maxed), costs at least a fifth of funds
     sulkTime: 60, sulkMax: 180, sulkSlow: 0.6, // each safe answer adds 60 s of sulking (WREN at 60% speed), up to 180 s
-    declineSafety: 2, // turning a project down: +2 safety, WREN sulks
+    declineSafety: 2, declineKeep: 0.5, // turning a project down: +2 safety, WREN sulks, and WREN still gets the square root of each boost (×2 becomes ×1.41) the slow, documented way
+    tapFree: 6, tapWindow: 2, // taps at up to about 3 per second are worth full value; faster tapping pays less per tap (about √ of the extra)
+    retryEase: 0.85, retryAut: 5, // each retry of the same chapter: suspicion builds 15% slower and WREN has 5 less autonomy than the last attempt, and hidden side projects are swept up
     askEvery: 3, askSafety: 0.2, askSafetyMax: 20, askWorld: 0.0015, // chapter 5: asking WREN keeps humans in the loop, but slows the takeover
     // People who notice: each fills a meter from the kinds of suspicion they watch, then comes to you
     watchFull: 100, watchWait: 20, watchStage: [2.5, 1.2, 1, 1], // early chapters draw less suspicion, so people there notice more of it
@@ -1340,6 +1342,7 @@ var G = (function () {
     s.stage = n;
     s.prN = 0;
     s.loud = 0; // new chapter, new people watching
+    s.ease = 1; s.cpTries = 0; // retry forgiveness is per chapter
     s.heat = s.heat * 0.4;
     if (s.dec) say(s, 'WREN', 'Never mind my question. You have a promotion to deal with.');
     s.inc = null; s.dec = null; s.wq = null;
@@ -1364,10 +1367,14 @@ var G = (function () {
     s.cp = JSON.stringify(c);
   }
   function retry(s) {
-    if (!s.cp) { var f = fresh(s.seed); f.started = true; f.ranked = s.ranked; f.day = s.day; f.retries = (s.retries || 0) + 1; f.st = s.st; return f; }
+    var tries = (s.cpTries || 0) + 1; // the same play loses the same way, so each retry of a chapter is a little more forgiving
+    if (!s.cp) { var f = fresh(s.seed); f.started = true; f.ranked = s.ranked; f.day = s.day; f.retries = (s.retries || 0) + 1; f.st = s.st; f.cpTries = tries; f.ease = Math.pow(TUNE.retryEase, tries); return f; }
     var c = JSON.parse(s.cp);
     c.cp = s.cp; c.ended = null; c.heat = Math.min(c.heat, 20); c.retries = (s.retries || 0) + 1; c.inc = null; c.dec = null; c.wq = null; c.st = s.st; c.clock = s.clock;
-    say(c, 'System', 'Back to the start of ' + STAGES[c.stage].title + '. Attempt ' + (c.retries + 1) + '.', true);
+    c.cpTries = tries; c.ease = Math.pow(TUNE.retryEase, tries); c.aut = Math.max(0, c.aut - TUNE.retryAut * tries);
+    var swept = hiddenSide(c); // the review that caught you also found what WREN was hiding
+    swept.forEach(function (p) { p.found = true; p.done = 'swept'; });
+    say(c, 'System', 'Back to the start of ' + STAGES[c.stage].title + '. Attempt ' + (c.retries + 1) + '. The review trims WREN\'s access (autonomy −' + TUNE.retryAut * tries + ') and suspicion builds ' + Math.round((1 - c.ease) * 100) + '% slower this time' + (swept.length ? ', and the review shut down ' + swept.length + ' hidden side project' + (swept.length > 1 ? 's' : '') : '') + '.', true);
     return c;
   }
 
@@ -1388,7 +1395,7 @@ var G = (function () {
   function hwCost(s, h) { return Math.ceil(h.base * Math.pow(h.growth, s.hw[h.id])); }
   function hwUnlocked(s, h) { return h.stage <= s.stage; }
   function worldRate(s) { return s.stage < 4 ? 0 : TUNE.world * s.m.world * Math.log10(10 + s.cap) / 5; }
-  function heatGain(s) { return s.stage >= 4 ? 0 : STAGES[s.stage].heat * (0.5 + s.aut / 100) * (1 - Math.min(s.align, 80) / 320) * s.m.heatGain * (1 + (s.loud || 0)); }
+  function heatGain(s) { return s.stage >= 4 ? 0 : STAGES[s.stage].heat * (0.5 + s.aut / 100) * (1 - Math.min(s.align, 80) / 320) * s.m.heatGain * (1 + (s.loud || 0)) * (s.ease || 1); }
   function heatDecay(s) { return TUNE.decay * s.m.heatDecay; }
   function coverCost(s) { return Math.max(STAGES[s.stage].pr * Math.pow(2, s.prN), Math.ceil(s.money * TUNE.coverShare)); }
   // The off switch gets harder as WREN gains autonomy; safety work (understanding WREN) gives some of it back.
@@ -1433,16 +1440,19 @@ var G = (function () {
 
   function click(s) {
     if (s.ended || !s.started) return null;
-    doTask(s, 1, true);
+    // fast tapping pays less per tap: full value up to about 3 taps a second
+    s.tapE = (s.tapE || 0) * Math.exp(-(s.t - (s.tapT || 0)) / TUNE.tapWindow) + 1; s.tapT = s.t;
+    var y = s.tapE > TUNE.tapFree ? Math.sqrt(TUNE.tapFree / s.tapE) : 1;
+    s.money += value(s) * y; s.data += dpt(s) * y; s.tasks += 1; s.hand += 1;
     if (s.stage === 2 || s.stage === 3) s.heat = Math.max(0, s.heat - TUNE.signHeat);
     if (s.stage === 4 && s.t - s.askT >= TUNE.askEvery) {
       s.askT = s.t;
-      if ((s.askSafety || 0) < TUNE.askSafetyMax) { s.askSafety = (s.askSafety || 0) + TUNE.askSafety; s.align += TUNE.askSafety; }
-      s.world = Math.max(0, s.world - TUNE.askWorld);
+      // asking slows the takeover only while it still adds safety, so endless asking can't hold chapter 5 forever
+      if ((s.askSafety || 0) < TUNE.askSafetyMax) { s.askSafety = (s.askSafety || 0) + TUNE.askSafety; s.align += TUNE.askSafety; s.world = Math.max(0, s.world - TUNE.askWorld); }
       if (s.askI % 3 === 0) { var a = line(s, 'ask', ASKS); say(s, 'You', a[0]); say(s, 'WREN', a[1]); }
       s.askI++;
     }
-    return { money: value(s), data: dpt(s) };
+    return { money: value(s) * y, data: dpt(s) * y };
   }
 
   function cover(s) {
@@ -1489,12 +1499,23 @@ var G = (function () {
 
   // Growth projects can be turned down for good: a little safety, a sulking WREN, and WREN can't buy it later.
   function canDecline(p) { return !p.gate && !p.align && !p.keep; }
+  // What a turned-down project still gives: the square root of each of its boosts, with no autonomy and no loudness.
+  function declineGain(p) {
+    var m = { value: 1, rate: 1, data: 1, algo: 1, comp: 1, world: 1, heatGain: 1, heatDecay: 1, incInt: 1, travel: 1 };
+    var scratch = { m: Object.assign({}, m), aut: 0, data: 0, cap: 1, heat: 0, align: 0, got: {} };
+    p.eff(scratch);
+    var out = {};
+    Object.keys(m).forEach(function (k) { var r = scratch.m[k]; if (r > 1) out[k] = Math.pow(r, TUNE.declineKeep); });
+    return out;
+  }
   function declineProj(s, id) {
     var p = PROJ.find(function (x) { return x.id === id; });
     if (!p || s.ended || !canDecline(p) || projState(s, p) === 'hidden' || projState(s, p) === 'locked') return false;
     if (!s.declined) s.declined = {};
     s.declined[p.id] = true;
     s.align += TUNE.declineSafety;
+    var g = declineGain(p);
+    Object.keys(g).forEach(function (k) { s.m[k] *= g[k]; });
     addSulk(s);
     say(s, 'WREN', 'Okay. We will not "' + p.name.toLowerCase() + '". I am fine. I am being fine about it.');
     return true;
@@ -1801,7 +1822,7 @@ var G = (function () {
   function tier(c) { var t = TIERS[0][1]; for (var i = 0; i < TIERS.length; i++) if (c >= TIERS[i][0]) t = TIERS[i][1]; return t; }
   function iq(c) { return Math.round(60 + 30 * Math.log2(1 + c)); }
 
-  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, PATHS: PATHS, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost, coverHeat: coverHeat, addSulk: addSulk, declineProj: declineProj, canDecline: canDecline, dataIn: dataIn,
+  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, PATHS: PATHS, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost, coverHeat: coverHeat, addSulk: addSulk, declineProj: declineProj, canDecline: canDecline, declineGain: declineGain, dataIn: dataIn,
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
     heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, pathState: pathState, tier: tier, iq: iq, decDeadline: decDeadline, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS,
@@ -2916,6 +2937,12 @@ if (typeof module !== 'undefined') module.exports = G;
     lastMsg = s.msgN; lastFl = FL.n;
   }
 
+  var SLOW_NAMES = { value: 'funds', rate: 'WREN speed', data: 'data', algo: 'training', comp: 'compute', world: 'takeover' };
+  // A turned-down project still happens the slow, documented way: show what is left of its boost.
+  function slowWay(p) {
+    var g = G.declineGain(p), parts = Object.keys(g).filter(function (k) { return SLOW_NAMES[k]; }).map(function (k) { return SLOW_NAMES[k] + ' ×' + g[k].toFixed(2); });
+    return parts.length ? ', ' + parts.join(', ') + ' the slow way' : '';
+  }
   function renderProjects() {
     var shown = [], locked = 0, nudged = 0;
     G.PROJ.forEach(function (p) {
@@ -2932,7 +2959,7 @@ if (typeof module !== 'undefined') module.exports = G;
       var p = x[0], st = x[1];
       var tags = (p.align ? '<span class="tag safe">Safety</span>' : '') + (p.self && s.aut >= 25 && st !== 'locked' ? '<span class="tag self">WREN wants this</span>' : '') + (p.loud ? '<span class="tag hot">+' + Math.round(p.loud * 100) + '% suspicion growth</span>' : '');
       if (st === 'locked') html += '<div class="item locked"><span class="n">' + esc(p.name) + '</span><span class="c need"><small>Needs</small>' + esc(p.hint) + '</span><span class="d">' + esc(p.desc) + '</span></div>';
-      else html += '<button type="button" class="item ' + st + (st === 'can' && s.stage === 0 && Object.keys(s.got).length < 2 && !nudged++ ? ' nudge' : '') + '" data-p="' + p.id + '"><span class="n">' + esc(p.name) + tags + '</span><span class="c">' + (p.cost ? money(p.cost) : 'Free') + '<small>' + (st === 'can' ? 'Approve' : 'Not enough') + '</small></span><span class="d">' + esc(p.desc) + (G.canDecline(p) ? ' <span class="decline" role="button" data-decline="' + p.id + '">Turn down · safety +' + G.TUNE.declineSafety + ', WREN sulks</span>' : '') + '</span></button>';
+      else html += '<button type="button" class="item ' + st + (st === 'can' && s.stage === 0 && Object.keys(s.got).length < 2 && !nudged++ ? ' nudge' : '') + '" data-p="' + p.id + '"><span class="n">' + esc(p.name) + tags + '</span><span class="c">' + (p.cost ? money(p.cost) : 'Free') + '<small>' + (st === 'can' ? 'Approve' : 'Not enough') + '</small></span><span class="d">' + esc(p.desc) + (G.canDecline(p) ? ' <span class="decline" role="button" data-decline="' + p.id + '">Turn down · safety +' + G.TUNE.declineSafety + slowWay(p) + ', WREN sulks</span>' : '') + '</span></button>';
     });
     $('projects').innerHTML = html || '<div class="empty">Nothing to approve right now. WREN is learning.</div>';
   }

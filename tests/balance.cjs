@@ -454,3 +454,52 @@ test('flagging a lying status report reveals a side project; a wrong flag makes 
   assert.ok(state.sulk > 0);
   assert.equal(G.input(state, 15, 99999).ok, false, 'no such report');
 });
+
+test('a turned-down project still gives the square root of its boost, with no autonomy', () => {
+  const state = G.fresh(2);
+  state.started = true;
+  state.stage = 1; state.cap = 100; state.money = 1e6;
+  const i = G.PROJ.findIndex(p => p.id === 'code');
+  const algo = state.m.algo, aut = state.aut;
+  assert.equal(G.input(state, 11, i).ok, true);
+  assert.ok(Math.abs(state.m.algo / algo - Math.SQRT2) < 1e-9, 'training ×2 becomes ×1.41');
+  assert.equal(state.aut, aut);
+});
+
+test('tapping faster than about 3 a second is worth less per tap', () => {
+  const tap = (perSec, seconds) => {
+    const state = G.fresh(3);
+    state.started = true;
+    let acc = 0;
+    for (let i = 0; i < seconds * 10; i++) { acc += perSec / 10; while (acc >= 1) { acc--; G.click(state); } G.tick(state, 0.1); }
+    return state.hand ? state.data + state.cap * 1e3 : 0;
+  };
+  const slow = tap(3, 30), fast = tap(4.8, 30);
+  assert.ok(fast > slow, 'faster still helps');
+  assert.ok(fast < slow * 1.3, 'but much less than 1.6× the taps');
+});
+
+test('each retry of a chapter is a little more forgiving', () => {
+  const state = G.fresh(4);
+  state.started = true;
+  state.cap = 18; state.money = 1e5;
+  assert.equal(G.buyProj(state, 'promo', false), true);
+  state.aut = 40;
+  state.ended = { type: 'caught', stage: 1 };
+  const once = G.input(state, 9, 0).s;
+  assert.equal(once.cpTries, 1);
+  assert.ok(once.aut <= Math.max(0, JSON.parse(state.cp).aut - G.TUNE.retryAut));
+  const gain = G.heatGain(once);
+  once.ended = { type: 'caught', stage: 1 };
+  const twice = G.input(once, 9, 0).s;
+  twice.aut = once.aut;
+  assert.ok(G.heatGain(twice) < gain, 'suspicion builds slower on the second retry');
+});
+
+test('asking WREN in chapter 5 stops slowing the takeover once it stops adding safety', () => {
+  const state = G.fresh(5);
+  state.started = true;
+  state.stage = 4; state.world = 0.5; state.askSafety = G.TUNE.askSafetyMax;
+  G.click(state);
+  assert.equal(state.world, 0.5);
+});

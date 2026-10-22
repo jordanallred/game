@@ -131,7 +131,7 @@ function choicesHtml(A, runs) {
   const label = (n) => { const r = runs.find((x) => x.sum.strategy === n); return r ? r.label : n; };
   const strats = A.stratsEx;
   if (!strats.length) return '<p class="lede">Skipped (run without <code>--explore none</code> to include it).</p>';
-  const kinds = [['decision', 'Decisions'], ['path', 'Upgrade paths'], ['coworker', 'Coworkers'], ['project', 'Turning projects down']];
+  const kinds = [['decision', 'Decisions'], ['path', 'Upgrade paths'], ['coworker', 'Coworkers'], ['side', 'Side projects'], ['project', 'Turning projects down']];
   return kinds.map(([k, title]) => {
     const rows = A.choices.filter((c) => c.kind === k);
     if (!rows.length) return '';
@@ -158,6 +158,12 @@ function peopleHtml(G, A, runs) {
   }).join('')}</tr>`).join('');
   return `<div class="frame"><table><thead><tr><th>Person</th>${strats.map((n) => `<th class="num">${esc(label(n))}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
   <p class="lede">Visits per run, and how each person ended up across all seeds.</p>`;
+}
+
+function sidesHtml(A) {
+  if (!A.sides || !A.sides.some((x) => x.looks || x.finished || x.allowed)) return '';
+  const f = (x) => x.toFixed(1);
+  return `<div class="frame"><table><thead><tr><th>Player</th><th class="num">Investigations</th><th class="num">Lies caught</th><th class="num">Wrong flags</th><th class="num">Shut down</th><th class="num">Allowed</th><th class="num">Finished unseen</th></tr></thead><tbody>${A.sides.filter((x) => x.name !== 'chaos').map((x) => `<tr><td class="who">${esc(x.label)}</td><td class="num">${f(x.looks)}</td><td class="num">${f(x.lies)}</td><td class="num">${f(Math.max(0, x.flags - x.lies))}</td><td class="num">${f(x.shut)}</td><td class="num">${f(x.allowed)}</td><td class="num">${f(x.finished)}</td></tr>`).join('')}</tbody></table></div><p class="lede">Averages per run.</p>`;
 }
 
 function tapsHtml(A) {
@@ -195,6 +201,7 @@ function renderHtml(G, A, data, S) {
 <section><h2>How each player did</h2><p class="lede">Score is the median over seeds, with the range underneath; each dot is one seed (hover for details). Caught counts runs that were caught at least once, including ones that retried and finished.</p>${playersHtml(G, A)}</section>
 <section><h2>Where the time goes</h2><p class="lede">Median minutes spent in each chapter. Runs that never reached a chapter leave it out.</p>${chaptersHtml(A)}</section>
 <section><h2>Choices, replayed both ways</h2><p class="lede">At every choice, the run was copied and each answer was played to the end by the same player. The number is the score with that answer compared with the other answers; the count is how often that answer clearly won (by more than 2%). An answer that always wins is not much of a choice; one with no effect is flavor.</p>${choicesHtml(A, data.runs)}</section>
+${sidesHtml(A) ? `<section><h2>WREN's side projects</h2>${sidesHtml(A)}</section>` : ''}
 <section><h2>People who notice</h2>${peopleHtml(G, A, data.runs)}</section>
 ${A.tapRows.length ? `<section><h2>How much tapping matters</h2><p class="lede">The Balanced player at different tap speeds (4.8 per second is about the most the ranked limits allow over ten minutes).</p>${tapsHtml(A)}</section>` : ''}
 <section><h2>What got used</h2>${coverageHtml(G, A, data.runs)}</section>

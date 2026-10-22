@@ -123,7 +123,7 @@ function analyze(G, data) {
     if (!loops.length) return;
     const ch = [...new Set(loops.map((r) => r.rec.caught[0].stage + 1))].join('/');
     add('warn', 'Pacing', loops[0].label + ': retrying the chapter did not help in ' + loops.length + ' of ' + by(n).length + ' runs',
-      'Caught in chapter ' + ch + ', then caught again on every retry until giving up. The checkpoint brings back the same autonomy and multipliers, so the same play loses the same way.',
+      'Caught in chapter ' + ch + ', then caught again on every retry until the player gave up. The same play tends to lose the same way, so check whether retries give enough room.',
       loops.map((r) => 'seed ' + r.sum.seed + ': caught at ' + r.rec.caught.map((c) => min1(c.t)).join(', ') + ' min'));
   });
   const stallMin = meta.stallMinutes || 8;
@@ -167,6 +167,18 @@ function analyze(G, data) {
   const whistles = act.reduce((a, r) => a + (r.sum.st.whistles || 0), 0), allies = act.reduce((a, r) => a + people.filter((p) => r.sum.w[p.id] && (r.sum.w[p.id].st === 'ally' || r.sum.w[p.id].st === 'blew')).length, 0);
   if (allies && whistles / allies > 0.2) add('note', 'People who notice', 'Allies blow the whistle ' + pct(whistles / allies) + ' of the time, even for careful players', 'Bringing someone in asks for +' + G.TUNE.allyNeed + ' safety within ' + G.TUNE.allyTime / 60 + ' minutes. Players who already finished their safety work (or have no safety project unlocked yet) can miss it without doing anything wrong.',
     act.filter((r) => r.sum.st.whistles).map((r) => r.label + ' seed ' + r.sum.seed + ': ' + r.sum.st.whistles));
+
+  // ---- side projects
+  const sides = strategies.map((n) => {
+    const rs = by(n), avg = (k) => mean(rs.map((r) => r.sum.st[k] || 0));
+    return { name: n, label: rs[0].label, looks: avg('looks'), lies: avg('lies'), shut: avg('shut'), allowed: avg('allowed'), finished: avg('finished'), flags: mean(rs.map((r) => (r.rec.flags || []).length)) };
+  });
+  if (G.SIDE) {
+    sides.forEach((x) => {
+      if (!ACTIVE.includes(x.name) || x.name === 'rusher') return;
+      if (x.finished >= 3) add('note', 'Side projects', x.label + ': ' + x.finished.toFixed(1) + ' side projects finish unseen per run', 'Even a player who investigates misses this many, each worth +' + G.TUNE.sideDoneAut + ' autonomy and −' + G.TUNE.sideDoneSafety + ' safety.', []);
+    });
+  }
 
   // ---- 7. choices: which answers always win, which never matter
   const choices = {};
@@ -219,7 +231,7 @@ function analyze(G, data) {
 
   const order = { bug: 0, warn: 1, note: 2 };
   findings.sort((a, b) => order[a.sev] - order[b.sev]);
-  return { findings, table, people, choices: choiceRows, coverage: { bought, decSeen, visits, endingsSeen }, tapRows: data.tapRows || [], stratsEx };
+  return { findings, table, people, sides, choices: choiceRows, coverage: { bought, decSeen, visits, endingsSeen }, tapRows: data.tapRows || [], stratsEx };
 }
 
 function labelOf(runs, n) { const r = runs.find((x) => x.sum.strategy === n); return r ? r.label : n; }
@@ -227,6 +239,7 @@ function choiceLabel(G, kind, key) {
   if (kind === 'decision') { const d = G.DEC[key]; return 'Ch.' + (d.stage + 1) + ' decision: ' + d.q.replace(/\s+/g, ' ').slice(0, 90) + (d.q.length > 90 ? '…' : ''); }
   if (kind === 'path') return 'Upgrade: ' + G.PATHS[key].name;
   if (kind === 'coworker') { const w = G.WATCHERS.find((x) => x.id === key); return 'Coworker: ' + w.name + ' (' + w.role + ')'; }
+  if (kind === 'side') return 'Side project that boosts ' + ({ rate: 'WREN speed', data: 'training data', value: 'funds', algo: 'training' }[key] || key);
   if (kind === 'project') { const p = G.PROJ.find((x) => x.id === key); return 'Ch.' + (p.stage + 1) + ' project: ' + p.name; }
   return kind + ' ' + key;
 }
@@ -234,6 +247,7 @@ function optionLabel(G, kind, key, o) {
   if (kind === 'decision') return G.DEC[key][o].l;
   if (kind === 'path') return G.PATHS[key].options[+o].name;
   if (kind === 'coworker') return ['Reassure', 'Bring in', 'Let WREN handle it'][+o];
+  if (kind === 'side') return ['Shut it down', 'Allow it'][+o];
   if (kind === 'project') return o === 'buy' ? 'Buy it' : 'Turn it down';
   return String(o);
 }
