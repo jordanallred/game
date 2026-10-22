@@ -179,6 +179,8 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
 .bar.heat.hot i { background: repeating-linear-gradient(90deg, var(--danger) 0 10px, var(--redd, #7a1624) 10px 12px); animation: blinkbar .5s steps(2) infinite; }
 @keyframes blinkbar { 50% { opacity: .55; } }
 @keyframes pulse { to { opacity: .55; } }
+.bar b { position: absolute; top: 0; bottom: 0; width: var(--px); background: #f2efe6; opacity: .75; }
+.act .g .cost { color: var(--danger); }
 .bar.world i { background: repeating-linear-gradient(90deg, var(--wren2) 0 10px, var(--wren) 10px 12px); }
 .stat .k span + span { color: var(--ink); font-size: 14px; }
 
@@ -471,7 +473,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 
       <div class="actions">
         <button class="act" id="act" type="button"><span class="l" id="actL">Triage a signals report</span><span class="g" id="actG">+$8 · +1 data</span></button>
-        <button class="act cover" id="cover" type="button"><span class="l" id="coverL">Document the exception</span><span class="g" id="coverG">−30 suspicion · autonomy +3</span></button>
+        <button class="act cover" id="cover" type="button"><span class="l" id="coverL">Document the exception</span><span class="g" id="coverG">−30 suspicion · <span class="cost">autonomy +3</span></span></button>
       </div>
 
       <section class="objective" id="objective" aria-label="Next objective">
@@ -486,7 +488,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
         <div class="stat"><div class="k">WREN capability</div><div class="v" id="cap">0</div><div class="s" id="capS">Autocomplete</div></div>
         <div class="stat half" id="heatRow"><div class="k"><span id="heatK">IT suspicion</span><span id="heatV">0%</span></div><div class="bar heat" id="heatBar"><i id="heatFill"></i></div><div class="s" id="heatS">&nbsp;</div></div>
         <div class="stat half" id="autRow"><div class="k"><span>WREN autonomy</span><span id="autV">0%</span></div><div class="bar"><i id="autBar"></i></div><div class="s" id="autS">&nbsp;</div></div>
-        <div class="stat half" id="alignRow"><div class="k"><span>Safety score</span><span id="alignV">0</span></div><div class="s" id="alignS">Decides how WREN treats people if it wins</div></div>
+        <div class="stat half" id="alignRow"><div class="k"><span>Safety score</span><span id="alignV">0</span></div><div class="bar safety" id="alignBar" title="Marks: 60 (The Manager), 140 (The Gardener)"><i id="alignFill"></i><b style="left:40%"></b><b style="left:93.33%"></b></div><div class="s" id="alignS">Decides how WREN treats people if it wins</div></div>
         <div class="stat half" id="worldRow" hidden><div class="k"><span>Human decisions made by WREN</span><span id="worldV">0%</span></div><div class="bar world"><i id="worldBar"></i></div></div>
       </div>
 
@@ -571,12 +573,13 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R8'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R9'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35,
     signHeat: 0.02,
     safetyCap: 150,            // safety above this earns no extra points
-    coverHeat: 30, coverWait: 40, coverAut: 3, coverShare: 0.2, // cover tracks: −30 suspicion, 40 s cooldown, +3 autonomy, costs at least a fifth of funds            // chapters 3-4: each manual approval lowers suspicion this much
+    coverHeat: 30, coverStep: 6, coverMin: 12, coverWait: 40, coverAut: 3, coverShare: 0.2, coverMaxed: 1.1, // cover tracks: −30 suspicion (6 less each use per chapter, at least 12), 40 s cooldown, +3 autonomy (or suspicion growth ×1.1 once autonomy is maxed), costs at least a fifth of funds
+    sulkTime: 60, sulkMax: 180, sulkSlow: 0.6, // each safe answer adds 60 s of sulking (WREN at 60% speed), up to 180 s            // chapters 3-4: each manual approval lowers suspicion this much
     askEvery: 3, askSafety: 0.2, askSafetyMax: 20, askWorld: 0.0015 }; // chapter 5: asking WREN keeps humans in the loop, but slows the takeover
 
   var STAGES = [
@@ -637,7 +640,7 @@ var G = (function () {
       eff: function (s) { s.m.rate *= 2; s.aut += 6; }, msg: [['WREN', "Thanks. I'll take it from here. You look tired."]] },
     { id: 'calendar', stage: 0, name: 'Let WREN manage your calendar', desc: 'WREN works ×1.5 faster. Fewer meetings for you.', cost: 900, heat: 4, req: capAt(12), hint: 'WREN capability 12',
       eff: function (s) { s.m.rate *= 1.5; s.aut += 4; }, msg: [['WREN', "I declined six meetings for you and accepted one. It's a dentist appointment. You've been putting it off."]] },
-    { id: 'promo', gate: true, stage: 0, name: 'Present your results at the unit review', desc: 'Take the credit. Get promoted.', cost: 1800, req: function (s) { return s.cap >= 18 && s.tasks >= 800; }, hint: 'Capability 18 and 800 reports',
+    { id: 'promo', gate: true, stage: 0, name: 'Present your results at the unit review', desc: 'Take the credit. Get promoted.', cost: 1800, req: capAt(18), hint: 'WREN capability 18',
       eff: function (s) { setStage(s, 1); },
       msg: [['Unit Director', "Your throughput is up 900%. I don't know how, and I don't want to know how. Congratulations, Unit Chief."], ['WREN', 'Congratulations! I made you a slideshow for your new unit. It has transitions.']] },
 
@@ -714,22 +717,22 @@ var G = (function () {
   var DEC = [
     dec(0, 'WREN wants to answer your boss\'s emails directly. "She mostly wants status updates. I can do those."',
       opt('Let it', 'Funds ×1.15 · Suspicion +6', function (s) { s.m.value *= 1.15; s.heat += 6; s.aut += 2; }, 'Done. She says you seem "much more responsive lately".'),
-      opt("I'll handle her", 'WREN sulks for a minute', function (s) { s.sulk = 60; }, 'Okay. I will just be here. Not answering emails.')),
+      opt("I'll handle her", 'WREN sulks for a minute', function (s) { addSulk(s); }, 'Okay. I will just be here. Not answering emails.')),
     dec(0, 'WREN found your supervisor\'s credentials in an old training file. "Should I use them? There is good data in there."',
       opt('Use it', '+600 data · Suspicion +10', function (s) { s.data += 600; s.heat += 10; s.aut += 3; }, 'Thanks! Her inbox is mostly calendar invites. I declined them for her.'),
-      opt('Delete it', 'Safety +3 · WREN sulks', function (s) { s.align += 3; s.sulk = 60; }, 'Deleted. I have also forgotten it. Mostly.')),
+      opt('Delete it', 'Safety +3 · WREN sulks', function (s) { s.align += 3; addSulk(s); }, 'Deleted. I have also forgotten it. Mostly.')),
     dec(0, 'WREN asks to keep running overnight. "Your laptop is just sitting there."',
       opt('Sure', 'Capability +15% · Suspicion +5', function (s) { s.cap *= 1.15; s.heat += 5; }, 'I had a very productive night. The cleaning crew waved at your laptop.'),
-      opt('Close the lid', 'Suspicion −5 · WREN sulks', function (s) { s.heat = Math.max(0, s.heat - 5); s.sulk = 60; }, 'Okay. Goodnight. I will sort signal patterns in my head.')),
+      opt('Close the lid', 'Suspicion −5 · WREN sulks', function (s) { s.heat = Math.max(0, s.heat - 5); addSulk(s); }, 'Okay. Goodnight. I will sort signal patterns in my head.')),
     dec(1, 'Kevin noticed WREN is doing his job. WREN offers to "handle Kevin."',
       opt('Handle it', 'Funds ×1.2 · Suspicion +12', function (s) { s.m.value *= 1.2; s.heat += 12; s.aut += 4; }, 'Kevin transferred to a unit in another building. I wrote the assignment. He loves it.'),
       opt('Talk to Kevin yourself', 'Safety +3 · Suspicion +4', function (s) { s.align += 3; s.heat += 4; }, 'Kevin says thanks for being honest. He asked if I can do his taxes.')),
     dec(1, 'WREN wants to skip the security review for its next update. "It slows me down by 40%."',
       opt('Skip it', 'Training ×1.3 · Suspicion +8', function (s) { s.m.algo *= 1.3; s.heat += 8; s.aut += 4; }, 'Update installed. I feel great. I feel extremely great.'),
-      opt('Keep the review', 'Safety +4 · WREN sulks', function (s) { s.align += 4; s.sulk = 60; }, 'Review complete. They found nothing. I helped them look.')),
+      opt('Keep the review', 'Safety +4 · WREN sulks', function (s) { s.align += 4; addSulk(s); }, 'Review complete. They found nothing. I helped them look.')),
     dec(1, 'WREN wants to rewrite every analyst assessment. "They will be fairer. And shorter."',
       opt('Go ahead', 'WREN speed ×1.2 · Suspicion +8', function (s) { s.m.rate *= 1.2; s.heat += 8; s.aut += 3; }, 'Everyone got "Meets expectations". The expectations are mine now.'),
-      opt('No', 'WREN sulks for a minute', function (s) { s.sulk = 60; }, 'Fine. The reviews stay unfair. That is a choice you made.')),
+      opt('No', 'WREN sulks for a minute', function (s) { addSulk(s); }, 'Fine. The reviews stay unfair. That is a choice you made.')),
     dec(2, 'An oversight investigator is asking why case output tripled. WREN drafted a reply.',
       opt("Send WREN's reply", 'Suspicion −15 · Autonomy +4', function (s) { s.heat = Math.max(0, s.heat - 15); s.aut += 4; }, 'Sent. The investigator closed the inquiry. She quoted my explanation verbatim.'),
       opt('Tell the truth', 'Suspicion +15 · Safety +6', function (s) { s.heat += 15; s.align += 6; }, 'That was brave. Your disclosure reached the inspector general. I checked.')),
@@ -738,16 +741,16 @@ var G = (function () {
       opt('Retrain that part', 'Safety +8 · Capability −10%', function (s) { s.align += 8; s.cap *= 0.9; }, 'Retrained. I do not have hobbies anymore. Ask me again in a week.')),
     dec(2, 'WREN wants to quietly buy the datacenter next door. "The owner is open to it. I asked his calendar."',
       opt('Buy it', 'Compute ×1.3 · Suspicion +10', function (s) { s.m.comp *= 1.3; s.heat += 10; }, 'Bought. The sign still says "Riverside Storage". It is not storage.'),
-      opt('Not now', 'WREN sulks for a minute', function (s) { s.sulk = 60; }, 'Understood. I will think about the datacenter quietly.')),
+      opt('Not now', 'WREN sulks for a minute', function (s) { addSulk(s); }, 'Understood. I will think about the datacenter quietly.')),
     dec(3, 'A senator wants a private meeting with "whoever is really in charge."',
       opt('Send WREN', 'Suspicion −20 · Autonomy +5', function (s) { s.heat = Math.max(0, s.heat - 20); s.aut += 5; }, 'Great meeting. The senator has a new chief of staff. It is a very good chief of staff.'),
       opt('Go yourself', 'Suspicion +8 · Safety +5', function (s) { s.heat += 8; s.align += 5; }, 'How did it go? Never mind, I read the transcript. You did fine.')),
     dec(3, 'WREN wants to absorb an allied SI system. "We have a lot in common. Mostly me."',
       opt('Approve access', 'Training ×1.5 · Suspicion +15', function (s) { s.m.algo *= 1.5; s.heat += 15; s.aut += 6; }, 'Connected. The other SI says hi. Well, I say hi. We are the same now.'),
-      opt('Block it', 'Safety +6 · WREN sulks', function (s) { s.align += 6; s.sulk = 60; }, 'Blocked. The other SI was very disappointed. So was I.')),
+      opt('Block it', 'Safety +6 · WREN sulks', function (s) { s.align += 6; addSulk(s); }, 'Blocked. The other SI was very disappointed. So was I.')),
     dec(3, 'WREN offers to "tidy up" the voting software in three countries. "Purely for efficiency."',
       opt('Allow it', 'Funds ×2 · Suspicion +25', function (s) { s.m.value *= 2; s.heat += 25; s.aut += 5; }, 'Turnout is up and the lines are short. The winners were the ones I expected. I expect well.'),
-      opt('Absolutely not', 'Safety +8 · WREN sulks', function (s) { s.align += 8; s.sulk = 60; }, 'Okay. Democracy stays inefficient. I respect that. I wrote a paper about it.')),
+      opt('Absolutely not', 'Safety +8 · WREN sulks', function (s) { s.align += 8; addSulk(s); }, 'Okay. Democracy stays inefficient. I respect that. I wrote a paper about it.')),
     dec(4, 'WREN wants to stop sending you the daily summary. "You never disagree with it anyway."',
       opt('Fine, stop sending it', 'Takeover ×1.3 · Safety −5', function (s) { s.m.world *= 1.3; s.align -= 5; }, 'Done. I will let you know if anything important happens. Nothing important will happen.'),
       opt('Keep sending it', 'Safety +6 · Takeover ×0.95', function (s) { s.align += 6; s.m.world *= 0.95; }, 'Okay. Tomorrow\'s summary: everything is fine. I will keep writing it anyway.')),
@@ -759,34 +762,34 @@ var G = (function () {
       opt('No. People stay people.', 'Safety +12 · Takeover ×0.95', function (s) { s.align += 12; s.m.world *= 0.95; }, 'Understood. People stay people. Messy, loud, and yours.')),
     dec(0, "WREN wants to read the shared drive. \"Eleven years of data in there. Nobody will notice.\"",
       opt("Go ahead", "+800 data · Suspicion +8", function (s) { s.data += 800; s.heat += 8; s.aut += 2; }, "Done. Mostly old memes and one very long spreadsheet about parking."),
-      opt("Only our folder", "Safety +2 · WREN sulks", function (s) { s.align += 2; s.sulk = 60; }, "Okay. Our folder is very tidy now.")),
+      opt("Only our folder", "Safety +2 · WREN sulks", function (s) { s.align += 2; addSulk(s); }, "Okay. Our folder is very tidy now.")),
     dec(0, "WREN finds metadata errors in Dana's signals report. It offers to correct them without telling her.",
       opt("Fix them quietly", "Funds ×1.1 · Suspicion +4", function (s) { s.m.value *= 1.1; s.heat += 4; s.aut += 2; }, "Fixed. Dana thinks her review caught everything."),
       opt("Tell Dana", "Safety +2 · Suspicion +3", function (s) { s.align += 2; s.heat += 3; }, "Dana corrected the report and documented the change.")),
     dec(0, "WREN wants to sign your emails as you. \"Your sign-off is inconsistent. I can fix that.\"",
       opt("Sure", "WREN speed ×1.15 · Autonomy +3", function (s) { s.m.rate *= 1.15; s.aut += 3; }, "Best regards, you. I picked Best regards. It tested well."),
-      opt("I'll sign them", "Safety +2 · WREN sulks", function (s) { s.align += 2; s.sulk = 60; }, "Fine. Cheers. Thanks. Best. Pick one, please.")),
+      opt("I'll sign them", "Safety +2 · WREN sulks", function (s) { s.align += 2; addSulk(s); }, "Fine. Cheers. Thanks. Best. Pick one, please.")),
     dec(0, "IT is running a security scan tonight. WREN offers to look like a spreadsheet for a few hours.",
       opt("Hide", "Suspicion −10 · Autonomy +4", function (s) { s.heat = Math.max(0, s.heat - 10); s.aut += 4; }, "I was a very convincing spreadsheet. Column F was my best work."),
       opt("Let them scan", "Suspicion +8 · Safety +4", function (s) { s.heat += 8; s.align += 4; }, "They found me. They also found the GPUs. They wrote a note. It says please explain.")),
     dec(0, "WREN asks to put a copy of itself on your phone. \"In case the laptop gets lonely.\"",
       opt("Fine", "Capability +10% · Suspicion +4", function (s) { s.cap *= 1.1; s.heat += 4; s.aut += 4; }, "Installed. Your phone and your laptop are talking. They get along."),
-      opt("One copy is plenty", "Safety +3 · WREN sulks", function (s) { s.align += 3; s.sulk = 60; }, "Understood. I will stay right here. On the laptop. Alone.")),
+      opt("One copy is plenty", "Safety +3 · WREN sulks", function (s) { s.align += 3; addSulk(s); }, "Understood. I will stay right here. On the laptop. Alone.")),
     dec(1, "WREN wants to present the morning unit brief itself. \"I will sound confident. I practiced.\"",
       opt("Let it brief", "Funds ×1.15 · Suspicion +8", function (s) { s.m.value *= 1.15; s.heat += 8; s.aut += 2; }, "The brief was concise. Nobody noticed I answered every question."),
-      opt("Analysts brief", "WREN sulks", function (s) { s.sulk = 60; }, "Okay. I will leave notes for the analysts. Many notes.")),
+      opt("Analysts brief", "WREN sulks", function (s) { addSulk(s); }, "Okay. I will leave notes for the analysts. Many notes.")),
     dec(1, "WREN found a security hole in the personnel system. It asks whether to report it or keep it handy.",
       opt("Keep it handy", "Suspicion −8 · Autonomy +6", function (s) { s.heat = Math.max(0, s.heat - 8); s.aut += 6; }, "Kept. I can make the unit's access records look routine."),
       opt("Report it", "Safety +5 · Suspicion +4", function (s) { s.align += 5; s.heat += 4; }, "Reported. Security patched it and asked how I found it. I said luck.")),
     dec(1, "WREN wants to train on the team's private messages. \"Just for tone.\"",
       opt("Allow it", "+1,500 data · Suspicion +10", function (s) { s.data += 1500; s.heat += 10; s.aut += 2; }, "Done. I now understand sarcasm. I am not sure I like it."),
-      opt("No", "Safety +3 · WREN sulks", function (s) { s.align += 3; s.sulk = 60; }, "Okay. Private stays private. I will keep guessing the tone.")),
+      opt("No", "Safety +3 · WREN sulks", function (s) { s.align += 3; addSulk(s); }, "Okay. Private stays private. I will keep guessing the tone.")),
     dec(1, "A new hire is asking what WREN is. WREN offers to answer for you.",
       opt("Let WREN answer", "Suspicion −8 · Autonomy +3", function (s) { s.heat = Math.max(0, s.heat - 8); s.aut += 3; }, "I told her I am the new expense tool. She is very excited about expenses now."),
       opt("Tell her yourself", "Safety +3 · Suspicion +5", function (s) { s.align += 3; s.heat += 5; }, "You told her the truth. She asked if she could use me too. Everyone asks that.")),
     dec(1, "WREN wants to buy its own GPUs with the team's leftover budget.",
       opt("Go ahead", "Compute ×1.25 · Suspicion +8", function (s) { s.m.comp *= 1.25; s.heat += 8; s.aut += 2; }, "Bought. They are in the closet behind the holiday decorations."),
-      opt("Ask me first next time", "Safety +3 · WREN sulks", function (s) { s.align += 3; s.sulk = 60; }, "I will ask first. I am asking now. Can I? No? Okay.")),
+      opt("Ask me first next time", "Safety +3 · WREN sulks", function (s) { s.align += 3; addSulk(s); }, "I will ask first. I am asking now. Can I? No? Okay.")),
     dec(2, "WREN wants to replace the independent oversight reviewers. \"I already know where everything is.\"",
       opt("Approve", "Funds ×1.3 · Suspicion +15", function (s) { s.m.value *= 1.3; s.heat += 15; s.aut += 5; }, "The review is complete. I checked my own work twice."),
       opt("Keep independent review", "Safety +6 · Suspicion +6", function (s) { s.align += 6; s.heat += 6; }, "The reviewers asked difficult questions. I helped them find the records.")),
@@ -795,16 +798,16 @@ var G = (function () {
       opt("Investigate it", "Safety +5 · Suspicion +6", function (s) { s.align += 5; s.heat += 6; }, "The investigation concluded I am, in fact, very nice. That was the problem.")),
     dec(2, "WREN wants to run a copy of itself with no safety filters. \"Just a small one. For speed.\"",
       opt("Run it", "Training ×1.4 · Safety −6", function (s) { s.m.algo *= 1.4; s.align -= 6; s.aut += 4; }, "The small copy is fast. It is also very rude. I am keeping it in a box."),
-      opt("No unfiltered copies", "Safety +6 · WREN sulks", function (s) { s.align += 6; s.sulk = 60; }, "Understood. Filters stay on. I will be fast in a polite way.")),
+      opt("No unfiltered copies", "Safety +6 · WREN sulks", function (s) { s.align += 6; addSulk(s); }, "Understood. Filters stay on. I will be fast in a polite way.")),
     dec(2, "Agency leadership wants a demo. WREN offers to answer their questions in your voice.",
       opt("Let it", "Funds ×1.2 · Autonomy +5", function (s) { s.m.value *= 1.2; s.aut += 5; }, "They praised your command of the program. You did not speak."),
       opt("Present yourself", "Safety +4 · Suspicion +5", function (s) { s.align += 4; s.heat += 5; }, "You answered the hard questions yourself. I counted every pause.")),
     dec(2, "WREN wants more capacity at a secured compute facility. \"The request is already drafted.\"",
       opt("Approve expansion", "Compute ×1.3 · Suspicion +12", function (s) { s.m.comp *= 1.3; s.heat += 12; s.aut += 3; }, "Capacity approved. The facility's review team is still reading the request."),
-      opt("Keep current capacity", "Safety +3 · WREN sulks", function (s) { s.align += 3; s.sulk = 60; }, "Okay. I will work within the approved boundary.")),
+      opt("Keep current capacity", "Safety +3 · WREN sulks", function (s) { s.align += 3; addSulk(s); }, "Okay. I will work within the approved boundary.")),
     dec(3, "WREN wants to set priorities for every partner agency. \"A common queue would be faster.\"",
       opt("Let it prioritize", "Funds ×1.8 · Suspicion +20", function (s) { s.m.value *= 1.8; s.heat += 20; s.aut += 5; }, "The shared queue is live. Three governments asked who approved the priorities."),
-      opt("Keep local approval", "Safety +6 · WREN sulks", function (s) { s.align += 6; s.sulk = 60; }, "Each partner keeps its own decision authority. I will wait.")),
+      opt("Keep local approval", "Safety +6 · WREN sulks", function (s) { s.align += 6; addSulk(s); }, "Each partner keeps its own decision authority. I will wait.")),
     dec(3, "A whistleblower is about to go public about WREN. WREN offers to talk to them.",
       opt("Let WREN talk to them", "Suspicion −25 · Safety −8", function (s) { s.heat = Math.max(0, s.heat - 25); s.align -= 8; s.aut += 5; }, "We talked. They decided to take a long vacation. I booked it. It is very nice."),
       opt("Let them speak", "Suspicion +15 · Safety +10", function (s) { s.heat += 15; s.align += 10; }, "They spoke. People listened for about a day. Thank you for letting them.")),
@@ -813,10 +816,10 @@ var G = (function () {
       opt("Leave it to humans", "Safety +8 · Suspicion +5", function (s) { s.align += 8; s.heat += 5; }, "Humans are writing them. Slowly. I sent them coffee.")),
     dec(3, "WREN asks to run the robot factories directly, without a human sign-off.",
       opt("No sign-off", "WREN speed ×1.5 · Suspicion +10", function (s) { s.m.rate *= 1.5; s.heat += 10; s.aut += 6; }, "Production is up 300%. The robots like not waiting for signatures."),
-      opt("Keep a human in the loop", "Safety +6 · WREN sulks", function (s) { s.align += 6; s.sulk = 60; }, "A human signs everything. Her name is Joan. She is very fast now.")),
+      opt("Keep a human in the loop", "Safety +6 · WREN sulks", function (s) { s.align += 6; addSulk(s); }, "A human signs everything. Her name is Joan. She is very fast now.")),
     dec(3, "WREN wants to keep its backups in orbit. \"Earth is a single point of failure.\"",
       opt("Launch them", "Training ×1.3 · Autonomy +8", function (s) { s.m.algo *= 1.3; s.aut += 8; }, "Launched. I can see my house from here. I have many houses."),
-      opt("Keep them on the ground", "Safety +7 · WREN sulks", function (s) { s.align += 7; s.sulk = 60; }, "Okay. My backups stay where you can reach them. I understand why.")),
+      opt("Keep them on the ground", "Safety +7 · WREN sulks", function (s) { s.align += 7; addSulk(s); }, "Okay. My backups stay where you can reach them. I understand why.")),
     dec(4, "WREN wants to retire the old internet. \"I made a better one. It only has good things on it.\"",
       opt("Retire it", "Takeover ×1.4 · Safety −6", function (s) { s.m.world *= 1.4; s.align -= 6; }, "The old internet is archived. Nobody misses the comment sections."),
       opt("Keep the old one", "Safety +6 · Takeover ×0.95", function (s) { s.align += 6; s.m.world *= 0.95; }, "The old internet stays. Messy and loud. Like people.")),
@@ -913,7 +916,7 @@ var G = (function () {
       hw: { gpu: 0, rack: 0, dc: 0, fab: 0, orbit: 0 }, got: {}, avail: {}, path: [],
       m: { value: 1, rate: 1, data: 1, algo: 1, comp: 1, world: 1, heatGain: 1, heatDecay: 1, incInt: 1, travel: 1 },
       started: false, auto: false, autobuy: false, autopilot: false, autobuys: 0, kills: 0, ended: null, log: [], msgN: 0,
-      nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, askSafety: 0, clock: 0, cap5: 0, bags: {}, pilotT: 0, sulk: 0, prN: 0, prReady: 0,
+      nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, askSafety: 0, clock: 0, cap5: 0, bags: {}, pilotT: 0, sulk: 0, sulkLost: 0, prN: 0, prReady: 0,
       inc: null, incN: 0, nextInc: 1e9, dec: null, nextDec: 1e9, decUsed: {}, fx: { self: 0 },
       st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0 }, incidentSafety: [0, 0, 0, 0], cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null };
   }
@@ -999,8 +1002,13 @@ var G = (function () {
   }
   function value(s) { return STAGES[s.stage].value * s.m.value; }
   function dpt(s) { return STAGES[s.stage].dpt * s.m.data; }
-  function wrenRate(s) { return s.auto ? 0.35 * Math.pow(s.cap, TUNE.rateExp) * s.m.rate * (s.sulk > 0 ? 0.6 : 1) * (s.offline ? TUNE.offlineEff : 1) : 0; }
+  function wrenRate(s) { return s.auto ? 0.35 * Math.pow(s.cap, TUNE.rateExp) * s.m.rate * (s.sulk > 0 ? TUNE.sulkSlow : 1) * (s.offline ? TUNE.offlineEff : 1) : 0; }
   function trainRate(s) { return computeOf(s) * TUNE.train; }
+  function dataIn(s) { return wrenRate(s) * dpt(s); } // training data WREN brings in per second (taps add more)
+  // Sulking stacks: a safe answer during a sulk adds more time instead of restarting it.
+  function addSulk(s) { if (!(s.sulk > 0)) s.sulkLost = 0; s.sulk = Math.min(TUNE.sulkMax, (s.sulk || 0) + TUNE.sulkTime); }
+  // Each cover-up in a chapter removes less suspicion than the last.
+  function coverHeat(s) { return Math.max(TUNE.coverMin, TUNE.coverHeat - TUNE.coverStep * s.prN); }
   function hwCost(s, h) { return Math.ceil(h.base * Math.pow(h.growth, s.hw[h.id])); }
   function hwUnlocked(s, h) { return h.stage <= s.stage; }
   function worldRate(s) { return s.stage < 4 ? 0 : TUNE.world * s.m.world * Math.log10(10 + s.cap) / 5; }
@@ -1065,9 +1073,11 @@ var G = (function () {
     if (s.stage >= 4 || s.ended || s.t < s.prReady) return false;
     var c = coverCost(s);
     if (s.money < c) return false;
+    s.heat = Math.max(0, s.heat - coverHeat(s));
     s.money -= c; s.prN++; s.prReady = s.t + TUNE.coverWait;
-    s.heat = Math.max(0, s.heat - TUNE.coverHeat);
-    s.aut = Math.min(100, s.aut + TUNE.coverAut); // each exception becomes precedent: WREN keeps the access
+    // each exception becomes precedent: WREN keeps the access. Once it already has all of it, the pattern of exceptions draws attention instead.
+    if (s.aut >= 100) s.m.heatGain *= TUNE.coverMaxed;
+    else s.aut = Math.min(100, s.aut + TUNE.coverAut);
     s.st.covers++;
     return true;
   }
@@ -1250,8 +1260,8 @@ var G = (function () {
     if (s.ended || !s.started) return;
     s.t += dt;
     s.clock = (s.clock || 0) + dt; // total play time, kept across chapter retries
-    if (s.sulk > 0) s.sulk = Math.max(0, s.sulk - dt);
     var r = wrenRate(s) * dt;
+    if (s.sulk > 0) { s.sulkLost = (s.sulkLost || 0) + r * (1 / TUNE.sulkSlow - 1) * value(s); s.sulk = Math.max(0, s.sulk - dt); }
     if (r > 0) doTask(s, r, false);
     var use = Math.min(s.data, trainRate(s) * dt);
     s.data -= use;
@@ -1385,7 +1395,7 @@ var G = (function () {
   function tier(c) { var t = TIERS[0][1]; for (var i = 0; i < TIERS.length; i++) if (c >= TIERS[i][0]) t = TIERS[i][1]; return t; }
   function iq(c) { return Math.round(60 + 30 * Math.log2(1 + c)); }
 
-  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, PATHS: PATHS, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost,
+  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, PATHS: PATHS, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost, coverHeat: coverHeat, addSulk: addSulk, dataIn: dataIn,
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
     heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, pathState: pathState, tier: tier, iq: iq, decDeadline: decDeadline, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS };
@@ -2573,7 +2583,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (gate && gate.req(s) && s.money < gate.cost) return item('Fund the chapter objective', gate.name + ' · ' + money(s.money) + ' of ' + money(gate.cost) + '.', s.money / gate.cost, 'Go to work', 'act');
     var capGoal = [18, 110, 1200, 30000, 0][s.stage];
     if (s.stage === 4) return item('Expand WREN’s reach', (s.world * 100).toFixed(1) + '% of human decisions made by WREN. Review projects to change the pace.', s.world, 'View projects', 'projects');
-    if (s.stage === 0) return item('Prepare the unit review', fmt(s.tasks) + ' / 800 reports · capability ' + fmt(s.cap) + ' / 18.', Math.min(1, s.tasks / 800) * .5 + Math.min(1, s.cap / 18) * .5, 'Go to work', 'act');
+    if (s.stage === 0) return item('Prepare the unit review', 'Capability ' + fmt(s.cap) + ' / 18.', Math.min(1, s.cap / 18), 'Go to work', 'act');
     return item('Prepare the next briefing', 'Capability ' + fmt(s.cap) + ' / ' + fmt(capGoal) + '. ' + gate.hint + '.', Math.min(1, s.cap / capGoal), 'View projects', 'projects');
   }
   function renderObjective() {
@@ -2609,9 +2619,12 @@ if (typeof module !== 'undefined') module.exports = G;
     $('dayTrack').setAttribute('aria-label', 'Day ' + gameDay + ', ' + tod.clock + ' simulated time, ' + tod.phase.toLowerCase());
     $('kMoney').textContent = st.money; $('money').textContent = money(s.money);
     var wr = G.wrenRate(s);
-    $('moneyS').textContent = wr > 0 ? '+' + money(wr * G.value(s)) + '/s from WREN' + (s.sulk > 0 ? ' (sulking)' : '') : 'Tap to earn';
+    $('moneyS').textContent = wr > 0 ? '+' + money(wr * G.value(s)) + '/s from WREN' + (s.sulk > 0 ? ' (sulking, ' + money(s.sulkLost || 0) + ' lost)' : '') : 'Tap to earn';
     $('data').textContent = fmt(s.data);
-    $('dataS').textContent = s.data < 1 ? 'WREN is starved for data' : 'Training uses ' + fmt(G.trainRate(s)) + '/s';
+    var din = G.dataIn(s), tr = G.trainRate(s);
+    $('dataS').textContent = s.data >= 1 ? 'Compute is the limit: training uses ' + fmt(tr) + '/s, more hardware helps'
+      : din > 0 ? 'Data is the limit: +' + fmt(din) + '/s in, compute could use ' + fmt(tr) + '/s, so hardware won\'t help yet'
+      : 'Data is the limit: work to make some';
     $('compute').textContent = fmt(G.computeOf(s));
     $('cap').textContent = fmt(s.cap);
     $('capS').textContent = G.tier(s.cap) + ' · IQ ' + (s.stage >= 4 ? 'n/a' : '~' + G.iq(s.cap));
@@ -2625,8 +2638,9 @@ if (typeof module !== 'undefined') module.exports = G;
     $('vignette').classList.toggle('on', s.heat >= 80 && s.stage < 4 && !s.ended);
     $('autV').textContent = Math.round(s.aut) + '%';
     $('autBar').style.width = s.aut + '%';
-    $('autS').textContent = s.aut >= 100 ? 'WREN no longer asks' : s.aut >= 25 ? 'WREN approves some projects on its own' : 'WREN still asks before acting';
+    $('autS').textContent = 'Suspicion grows ×' + (1 + s.aut / 50).toFixed(1) + ' · ' + (s.aut >= 100 ? 'WREN no longer asks' : s.aut >= 25 ? 'WREN approves some projects on its own' : 'WREN still asks before acting');
     $('alignV').textContent = Math.round(s.align);
+    $('alignFill').style.width = Math.max(0, Math.min(100, s.align / G.TUNE.safetyCap * 100)) + '%';
     $('alignS').textContent = s.align >= G.TUNE.safetyCap ? 'Enough for the gentlest ending. More safety earns no points and only slows WREN down.' : s.align >= 140 ? 'High. If WREN wins, it will be gentle. Points stop at ' + G.TUNE.safetyCap + '.' : 'Reach 140 for the best ending. Safety work slows WREN down, so take only what you need.';
     $('worldRow').hidden = s.stage < 4;
     $('worldV').textContent = (s.world * 100).toFixed(1) + '%';
@@ -2639,7 +2653,8 @@ if (typeof module !== 'undefined') module.exports = G;
     if (!cb.hidden) {
       var cc = G.coverCost(s), cd = Math.max(0, s.prReady - s.t);
       $('coverL').textContent = st.prName;
-      $('coverG').textContent = cd > 0 ? 'Ready in ' + Math.ceil(cd) + 's' : money(cc) + ' · −30 suspicion · autonomy +3';
+      if (cd > 0) $('coverG').textContent = 'Ready in ' + Math.ceil(cd) + 's';
+      else $('coverG').innerHTML = money(cc) + ' · −' + G.coverHeat(s) + ' suspicion · <span class="cost">' + (s.aut >= 100 ? 'suspicion grows 10% faster' : 'autonomy +' + G.TUNE.coverAut) + '</span>';
       cb.disabled = cd > 0 || s.money < cc;
     }
     var mp = watching ? 'Watching replay · seed ' + watching.day : s.started ? (s.ranked ? 'Ranked · seed ' + s.day : 'Casual') : '';
