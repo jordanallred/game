@@ -12,9 +12,11 @@ A browser incremental game. You're an NSA signals analyst evaluating WREN, an ex
 - **Decisions:** WREN asks permission on a timer. Unreviewed approvals leave permanent scrutiny; safe reviews expose the program, reduce capability, or slow progress. If you don't answer, it decides for itself.
 - **WREN's side projects:** WREN quietly starts work nobody approved. Pay to investigate, or catch WREN's status reports in a lie, then shut each one down or let it keep it. The ones you never find finish on their own and make WREN harder to switch off. Shutdowns earn at most 12 safety per run; allowing work leaves permanent scrutiny even at full autonomy.
 - **People who notice:** six coworkers and outsiders (Kevin, Dana from security, a compliance officer, a researcher, a partner-agency liaison and a reporter) each watch different kinds of suspicion. When one gets close, reassure them, bring them in as an ally (who expects real safety work), or let WREN "handle" them. The ending remembers who you trusted and who disappeared.
-- **Upgrade path:** four permanent two-way picks across the first four chapters. Favor speed or safety; repeating a side earns a chain bonus. Autopilot leaves these picks to you.
-- **Autopilot:** an unlockable passive mode. WREN plays for you, including while the game is closed (half speed, up to 8 hours). It's reckless and never buys safety projects, and each chapter's big moment waits until you're back.
-- **Safety is scarce:** Safety project, decision and path rewards are smaller; expanding access consumes some earned safety. Chapter-five requests earn at most 6. Taking longer always reduces your score.
+- **Upgrades:** permanent, positive improvements bought with funds. Hardware expands training capacity; the forecast explains when it helps. Chapter advancement is a separate, explicit approval.
+- **Skill tree:** twelve connected skills across Automation, Research and Control. Start with two points, earn one per chapter (six total), follow prerequisites and choose at most one capstone. Specialize or mix branches; WREN never spends your points.
+- **Focused views:** Play, Upgrades, Skill tree, Oversight and Log. One document scrollbar; badges show available actions. New timed decisions and incidents return you to Play. Training diagnostics and records stay out of the core play view.
+- **Autopilot:** an unlockable passive mode. WREN plays for you, including while the game is closed (half speed, up to 8 hours). It buys routine upgrades, but answers permissions recklessly. It never chooses skills or advances a chapter for you.
+- **Safety has a purpose:** Control skills, safeguards, decisions and genuine interventions improve safety. Delegated operations and cover-ups have explicit risks. Chapter-five requests earn at most 6. Taking longer always reduces your score; excess safety earns no extra points.
 - **Endings and score:** ten outcomes across shutdown, investigation, and WREN takeover. A late shutdown can score highly; how WREN treats humanity depends on your safety score (140+ for the best takeover ending). Every outcome shows a score.
 - **Decisions and events:** 40 decisions, 32 kinds of incidents, and 80+ lines of WREN chatter, drawn without repeats.
 - **Watch replays:** after checking a coworker's replay, watch it play out at 1× to 64×.
@@ -23,7 +25,7 @@ A browser incremental game. You're an NSA signals analyst evaluating WREN, an ex
 - **Ranked or casual:** ranked runs use a daily seed and produce a replay anyone can verify. Casual runs keep Autopilot's offline progress.
 - Progress saves in your browser (localStorage).
 - Mechanics and scripted balance checks: see [DESIGN.md](DESIGN.md).
-- Simulated playtest: `node sim/playtest.cjs` plays the game with eleven kinds of simulated player across many seeds and writes `sim/out/report.html` (what looks broken, unused, too strong or stuck). See [sim/README.md](sim/README.md).
+- Simulated playtest: `node sim/playtest.cjs` plays the game with thirteen kinds of simulated player across many seeds and writes `sim/out/report.html` (what looks broken, unused, too strong or stuck). See [sim/README.md](sim/README.md).
 
 ## Setting and source material
 
@@ -85,3 +87,7 @@ Chapters 1–2 provide three times as much data per report and proportionally le
 Training data shows incoming supply, estimated processing and buffer duration. Compute shows estimated utilization. Hardware previews show the estimated training-throughput gain over 30 seconds, including zero when data supply is the limit. Forecasts assume the current automated work rate and recent manual tapping continue; decisions, promotions and changing capability can change the result.
 
 Regression checks: `node --test tests/*.cjs`. R15 deliberately invalidates ranked replays made with older rules.
+
+### Progression and navigation (R16)
+
+Routine upgrades no longer add autonomy, consume assurance, or slow other resources. Strategic delegation belongs in the connected skill tree; live permission decisions still carry consequences. Skill prerequisites, point budgets and capstone exclusivity are enforced by the rules and ranked replay input 10. Input 11 (declining an upgrade) is retired. Existing casual runs retain their earned effects; old path choices consume points from the shared budget and previously declined improvements are not sold twice. R16 ranked replays require matching rules.

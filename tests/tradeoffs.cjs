@@ -78,12 +78,13 @@ test('allowing a side project still has a lasting cost at maximum autonomy',()=>
  const before=G.heatGain(s);assert.equal(G.input(s,14,3).ok,true);
  assert.ok(G.heatGain(s)>before);
 });
-test('expanding WREN access consumes safety assurance as well as raising scrutiny',()=>{
- const s=state();s.cap=10;const before=s.align;
- assert.equal(G.buyProj(s,'login',false),true);
- assert.ok(s.align<before,'new access invalidates some of the safeguards already earned');
- assert.match(G.PROJ.find(p=>p.id==='login').desc,/Safety −/);
+test('independent operations spends assurance and creates autonomy through a deliberate skill choice',()=>{
+ const s=state(3);s.cap=3000;const before=s.align,aut=s.aut;
+ for(const i of [0,1,2,3])assert.equal(G.input(s,10,i).ok,true);
+ assert.ok(s.align<before);assert.ok(s.aut>aut);
+ assert.match(G.SKILLS[3].desc,/safety −8/);
 });
+
 test('ranked replay reproduces independent reviews and their costs exactly',()=>{
  const day='2026-10-22', s=G.fresh(G.daySeed(day));s.started=true;s.ranked=true;s.day=day;
  const taps=[],events=[];let reviewed=0;
