@@ -52,13 +52,22 @@ function play(seed, careful, pathSide = null, opts = {}) {
       }
     }
     if (state.dec && state.t - state.dec.t0 >= 0.6) G.input(state, wantSafe ? 5 : 4, 0);
-    if (careful && state.wq && state.t - state.wq.t0 >= 0.6) G.input(state, 11, 1); // careful players bring people in; others let WREN handle them by not answering
+    // people who notice: careful players bring them in, opts.people 'reassure' pays them off when it can, otherwise WREN handles them (no answer)
+    if (state.wq && state.t - state.wq.t0 >= 0.6) {
+      if (careful) G.input(state, 12, 1);
+      else if (opts.people === 'reassure') G.input(state, 12, 0);
+    }
     if (state.heat > 58 && state.money >= G.coverCost(state)) G.input(state, 3, 0);
     if (step % 10 === 0) {
       if (pathSide !== null) {
         for (let tier = 0; tier < G.PATHS.length; tier++) {
           if (G.pathState(state, tier) === 'can') G.input(state, 10, tier * 2 + (pathSide === 'auto' ? (wantSafe ? 1 : 0) : pathSide));
         }
+      }
+      for (const id of (opts.decline || [])) {
+        const i = G.PROJ.findIndex(p => p.id === id);
+        const st = G.projState(state, G.PROJ[i]);
+        if (st === 'can' || st === 'no') G.input(state, 11, i);
       }
       for (const id of priorities) {
         const project = G.PROJ.find(p => p.id === id);
@@ -86,7 +95,7 @@ test('careful play can reach the best ending with moderate tapping and missed in
 
 test('fast play that skips safety finishes sooner with a worse ending', () => {
   for (const seed of [1, 2, 3]) {
-    const result = play(seed, false, null, { packets: true });
+    const result = play(seed, false, null, { packets: true, people: 'reassure' });
     assert.equal(result.state.ended?.type, 'takeover');
     assert.notEqual(G.endingId(result.state), 'gardener');
     assert.deepEqual(result.chapters, [0, 1, 2, 3, 4]);
@@ -161,6 +170,54 @@ test('the chapter 1 gate only needs capability', () => {
   state.started = true;
   state.cap = 18; state.tasks = 0;
   assert.equal(G.PROJ.find(p => p.id === 'promo').req(state), true);
+});
+
+test('loud projects make suspicion grow faster until the next chapter', () => {
+  const state = G.fresh(2);
+  state.started = true;
+  const team = G.PROJ.find(p => p.id === 'team');
+  state.stage = 1; state.cap = 100; state.money = 1e6;
+  const before = G.heatGain(state);
+  assert.equal(G.buyProj(state, 'team', false), true);
+  state.aut = 0; // compare loudness alone
+  assert.ok(Math.abs(G.heatGain(state) / before - (1 + team.loud)) < 1e-9);
+  state.cap = 200;
+  assert.equal(G.buyProj(state, 'demo', false), true);
+  assert.equal(state.stage, 2);
+  assert.equal(state.loud, 0);
+});
+
+test('suspicion projects slow WREN down', () => {
+  const state = G.fresh(2);
+  state.started = true;
+  state.cap = 10; state.money = 1e6;
+  G.buyProj(state, 'vpn', false);
+  assert.equal(state.m.rate, 0.9);
+});
+
+test('turning a project down gives safety, makes WREN sulk and stops WREN buying it', () => {
+  const state = G.fresh(2);
+  state.started = true;
+  state.auto = true;
+  state.stage = 1; state.cap = 100; state.money = 1e6; state.aut = 50;
+  const i = G.PROJ.findIndex(p => p.id === 'card');
+  assert.equal(G.input(state, 11, i).ok, true);
+  assert.equal(state.align, G.TUNE.declineSafety);
+  assert.ok(state.sulk > 0);
+  assert.equal(G.projState(state, G.PROJ[i]), 'hidden');
+  for (let t = 0; t < 600; t++) G.tick(state, 0.1);
+  assert.ok(!state.got.card, 'WREN cannot approve a project you turned down');
+  const core = G.PROJ.findIndex(p => p.id === 'team');
+  assert.equal(G.input(state, 11, core).ok, false, 'core projects cannot be turned down');
+  assert.equal(G.input(state, 11, G.PROJ.findIndex(p => p.id === 'demo')).ok, false, 'chapter gates cannot be turned down');
+});
+
+test('turning down optional projects is a real alternative, not a dead end', () => {
+  const quiet = ['slack', 'card', 'budget', 'acquire', 'lobby', 'robots'];
+  for (const id of quiet) {
+    const result = play(1, true, 'auto', { safeUntil: 150, decline: [id] });
+    assert.equal(G.endingId(result.state), 'gardener', 'declining ' + id + ' still reaches the best ending');
+  }
 });
 
 test('offline autopilot cannot end a run or cross a chapter gate', () => {
@@ -274,7 +331,7 @@ test('an unanswered coworker gets handled by WREN, at a cost', () => {
 test('reassuring costs more each time and makes them come back sooner', () => {
   const state = withPrompt(3);
   const cost = G.watchCost(state), money = state.money;
-  assert.equal(G.input(state, 11, 0).ok, true);
+  assert.equal(G.input(state, 12, 0).ok, true);
   assert.equal(state.money, money - cost);
   assert.equal(state.w.kevin.st, 'watch');
   assert.equal(state.w.kevin.n, 0);
@@ -284,13 +341,13 @@ test('reassuring costs more each time and makes them come back sooner', () => {
   G.tick(state, 0.1);
   for (let i = 0; i < 5; i++) G.tick(state, 0.1);
   assert.equal(state.wq.again, true);
-  assert.equal(G.input(state, 11, 0).ok, false, 'reassuring needs the funds');
+  assert.equal(G.input(state, 12, 0).ok, false, 'reassuring needs the funds');
 });
 
 test('allies help, but blow the whistle if you do not follow through', () => {
   const kept = withPrompt(4, s => { s.aut = 60; });
   const plug = (() => { kept.stage = 1; const c = G.killChance(kept); kept.stage = 0; return c; })();
-  assert.equal(G.input(kept, 11, 1).ok, true);
+  assert.equal(G.input(kept, 12, 1).ok, true);
   assert.equal(kept.w.kevin.st, 'ally');
   assert.equal(kept.align, G.TUNE.allySafety);
   kept.stage = 1;
@@ -301,7 +358,7 @@ test('allies help, but blow the whistle if you do not follow through', () => {
   assert.equal(kept.w.kevin.until, 0, 'promise kept');
 
   const broken = withPrompt(4);
-  G.input(broken, 11, 1);
+  G.input(broken, 12, 1);
   const heat = broken.heat;
   for (let i = 0; i < G.TUNE.allyTime * 10 + 10; i++) G.tick(broken, 0.1);
   assert.equal(broken.w.kevin.st, 'blew');
@@ -312,7 +369,7 @@ test('allies help, but blow the whistle if you do not follow through', () => {
 test('answering a coworker is a checked input, and autopilot lets WREN handle them', () => {
   const state = G.fresh(6);
   state.started = true;
-  assert.equal(G.input(state, 11, 1).ok, false, 'nobody is asking');
+  assert.equal(G.input(state, 12, 1).ok, false, 'nobody is asking');
   const piloted = withPrompt(6, s => { s.got.pilot = true; s.autopilot = true; });
   for (let i = 0; i < 90; i++) G.tick(piloted, 0.1);
   assert.equal(piloted.w.kevin.st, 'gone');
