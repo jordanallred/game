@@ -76,3 +76,12 @@ Replays prove that a sequence of inputs reaches the stated result under the publ
 R14 changes the rules, so R13 ranked saves and replays cannot continue in this version; the existing version-mismatch message explains this. Casual saves still load, but existing progress was earned under the old balance. Start a new run to evaluate the new tradeoffs.
 
 Run all rule and offline checks with `node --test tests/*.cjs`. The simulation understands independent reviews and explores review-versus-cover-up choices through the same checked input path as real play and ranked replays. Automated policies verify reachability and resource costs, not human enjoyment or a guarantee that every option has equal score value.
+
+
+### Training resources (R15)
+
+Chapters 1–2 provide three times as much data per report and proportionally less learning per data unit. The archive provides 1,200 data. This preserves the learning value of reports while giving early hardware a backlog to process. Later chapters retain their existing rates.
+
+Training data shows incoming supply, estimated processing and buffer duration. Compute shows estimated utilization. Hardware previews show the estimated training-throughput gain over 30 seconds, including zero when data supply is the limit. Forecasts assume the current automated work rate and recent manual tapping continue; decisions, promotions and changing capability can change the result.
+
+Regression checks: `node --test tests/*.cjs`. R15 deliberately invalidates ranked replays made with older rules.

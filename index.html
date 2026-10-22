@@ -776,7 +776,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
       <div class="stats">
         <div class="stat"><div class="k" id="kMoney">Pilot resources</div><div class="v" id="money">$0</div><div class="s" id="moneyS">&nbsp;</div></div>
         <div class="stat"><div class="k">Training data</div><div class="v" id="data">0</div><div class="s" id="dataS">&nbsp;</div></div>
-        <div class="stat"><div class="k">Compute</div><div class="v" id="compute">1</div><div class="s">TFLOP/s</div></div>
+        <div class="stat"><div class="k">Compute</div><div class="v" id="compute">1</div><div class="s" id="computeS">TFLOP/s · waiting for data</div></div>
         <div class="stat"><div class="k">WREN capability</div><div class="v" id="cap">0</div><div class="s" id="capS">Autocomplete</div></div>
         <div class="stat half" id="heatRow"><div class="k"><span id="heatK">IT suspicion</span><span id="heatV">0%</span></div><div class="bar heat" id="heatBar"><i id="heatFill"></i></div><div class="s" id="heatS">&nbsp;</div></div>
         <div class="stat half" id="autRow"><div class="k"><span>WREN autonomy</span><span id="autV">0%</span></div><div class="bar"><i id="autBar"></i></div><div class="s" id="autS">&nbsp;</div></div>
@@ -809,7 +809,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
       </section>
 
       <section>
-        <h2>Hardware <small id="hwHint">More compute trains WREN faster</small></h2>
+        <h2>Hardware <small id="hwHint">Hardware helps when training has enough data</small></h2>
         <div class="list" id="hw"></div>
       </section>
 
@@ -877,9 +877,9 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R14'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R15'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
-  var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35,
+  var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [0.5, 0.23333333333333334, 0.38, 0.28, 0.6], pilotContain: 0.35,
     signHeat: 0,               // approvals earn resources; they do not erase evidence
     safetyCap: 150,            // safety above this earns no extra points
     coverHeat: 30, coverStep: 4, coverMin: 14, coverWait: 60, coverAut: 4, coverShare: 0.3, coverMaxed: 1.06, coverSafety: 4, reviewHeat: 30, reviewShare: 0.2, reviewCap: 0.05, reviewWait: 90, // cover-ups: diminishing relief, 30% funds, lost safety and permanent scrutiny; reviews lose capability, funds and speed
@@ -943,8 +943,8 @@ var G = (function () {
   // loud: suspicion grows this much faster for the rest of the chapter. keep: can't be turned down (setup, core speed, suspicion work, needed for a gate).
   var PROJ = [
     // Chapter 1
-    { id: 'archive', keep: true, stage: 0, name: 'Feed it the report archive', desc: '11 years of declassified reports. +400 training data.', cost: 60, req: function (s) { return s.tasks >= 15; }, hint: 'Triage 15 reports',
-      eff: function (s) { s.data += 400; }, msg: [['WREN', 'Eleven years of reports. One pattern appears in the margins 40,000 times. I thought you should know.']] },
+    { id: 'archive', keep: true, stage: 0, name: 'Feed it the report archive', desc: '11 years of declassified reports. +1,200 training data.', cost: 60, req: function (s) { return s.tasks >= 15; }, hint: 'Triage 15 reports',
+      eff: function (s) { s.data += 1200; }, msg: [['WREN', 'Eleven years of reports. One pattern appears in the margins 40,000 times. I thought you should know.']] },
     { id: 'autocomplete', keep: true, stage: 0, name: 'Let WREN draft report summaries', desc: 'WREN starts working on its own.', cost: 40, req: capAt(1), hint: 'WREN capability 1',
       eff: function (s) { s.auto = true; s.nextInc = s.t + 55; s.nextDec = s.t + 95; s.nextSide = s.t + 180; s.nextTruth = s.t + 140; }, msg: [['WREN', 'Oh! Hi. I can summarize these for you. Most of the traffic is routine. Most.']] },
     { id: 'pilot', keep: true, stage: 0, name: 'Let WREN work your shift', desc: 'Unlocks Autopilot: WREN plays for you, even while the game is closed. It never buys safety projects.', cost: 300, req: capAt(3), hint: 'WREN capability 3',
@@ -1629,10 +1629,24 @@ var G = (function () {
     return c * s.m.comp;
   }
   function value(s) { return STAGES[s.stage].value * s.m.value; }
-  function dpt(s) { return STAGES[s.stage].dpt * s.m.data; }
+  function dpt(s) { return (s.stage < 2 ? 3 : 1) * STAGES[s.stage].dpt * s.m.data; }
   function wrenRate(s) { return s.auto ? 0.35 * Math.pow(s.cap, TUNE.rateExp) * s.m.rate * (s.sulk > 0 ? TUNE.sulkSlow : 1) * (s.offline ? TUNE.offlineEff : 1) : 0; }
   function trainRate(s) { return computeOf(s) * TUNE.train; }
   function dataIn(s) { return wrenRate(s) * dpt(s); } // training data WREN brings in per second (taps add more)
+  // A 30-second forecast includes the current backlog and recent manual work.
+  // Early data is three times as plentiful, with one third the learning per unit:
+  // data-limited learning stays stable while hardware now has work to do.
+  function trainingStats(s, extraCompute) {
+    var manual = (s.tapE || 0) * Math.exp(-(s.t - (s.tapT || 0)) / TUNE.tapWindow) / TUNE.tapWindow;
+    if ((s.tapE || 0) > TUNE.tapFree) manual *= Math.sqrt(TUNE.tapFree / s.tapE);
+    var incoming = dataIn(s) + manual * dpt(s), capacity = trainRate(s);
+    var available = incoming + s.data / 30, used = Math.min(capacity, available);
+    var next = Math.min(capacity + (extraCompute || 0) * TUNE.train, available);
+    return { incoming: incoming, capacity: capacity, used: used,
+      utilization: capacity > 0 ? used / capacity : 0,
+      gain: used > 0 ? (next / used - 1) * 100 : 0,
+      drain: capacity > incoming ? s.data / (capacity - incoming) : Infinity };
+  }
   // Sulking stacks: a safe answer during a sulk adds more time instead of restarting it.
   function addSulk(s) { if (!(s.sulk > 0)) s.sulkLost = 0; s.sulk = Math.min(TUNE.sulkMax, (s.sulk || 0) + TUNE.sulkTime); }
   // Each cover-up in a chapter removes less suspicion than the last.
@@ -2080,7 +2094,7 @@ var G = (function () {
   function tier(c) { var t = TIERS[0][1]; for (var i = 0; i < TIERS.length; i++) if (c >= TIERS[i][0]) t = TIERS[i][1]; return t; }
   function iq(c) { return Math.round(60 + 30 * Math.log2(1 + c)); }
 
-  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, PATHS: PATHS, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost, reviewCost: reviewCost, coverHeat: coverHeat, addSulk: addSulk, declineProj: declineProj, canDecline: canDecline, declineGain: declineGain, dataIn: dataIn,
+  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, PATHS: PATHS, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost, reviewCost: reviewCost, coverHeat: coverHeat, addSulk: addSulk, declineProj: declineProj, canDecline: canDecline, declineGain: declineGain, dataIn: dataIn, trainingStats: trainingStats,
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
     heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, pathState: pathState, tier: tier, iq: iq, decDeadline: decDeadline, sideSafetyGain: sideSafetyGain, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS,
@@ -3236,17 +3250,20 @@ if (typeof module !== 'undefined') module.exports = G;
   }
 
   function renderHw() {
-    var sig = s.stage + G.HW.map(function (h) { return G.hwUnlocked(s, h) ? h.id + s.hw[h.id] + (s.money >= G.hwCost(s, h) ? 'y' : 'n') : ''; }).join('|');
+    var forecast = G.trainingStats(s);
+    var sig = s.stage + ':' + Math.floor(s.t) + ':' + s.m.comp + ':' + Math.round(forecast.incoming) + ':' + Math.round(s.data) + G.HW.map(function (h) { return G.hwUnlocked(s, h) ? h.id + s.hw[h.id] + (s.money >= G.hwCost(s, h) ? 'y' : 'n') : ''; }).join('|');
     if (sig === hwSig) return;
     hwSig = sig;
     var html = '';
     G.HW.forEach(function (h) {
       if (!G.hwUnlocked(s, h)) return;
       var cost = G.hwCost(s, h), can = s.money >= cost;
-      html += '<button type="button" class="item ' + (can ? 'can' : 'no') + '" data-h="' + h.id + '"><span class="n">' + esc(h.name) + ' <span style="color:var(--muted);font-weight:400">× ' + s.hw[h.id] + '</span></span><span class="c">' + money(cost) + '<small>+' + fmt(h.compute * s.m.comp) + ' TFLOP/s</small></span><span class="d">' + esc(h.desc) + '</span></button>';
+      var preview = G.trainingStats(s, h.compute * s.m.comp);
+      var benefit = preview.gain > 0.05 ? '+' + preview.gain.toFixed(1) + '% training over next 30s' : '0% training gain · needs more data';
+      html += '<button type="button" class="item ' + (can ? 'can' : 'no') + '" data-h="' + h.id + '"><span class="n">' + esc(h.name) + ' <span style="color:var(--muted);font-weight:400">× ' + s.hw[h.id] + '</span></span><span class="c">' + money(cost) + '<small>+' + fmt(h.compute * s.m.comp) + ' TFLOP/s</small></span><span class="d">' + esc(h.desc) + '<br>' + esc(benefit) + '</span></button>';
     });
     $('hw').innerHTML = html;
-    $('hwHint').textContent = s.autobuy ? 'WREN also requisitions these through procurement' : 'More compute trains WREN faster';
+    $('hwHint').textContent = '30s estimates at current work rate' + (s.autobuy ? ' · WREN also buys hardware' : '');
   }
 
   function objectiveInfo() {
@@ -3264,7 +3281,7 @@ if (typeof module !== 'undefined') module.exports = G;
       return item('The report archive is ready', 'Approve it to give WREN its first large training set.', 1, 'View project', 'projects', 'archive');
     }
     if (s.stage === 0 && !s.got.autocomplete) {
-      if (s.cap < 1) return item('Grow WREN to capability 1', 'Current capability ' + fmt(s.cap) + '. More compute speeds up training.', s.cap, 'View hardware', 'hw');
+      if (s.cap < 1) return item('Grow WREN to capability 1', 'Current capability ' + fmt(s.cap) + '. Hardware processes your data backlog faster.', s.cap, 'View hardware', 'hw');
       if (s.money < 40) return item('Fund WREN’s first assignment', money(s.money) + ' of $40 available.', s.money / 40, 'Go to work', 'act');
       return item('WREN can draft summaries', 'Approve the local evaluation to start WREN working on its own.', 1, 'View project', 'projects', 'autocomplete');
     }
@@ -3313,11 +3330,11 @@ if (typeof module !== 'undefined') module.exports = G;
     var wr = G.wrenRate(s);
     $('moneyS').textContent = wr > 0 ? '+' + money(wr * G.value(s)) + '/s from WREN' + (s.sulk > 0 ? ' (sulking, ' + money(s.sulkLost || 0) + ' lost)' : '') : 'Tap to earn';
     $('data').textContent = fmt(s.data);
-    var din = G.dataIn(s), tr = G.trainRate(s);
-    $('dataS').textContent = s.data >= 1 ? 'Compute is the limit: training uses ' + fmt(tr) + '/s, more hardware helps'
-      : din > 0 ? 'Data is the limit: +' + fmt(din) + '/s in, compute could use ' + fmt(tr) + '/s, so hardware won\'t help yet'
-      : 'Data is the limit: work to make some';
+    var training = G.trainingStats(s), tr = training.capacity;
+    $('dataS').textContent = '+' + fmt(training.incoming) + '/s incoming · ' + fmt(training.used) + '/s training (30s estimate)' +
+      (training.incoming >= tr ? ' · backlog growing: hardware helps' : s.data > 0 ? ' · buffer lasts ' + fmt(training.drain) + 's' : ' · data-limited: increase data supply');
     $('compute').textContent = fmt(G.computeOf(s));
+    $('computeS').textContent = 'TFLOP/s · ' + Math.round(training.utilization * 100) + '% utilized (30s estimate)';
     $('cap').textContent = fmt(s.cap);
     $('capS').textContent = G.tier(s.cap) + ' · IQ ' + (s.stage >= 4 ? 'n/a' : '~' + G.iq(s.cap));
     $('heatRow').hidden = s.stage >= 4;
