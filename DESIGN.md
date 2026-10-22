@@ -53,7 +53,7 @@ You want WREN to get more capable (that's the job, and capability is most of you
 
 ## Balance check
 
-Scripted policies run through the real rules with a 90-minute limit. They are repeatable checks of reachability and obvious shortcuts, not a substitute for human playtesting.
+Scripted policies run through the real rules with a 90-minute limit. They are repeatable checks of reachability and obvious shortcuts, not a substitute for human playtesting. For a wider sweep (eleven player types, replayed choices, and a report of what looks broken, unused, too strong or stuck) run `node sim/playtest.cjs`; see `sim/README.md`.
 
 | Strategy (seeds 1–5) | Score range | Ending | Time |
 |---|---|---|---|

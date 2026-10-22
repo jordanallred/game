@@ -21,6 +21,7 @@ A browser incremental game. You're an NSA signals analyst evaluating WREN, an ex
 - **Ranked or casual:** ranked runs use a daily seed and produce a replay anyone can verify. Casual runs keep Autopilot's offline progress.
 - Progress saves in your browser (localStorage).
 - Mechanics and scripted balance checks: see [DESIGN.md](DESIGN.md).
+- Simulated playtest: `node sim/playtest.cjs` plays the game with eleven kinds of simulated player across many seeds and writes `sim/out/report.html` (what looks broken, unused, too strong or stuck). See [sim/README.md](sim/README.md).
 
 ## Setting and source material
 
