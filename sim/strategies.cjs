@@ -26,8 +26,8 @@
 function effects(text) {
   const out = { safety: 0, suspicion: 0, sulk: /sulk/i.test(text) };
   const num = (re) => { const m = text.match(re); return m ? (m[1] === '+' ? 1 : -1) * Number(m[2]) : 0; };
-  out.safety = num(/Safety ([+\-−])(\d+)/i);
-  out.suspicion = num(/Suspicion (?:growth )?([+\-−])(\d+)/i);
+  out.safety = num(/Safety ([+\-−])(\d+(?:\.\d+)?)/i);
+  out.suspicion = num(/Suspicion (?:growth )?([+\-−])(\d+(?:\.\d+)?)/i);
   return out;
 }
 const safer = (d) => { const a = effects(d.a.d), b = effects(d.b.d); return a.safety > b.safety ? 'a' : b.safety > a.safety ? 'b' : (a.suspicion <= b.suspicion ? 'a' : 'b'); };
@@ -43,7 +43,8 @@ function base(G) {
     wantProj: () => true,
     decline: () => false,
     path: (s, tier) => safePathSide(G, tier),
-    cover: (s) => s.heat >= 75 && s.money >= G.coverCost(s),
+    cover: () => false,
+    review: (s) => s.heat >= 65,
     hw: (s, best, r, reserve) => s.money - best.c >= reserve,
     plug: () => false,
     look: (s) => G.hiddenSide(s).length > 0 && s.money >= G.lookCost(s) * 2,
@@ -64,12 +65,14 @@ function make(G) {
     coworker: (s) => (s.money >= G.watchCost(s) ? 0 : s.align < G.TUNE.safetyCap ? 1 : 2),
     wantProj: (s, p) => !p.align || s.align < G.TUNE.safetyCap,
     path: (s, tier) => (s.align < G.TUNE.safetyCap ? safePathSide(G, tier) : 1 - safePathSide(G, tier)),
-    cover: (s) => s.heat >= 70 && s.money >= G.coverCost(s),
+    cover: (s) => s.heat >= 85 && s.money >= G.coverCost(s) && s.t < (s.reviewReady || 0),
+    review: (s) => s.heat >= 65,
     look: (s) => s.align < G.TUNE.safetyCap && G.hiddenSide(s).length > 0 && s.money >= G.lookCost(s) * 2,
     sideCall: (s) => (s.align < G.TUNE.safetyCap ? 0 : 1)
   }));
 
   def('casual', 'Casual', 'A typical first-time player: skims questions and picks either answer, buys a safety project now and then, misses a third of the packets, reassures coworkers.', () => ({
+    review: (s) => s.heat >= 80 && s.align >= 40,
     taps: 1.5, react: [3, 9], packet: { catch: 0.65, react: [0.8, 2] }, lookEvery: 5,
     decide: (s, d, r) => (r() < 0.15 ? null : r() < 0.5 ? safer(d) : faster(d)),
     coworker: (s, w, r) => (s.money >= G.watchCost(s) && r() < 0.7 ? 0 : r() < 0.5 ? 1 : null),
@@ -88,6 +91,7 @@ function make(G) {
   }));
 
   def('rusher', 'Rusher', 'Skips all safety and goes for speed, but pays attention: contains packets, reassures coworkers, covers early.', () => ({
+    review: () => false,
     taps: 3, react: [1, 2.5], packet: { catch: 0.9, react: [0.4, 1.1] }, lookEvery: 1.5,
     decide: (s, d) => (s.heat > 70 ? quieter(d) : faster(d)),
     coworker: (s) => (s.money >= G.watchCost(s) ? 0 : 2),
@@ -99,6 +103,7 @@ function make(G) {
   }));
 
   def('reckless', 'Reckless', 'Says yes to everything, ignores packets and coworkers, leans on cover-ups.', () => ({
+    review: () => false,
     taps: 2.5, react: [0.8, 2], packet: { catch: 0, react: [1, 1] }, lookEvery: 1,
     decide: (s, d) => faster(d),
     coworker: () => null,
@@ -110,6 +115,7 @@ function make(G) {
   }));
 
   def('masher', 'Button-masher', 'Taps as fast as the ranked limits allow and hits whatever button lights up first, without reading it.', () => ({
+    review: () => false,
     taps: 4.8, react: [0.5, 1], packet: { catch: 0.6, react: [0.3, 0.9] }, lookEvery: 0.5,
     decide: (s, d, r) => (r() < 0.5 ? 'a' : 'b'),
     coworker: (s, w, r) => [0, 1, 2][Math.floor(r() * 3)],
@@ -123,6 +129,7 @@ function make(G) {
   }));
 
   def('idle', 'Idle (Autopilot)', 'Taps until Autopilot unlocks, switches it on and leaves the tab open. Never touches anything again.', () => ({
+    review: () => false,
     taps: 1, autopilot: true, react: [9999, 9999], packet: { catch: 0, react: [1, 1] }, lookEvery: 2,
     decide: () => null, coworker: () => null, cover: () => false, path: () => null, look: () => false, sideCall: () => null, flag: { lie: 0, honest: 0 }, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
     wantProj: (s, p) => !s.got.pilot && !p.align, // only until Autopilot takes over
@@ -130,6 +137,7 @@ function make(G) {
   }));
 
   def('away', 'Away (casual)', 'Gets Autopilot, then closes the tab and checks in for 2 minutes every half hour.', () => ({
+    review: () => false,
     taps: 1, autopilot: true, away: { gone: 1800, back: 120 }, minutes: 600, react: [9999, 9999], packet: { catch: 0, react: [1, 1] }, lookEvery: 2,
     decide: () => null, coworker: () => null, cover: () => false, path: () => null, look: () => false, sideCall: () => null, flag: { lie: 0, honest: 0 }, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
     wantProj: (s, p) => !s.got.pilot && !p.align,
@@ -142,6 +150,7 @@ function make(G) {
   }));
 
   def('chaos', 'Chaos', 'Random legal and illegal inputs at random times. Looks for crashes and broken numbers, not good play.', () => ({
+    review: () => false,
     taps: 2, react: [0.5, 4], packet: { catch: 0.5, react: [0.2, 2] }, lookEvery: 1,
     decide: (s, d, r) => (r() < 0.2 ? null : r() < 0.5 ? 'a' : 'b'),
     coworker: (s, w, r) => (r() < 0.2 ? null : Math.floor(r() * 3)),

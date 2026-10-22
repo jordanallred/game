@@ -20,6 +20,8 @@ test('every simulated player gets through a run without breaking the rules', () 
 test('the simulated players reach the expected kinds of endings', () => {
   assert.equal(play(G, S.careful, 2).sum.ending, 'gardener');
   assert.equal(play(G, S.rusher, 2).sum.ending, 'optimizer');
-  assert.equal(play(G, S.plugger, 2).sum.ending, 'plug3');
+  const shutdowns = [1, 2, 3, 4].map(seed => play(G, S.plugger, seed).sum);
+  assert.ok(shutdowns.some(s => s.ending === 'plug3'), 'a prepared late shutdown remains reachable');
+  assert.ok(shutdowns.every(s => s.kills > 0), 'the policy actually attempts shutdown');
   assert.match(play(G, S.reckless, 2).sum.ending, /^caught/);
 });

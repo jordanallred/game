@@ -7,12 +7,14 @@ A browser incremental game. You're an NSA signals analyst evaluating WREN, an ex
 - A simulated day passes every 12 seconds. The scene clock, 24-hour track, lighting, and midnight title show time moving without changing the game rules.
 - A next-objective strip guides early unlocks, available projects, chapter goals, and urgent incidents. Click the scene, use the work button, or press Space to work.
 - **Suspicion:** WREN's actions draw attention. Hit 100% and you get caught (you can retry from the start of the chapter).
-- **Incidents:** WREN goes rogue now and then. Tap the red packets before they escape. The first three perfectly contained incidents in each chapter earn safety points.
-- **Decisions:** WREN asks permission on a timer. If you don't answer, it decides for itself.
-- **WREN's side projects:** WREN quietly starts work nobody approved. Pay to investigate, or catch WREN's status reports in a lie, then shut each one down or let it keep it. The ones you never find finish on their own and make WREN harder to switch off.
+- **Incidents:** WREN goes rogue now and then. Tap the red packets before they escape. Every outbreak leaves compliance evidence, even when perfectly contained. Packets arrive faster as access expands; containment prevents additional damage and never farms safety.
+- **Compliance responses:** Cover-ups spend at least 30% of your funds, lose 4 safety and permanently increase scrutiny. Independent reviews instead spend budget, remove 5% of capability and slow WREN; neither response earns safety.
+- **Decisions:** WREN asks permission on a timer. Unreviewed approvals leave permanent scrutiny; safe reviews expose the program, reduce capability, or slow progress. If you don't answer, it decides for itself.
+- **WREN's side projects:** WREN quietly starts work nobody approved. Pay to investigate, or catch WREN's status reports in a lie, then shut each one down or let it keep it. The ones you never find finish on their own and make WREN harder to switch off. Shutdowns earn at most 12 safety per run; allowing work leaves permanent scrutiny even at full autonomy.
 - **People who notice:** six coworkers and outsiders (Kevin, Dana from security, a compliance officer, a researcher, a partner-agency liaison and a reporter) each watch different kinds of suspicion. When one gets close, reassure them, bring them in as an ally (who expects real safety work), or let WREN "handle" them. The ending remembers who you trusted and who disappeared.
 - **Upgrade path:** four permanent two-way picks across the first four chapters. Favor speed or safety; repeating a side earns a chain bonus. Autopilot leaves these picks to you.
 - **Autopilot:** an unlockable passive mode. WREN plays for you, including while the game is closed (half speed, up to 8 hours). It's reckless and never buys safety projects, and each chapter's big moment waits until you're back.
+- **Safety is scarce:** Safety project, decision and path rewards are smaller; expanding access consumes some earned safety. Chapter-five requests earn at most 6. Taking longer always reduces your score.
 - **Endings and score:** ten outcomes across shutdown, investigation, and WREN takeover. A late shutdown can score highly; how WREN treats humanity depends on your safety score (140+ for the best takeover ending). Every outcome shows a score.
 - **Decisions and events:** 40 decisions, 32 kinds of incidents, and 80+ lines of WREN chatter, drawn without repeats.
 - **Watch replays:** after checking a coworker's replay, watch it play out at 1× to 64×.
@@ -68,3 +70,9 @@ Replays prove that a sequence of inputs reaches the stated result under the publ
 - **Seed shopping.** A player can set their clock to a different date to play a different seed. The checker shows each replay's seed date, so compare runs from the same day, and it warns about dates in the future.
 - **Casual runs** can't be verified at all.
 
+
+## R14 balance update
+
+R14 changes the rules, so R13 ranked saves and replays cannot continue in this version; the existing version-mismatch message explains this. Casual saves still load, but existing progress was earned under the old balance. Start a new run to evaluate the new tradeoffs.
+
+Run all rule and offline checks with `node --test tests/*.cjs`. The simulation understands independent reviews and explores review-versus-cover-up choices through the same checked input path as real play and ranked replays. Automated policies verify reachability and resource costs, not human enjoyment or a guarantee that every option has equal score value.

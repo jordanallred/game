@@ -144,7 +144,7 @@ function botStep(run) {
 
   // Status reports: check each one against the screen (a lie hides a side project)
   for (const m of s.log) {
-    if (!m.chk || m.id <= (bot.lastMsg || 0)) continue;
+    if (s.stage >= 4 || !m.chk || m.flagged || t - m.t > G.TUNE.lieWait || m.id <= (bot.lastMsg || 0)) continue;
     const lie = !!(s.lie && s.lie.msg === m.id);
     bot.flags = bot.flags || {};
     bot.flags[m.id] = { go: r() < (lie ? P.flag.lie : P.flag.honest), at: t + Math.max(1, between(bot, P.react)) };
@@ -154,7 +154,15 @@ function botStep(run) {
     const f = bot.flags[id];
     if (t < f.at) continue;
     delete bot.flags[id];
-    if (f.go && act(run, 15, +id, P.chaos ? null : 'flag status report') && run.rec) run.rec.flags.push({ t: +s.clock.toFixed(1), lie: !!s.lie });
+    const report = s.log.find(m => m.id === +id);
+    const available = s.stage < 4 && report && report.chk && !report.flagged && t - report.t <= G.TUNE.lieWait;
+    if (f.go && available && act(run, 15, +id, P.chaos ? null : 'flag status report') && run.rec) run.rec.flags.push({ t: +s.clock.toFixed(1), lie: !!s.lie });
+  }
+
+  if (s.stage < 4 && s.auto && s.cap > 0 && s.heat > 0 && P.review && P.review(s) && s.money >= G.reviewCost(s) && t >= (s.reviewReady || 0)) {
+    const canCover = t >= (s.prReady || 0) && s.money >= G.coverCost(s);
+    const response = canCover ? choicePoint(run, 'response', s.stage, ['review', 'cover'], 'review') : 'review';
+    act(run, response === 'cover' ? 3 : 16, 0, response === 'cover' ? 'cover tracks' : 'independent review');
   }
 
   // Shop
