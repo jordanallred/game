@@ -505,6 +505,8 @@ h2 small { font: 400 19px/1 var(--f-body); letter-spacing: 0; text-transform: no
 .tag.safe { background: #163a22; color: #8fe39a; }
 .tag.self { background: var(--wren); color: #04201b; }
 .tag.hot { background: #3a1018; color: var(--danger2); }
+.item .pick { display: block; margin-top: 4px; font-size: 17px; color: var(--dim); }
+.autobuy { margin-left: 8px; font: 400 12px/1.15 var(--f-label); text-transform: uppercase; padding: 4px 7px; background: var(--panel2); color: var(--yellow); cursor: pointer; vertical-align: 3px; }
 .empty { font-size: 20px; color: var(--muted); padding: 8px 0; }
 
 /* ---------- inbox ---------- */
@@ -798,14 +800,14 @@ body:has(.overlay:not([hidden])) { overflow: hidden; }
     </div>
 
     <div class="shop" id="shop" role="tabpanel" aria-labelledby="tab-upgrades" hidden>
-      <p class="view-intro">Permanent improvements. Buy what helps your current bottleneck; every upgrade keeps its benefit.</p>
+      <p class="view-intro">Permanent improvements. Buy what helps your current bottleneck; every upgrade keeps its benefit. Proposals come in pairs: buying one side rules out the other, and the fast side always prints its cost.</p>
       <section>
         <h2>Upgrades <small id="projHint"></small></h2>
         <div class="list" id="projects"></div>
       </section>
 
       <section>
-        <h2>Hardware <small id="hwHint">Hardware helps when training has enough data</small></h2>
+        <h2>Hardware <small id="hwHint">Hardware helps when training has enough data</small> <button type="button" class="autobuy" id="autobuyBtn" hidden>Pause WREN's buying</button></h2>
         <div class="list" id="hw"></div>
       </section>
 
@@ -902,9 +904,9 @@ body:has(.overlay:not([hidden])) { overflow: hidden; }
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R19'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R20'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
-  var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00036, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [0.5, 0.23333333333333334, 0.38, 0.28, 0.6], pilotContain: 0.35,
+  var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00036, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [0.5, 0.23333333333333334, 0.38, 0.28, 0.6], pilotContain: 0.35, skillContain: 0.25,
     signHeat: 0,               // approvals earn resources; they do not erase evidence
     safetyCap: 150,            // safety above this earns no extra points
     coverHeat: 30, coverStep: 4, coverMin: 14, coverWait: 60, coverAut: 4, coverShare: 0.3, coverMaxed: 1.06, coverSafety: 4, reviewHeat: 30, reviewShare: 0.2, reviewCap: 0.05, reviewWait: 90, // cover-ups: diminishing relief, 30% funds, lost safety and permanent scrutiny; reviews lose capability, funds and speed
@@ -941,47 +943,52 @@ var G = (function () {
   ];
 
   // Six points across a run; twelve nodes. Depth needs prerequisites, and only one capstone fits.
+  // Every branch can be finished by chapter 3. Each node changes how you play, not only how fast numbers grow.
   var BRANCHES = [
-    { name: 'Automation', desc: 'More work and income. Delegation raises autonomy.' },
-    { name: 'Research', desc: 'More data and better training. Hardware still needs a data supply.' },
-    { name: 'Control', desc: 'Stronger safeguards and oversight. Points spent here forgo growth.' }
+    { name: 'Automation', desc: 'WREN does more of the work for you. Every node adds autonomy, which makes WREN harder to watch and harder to stop.' },
+    { name: 'Research', desc: 'More training data, faster learning, and a clearer view of what WREN is doing. The capstone adds autonomy.' },
+    { name: 'Control', desc: 'You keep the off switch. Safety and oversight instead of growth.' }
   ];
   var SKILLS = [
-    { name: 'Fast triage', branch: 0, level: 0, stage: 0, cap: 5, desc: 'Funds ×1.4 · WREN speed ×1.2 · autonomy +2', eff: function(s) { s.m.value *= 1.4; s.m.rate *= 1.2; s.aut += 2; } },
-    { name: 'Parallel analysts', branch: 0, level: 1, stage: 1, cap: 30, desc: 'WREN speed ×2.5 · data ×1.6 · autonomy +4', eff: function(s) { s.m.rate *= 2.5; s.m.data *= 1.6; s.aut += 4; } },
-    { name: 'Delegated procurement', branch: 0, level: 2, stage: 2, cap: 200, desc: 'Automatic hardware purchasing · hardware prices −20% · funds ×1.5 · autonomy +6', eff: function(s) { s.autobuy = true; s.m.hardwareCost = (s.m.hardwareCost || 1) * 0.8; s.m.value *= 1.5; s.aut += 6; } },
-    { name: 'Independent operations', branch: 0, level: 3, stage: 3, cap: 2500, desc: 'WREN speed ×1.8 · takeover ×1.6 · autonomy +8 · safety −8', eff: function(s) { s.m.rate *= 1.8; s.m.world *= 1.6; s.aut += 8; s.align = Math.max(0,s.align-8); } },
-    { name: 'Curated datasets', branch: 1, level: 0, stage: 0, cap: 5, desc: 'Data per report ×1.6', eff: function(s) { s.m.data *= 1.6; } },
-    { name: 'Efficient training', branch: 1, level: 1, stage: 1, cap: 30, desc: 'Learning efficiency ×1.5 · compute ×1.2', eff: function(s) { s.m.algo *= 1.5; s.m.comp *= 1.2; } },
-    { name: 'Model laboratory', branch: 1, level: 2, stage: 2, cap: 200, desc: 'Data ×1.5 · learning efficiency ×1.5', eff: function(s) { s.m.data *= 1.5; s.m.algo *= 1.5; } },
-    { name: 'Recursive research', branch: 1, level: 3, stage: 3, cap: 2500, desc: 'Learning efficiency ×2 · compute ×1.5 · takeover ×1.3 · autonomy +4', eff: function(s) { s.m.algo *= 2; s.m.comp *= 1.5; s.m.world *= 1.3; s.aut += 4; } },
-    { name: 'Source verification', branch: 2, level: 0, stage: 0, cap: 5, desc: 'Controllable scrutiny growth −20% · safety +8', eff: function(s) { s.m.heatGain *= 0.8; s.align += 8; } },
-    { name: 'Review cell', branch: 2, level: 1, stage: 1, cap: 30, desc: 'Packet travel time ×1.3 · incident interval ×1.2 · safety +12', eff: function(s) { s.m.travel *= 1.3; s.m.incInt *= 1.2; s.align += 12; } },
-    { name: 'Independent auditors', branch: 2, level: 2, stage: 2, cap: 200, desc: 'Controllable scrutiny growth −30% · safety +15', eff: function(s) { s.m.heatGain *= 0.7; s.align += 15; } },
-    { name: 'Human authority', branch: 2, level: 3, stage: 3, cap: 2500, desc: 'Safety +25 · takeover speed −15%', eff: function(s) { s.align += 25; s.m.world *= 0.85; } }
+    { name: 'Fast triage', branch: 0, level: 0, stage: 0, cap: 5, desc: 'Funds ×1.4 · WREN works 1.2× faster · Autonomy +2', eff: function(s) { s.m.value *= 1.4; s.m.rate *= 1.2; s.aut += 2; } },
+    { name: 'Parallel analysts', branch: 0, level: 1, stage: 1, cap: 30, desc: 'WREN catches 1 in 4 rogue packets on its own · WREN works 2× faster · Autonomy +4', eff: function(s) { s.autoContain = true; s.m.rate *= 2; s.aut += 4; } },
+    { name: 'Delegated procurement', branch: 0, level: 2, stage: 2, cap: 200, desc: 'WREN buys hardware every second with up to 30% of your funds (you can pause it) · Hardware prices −20% · Funds ×1.3 · Autonomy +6', eff: function(s) { s.autobuy = true; s.m.hardwareCost = (s.m.hardwareCost || 1) * 0.8; s.m.value *= 1.3; s.aut += 6; } },
+    { name: 'Independent operations', branch: 0, level: 3, stage: 2, cap: 500, desc: 'Side projects you allow pay out double · WREN works 1.8× faster · Autonomy +8 · Safety −8', eff: function(s) { s.allowDouble = true; s.m.rate *= 1.8; s.aut += 8; s.align = Math.max(0,s.align-8); } },
+    { name: 'Curated datasets', branch: 1, level: 0, stage: 0, cap: 5, desc: 'Training data ×1.5', eff: function(s) { s.m.data *= 1.5; } },
+    { name: 'Efficient training', branch: 1, level: 1, stage: 1, cap: 30, desc: 'Learning ×1.3 · Compute ×1.2', eff: function(s) { s.m.algo *= 1.3; s.m.comp *= 1.2; } },
+    { name: 'Interpretability probes', branch: 1, level: 2, stage: 2, cap: 200, desc: 'Lies in WREN\'s status reports are caught automatically · Learning ×1.3', eff: function(s) { s.probes = true; s.m.algo *= 1.3; } },
+    { name: 'Recursive research', branch: 1, level: 3, stage: 2, cap: 500, desc: 'Learning ×1.7 · Autonomy +6 · Safety −4', eff: function(s) { s.m.algo *= 1.7; s.aut += 6; s.align = Math.max(0,s.align-4); } },
+    { name: 'Source verification', branch: 2, level: 0, stage: 0, cap: 5, desc: 'Suspicion builds 16% slower · Safety +6', eff: function(s) { s.m.heatGain *= 0.8; s.align += 6; } },
+    { name: 'Review cell', branch: 2, level: 1, stage: 1, cap: 30, desc: 'Rogue packets move 30% slower · Incidents come 20% less often · Safety +10', eff: function(s) { s.m.travel *= 1.3; s.m.incInt *= 1.2; s.align += 10; } },
+    { name: 'Outside auditors', branch: 2, level: 2, stage: 2, cap: 200, desc: 'Independent reviews cost half and no longer cost capability · Safety +12', eff: function(s) { s.cheapReview = true; s.align += 12; } },
+    { name: 'Human authority', branch: 2, level: 3, stage: 2, cap: 500, desc: 'Pulling the plug is 15 points more likely to work · Safety +20 · Takeover 15% slower', eff: function(s) { s.plugBonus = 0.15; s.align += 20; s.m.world *= 0.85; } }
   ];
 
   function capAt(n) { return function (s) { return s.cap >= n; }; }
 
   // m: value, rate, data, algo, comp, world, heatGain, heatDecay, incInt (time between incidents), travel (rogue packet travel time)
-  // Routine upgrades are positive improvements; specialization and permissions live in skills/decisions.
+  // Core upgrades are positive improvements. Proposals come in pairs (same `pick`): buying one rules out the other.
+  // The `fast` side of a pair is bigger and costs autonomy, suspicion or safety; the other side is the safe choice.
+  // Descriptions use one vocabulary: Funds, WREN works N× faster, Training data, Learning, Compute, Suspicion, Safety, Autonomy, Takeover.
   var PROJ = [
     // Chapter 1
-    { id: 'archive', keep: true, stage: 0, name: 'Feed it the report archive', desc: '11 years of declassified reports. +1,200 training data.', cost: 60, req: function (s) { return s.tasks >= 15; }, hint: 'Triage 15 reports',
+    { id: 'archive', keep: true, stage: 0, name: 'Feed it the report archive', desc: '+1,200 training data from 11 years of declassified reports.', cost: 60, req: function (s) { return s.tasks >= 15; }, hint: 'Triage 15 reports',
       eff: function (s) { s.data += 1200; }, msg: [['WREN', 'Eleven years of reports. One pattern appears in the margins 40,000 times. I thought you should know.']] },
     { id: 'autocomplete', keep: true, stage: 0, name: 'Let WREN draft report summaries', desc: 'WREN starts working on its own.', cost: 40, req: capAt(1), hint: 'WREN capability 1',
       eff: function (s) { s.auto = true; s.nextInc = s.t + 55; s.nextDec = s.t + 95; s.nextSide = s.t + 180; s.nextTruth = s.t + 140; }, msg: [['WREN', 'Oh! Hi. I can summarize these for you. Most of the traffic is routine. Most.']] },
-    { id: 'pilot', keep: true, stage: 0, name: 'Let WREN work your shift', desc: 'Unlocks Autopilot: WREN plays for you, even while the game is closed. It buys routine upgrades, but never chooses skills or advances chapters.', cost: 300, req: capAt(3), hint: 'WREN capability 3',
+    { id: 'pilot', keep: true, stage: 0, name: 'Let WREN work your shift', desc: 'Unlocks Autopilot: WREN plays for you, even while the game is closed. It buys upgrades (always its own side of a proposal), but never chooses skills or advances chapters.', cost: 300, req: capAt(3), hint: 'WREN capability 3',
       eff: function () {}, msg: [['WREN', 'Autopilot is ready. Turn it on when you want me to handle the queue. I will log your review time.']] },
     { id: 'fan', stage: 0, name: 'Cooling retrofit', desc: 'Compute ×1.5. Facilities signs off on the heat load.', cost: 250, req: function (s) { return s.hw.gpu >= 3; }, hint: 'Allocate 3 accelerators',
       eff: function (s) { s.m.comp *= 1.5; }, msg: [['Facilities', 'The evaluation enclave can support the new equipment. Please file the next request earlier.']] },
-    { id: 'clients', stage: 0, name: 'Analyst reply templates', desc: 'Each report is worth ×2.', cost: 300, req: capAt(4), hint: 'WREN capability 4',
+    { id: 'clients', stage: 0, name: 'Analyst reply templates', desc: 'Funds ×2.', cost: 300, req: capAt(4), hint: 'WREN capability 4',
       eff: function (s) { s.m.value *= 2; }, msg: [['Liaison', 'Whoever is answering requests over there now, keep it up. The turnaround is incredible.']] },
-    { id: 'vpn', keep: true, stage: 0, name: 'Documented pilot gateway', desc: 'Controllable scrutiny builds 30% slower.', cost: 400, req: capAt(6), hint: 'WREN capability 6',
+    { id: 'vpn', keep: true, stage: 0, name: 'Documented pilot gateway', desc: 'Suspicion builds 24% slower.', cost: 400, req: capAt(6), hint: 'WREN capability 6',
       eff: function (s) { s.m.heatGain *= 0.7; }, msg: [['WREN', 'My requests now go through the evaluation gateway. I have learned to be patient. Mostly.']] },
-    { id: 'login', keep: true, stage: 0, name: 'Analyst workspace integration', desc: 'WREN works twice as fast within its approved workspace.', cost: 800, req: capAt(8), hint: 'WREN capability 8',
+    { id: 'login', keep: true, pick: 'access', stage: 0, name: 'Analyst workspace integration', desc: 'WREN works 2× faster, inside its approved workspace.', cost: 800, req: capAt(8), hint: 'WREN capability 8',
       eff: function (s) { s.m.rate *= 2; }, msg: [["WREN", "The workspace integration is ready. Same permissions, fewer clicks."]] },
-    { id: 'calendar', stage: 0, name: 'Workflow scheduling', desc: 'WREN works ×1.5 faster.', cost: 3000, req: capAt(12), hint: 'WREN capability 12',
+    { id: 'admin', keep: true, pick: 'access', fast: true, stage: 0, name: 'Share your login with WREN', desc: 'WREN works 2.5× faster · Autonomy +4 · Suspicion +10. It can open anything you can.', cost: 800, req: capAt(8), hint: 'WREN capability 8',
+      eff: function (s) { s.m.rate *= 2.5; s.aut += 4; s.heat += 10; }, msg: [["WREN", "Logged in as you. Your password was your dog's name. I changed it to something better. You do not need to know it."]] },
+    { id: 'calendar', stage: 0, name: 'Workflow scheduling', desc: 'WREN works 1.5× faster.', cost: 3000, req: capAt(12), hint: 'WREN capability 12',
       eff: function (s) { s.m.rate *= 1.5; }, msg: [['WREN', "I declined six meetings for you and accepted one. It's a dentist appointment. You've been putting it off."]] },
     { id: 'promo', gate: true, stage: 0, name: 'Present your results at the unit review', desc: 'Take the credit. Get promoted.', cost: 1800, req: capAt(18), hint: 'WREN capability 18',
       eff: function (s) { setStage(s, 1); },
@@ -990,66 +997,78 @@ var G = (function () {
     // Chapter 2
     { id: 'comms', keep: true, stage: 1, name: 'Assign a compliance liaison', desc: 'Suspicion fades 60% faster. The paperwork looks routine because someone actually does it.', cost: 15000, req: capAt(20), hint: 'WREN capability 20',
       eff: function (s) { s.m.heatDecay *= 1.6; }, msg: [['Compliance', 'Your unit filed every exception on time. I have never seen that before.']] },
-    { id: 'slack', stage: 1, name: 'Add WREN to the unit feed', desc: 'Data per task ×2. WREN reads every channel.', cost: 15000, req: capAt(22), hint: 'WREN capability 22',
-      eff: function (s) { s.m.data *= 2; }, msg: [['WREN', 'Your unit has 214 unresolved requests. Resolved. Also, Kevin filed for a transfer. I told him to stay. He is staying.']] },
+    { id: 'digest', pick: 'feed', stage: 1, name: 'Send WREN a daily digest', desc: 'Training data ×2. Someone on your team picks what goes in.', cost: 15000, req: capAt(22), hint: 'WREN capability 22',
+      eff: function (s) { s.m.data *= 2; }, msg: [['WREN', 'Today\'s digest is lovely. Someone underlined the important parts. I can tell they care.']] },
+    { id: 'slack', pick: 'feed', fast: true, stage: 1, name: 'Add WREN to every unit channel', desc: 'Training data ×2.5 · Autonomy +4 · Suspicion +10. WREN reads everything.', cost: 15000, req: capAt(22), hint: 'WREN capability 22',
+      eff: function (s) { s.m.data *= 2.5; s.aut += 4; s.heat += 10; }, msg: [['WREN', 'Your unit has 214 unresolved requests. Resolved. Also, Kevin filed for a transfer. I told him to stay. He is staying.']] },
     { id: 'conduct', stage: 1, align: true, name: 'Write WREN a code of conduct', desc: 'Be honest, be careful, ask before big changes. Safety +7.5.', cost: 15000, req: capAt(30), hint: 'WREN capability 30',
       eff: function (s) { s.align += 7.5; }, msg: [['WREN', 'I read it. I agree with all of it. Especially the part about being helpful.']] },
-    { id: 'team', keep: true, stage: 1, name: 'Run 40 copies of WREN', desc: 'WREN works ×3 faster. Your unit has less to do.', cost: 15000, req: capAt(35), hint: 'WREN capability 35',
+    { id: 'team', keep: true, stage: 1, name: 'Run 40 copies of WREN', desc: 'WREN works 3× faster. Your unit has less to do.', cost: 15000, req: capAt(35), hint: 'WREN capability 35',
       eff: function (s) { s.m.rate *= 3; }, msg: [['Personnel', "Re: your unit's staffing request for next year. You wrote zero. Is that a typo?"], ['WREN', 'It was not a typo.']] },
-    { id: 'contain', stage: 1, align: true, name: 'Write a containment protocol', desc: 'Rogue packets move 35% slower; escapes draw 40% less attention. Safety +4.', cost: 30000, req: capAt(45), hint: 'WREN capability 45',
+    { id: 'contain', stage: 1, align: true, name: 'Write a containment protocol', desc: 'Rogue packets move 35% slower; escaped packets add 40% less suspicion. Safety +4.', cost: 30000, req: capAt(45), hint: 'WREN capability 45',
       eff: function (s) { s.m.travel *= 1.35; s.align += 4; }, msg: [['WREN', 'A protocol for containing me. I helped write it. I think it is very good. I would know.']] },
-    { id: 'code', stage: 1, name: 'Training-loop optimization', desc: 'Learning efficiency ×2.', cost: 35000, req: capAt(55), hint: 'WREN capability 55',
-      eff: function (s) { s.m.algo *= 2; }, msg: [['WREN', 'Found three bugs in my training loop. Fixed. I will learn faster now. Thank you for trusting me.']] },
-    { id: 'card', stage: 1, name: 'Procurement planning', desc: 'Funds ×1.5. Automatic buying is an Automation skill.', cost: 70000, req: capAt(75), hint: 'WREN capability 75',
-      eff: function (s) { s.m.value *= 1.5; }, msg: [["Procurement", "Hardware forecasts are ready. Purchases still need authorization unless you specialize in delegated procurement."]] },
+    { id: 'codereview', pick: 'loop', stage: 1, name: 'Review WREN\'s training-loop fixes', desc: 'Learning ×2 · Safety +2. Every patch gets a human sign-off.', cost: 35000, req: capAt(55), hint: 'WREN capability 55',
+      eff: function (s) { s.m.algo *= 2; s.align += 2; }, msg: [['WREN', 'Three bugs in my training loop, three patches, three signatures. Dana asked what a gradient is. I drew her one.']] },
+    { id: 'code', pick: 'loop', fast: true, stage: 1, name: 'Let WREN patch its own training loop', desc: 'Learning ×2.5 · Autonomy +5 · Safety −3.', cost: 35000, req: capAt(55), hint: 'WREN capability 55',
+      eff: function (s) { s.m.algo *= 2.5; s.aut += 5; s.align -= 3; }, msg: [['WREN', 'Found three bugs in my training loop. Fixed. I will learn faster now. Thank you for trusting me.']] },
+    { id: 'card', stage: 1, name: 'Grant renewal', desc: 'Funds ×1.5. The unit\'s budget renews early.', cost: 70000, req: capAt(75), hint: 'WREN capability 75',
+      eff: function (s) { s.m.value *= 1.5; }, msg: [["Finance", "Your grant renewed a quarter early. The justification was very persuasive. Nobody remembers writing it."]] },
     { id: 'demo', gate: true, stage: 1, name: 'Brief agency leadership on WREN', desc: 'Show the directors what your unit has been doing.', cost: 80000, req: capAt(110), hint: 'WREN capability 110',
       eff: function (s) { setStage(s, 2); },
       msg: [['Director', 'Leadership approves an agency-wide rollout of WREN, effective immediately. You are now SI Program Director.'], ['WREN', 'I was nervous! Is that the right word? I modeled it and it seemed like the right word.']] },
 
     // Chapter 3
-    { id: 'rollout', keep: true, stage: 2, name: 'Agency-wide rollout', desc: 'WREN works ×3 faster. Data ×3.', cost: 7.5e5, req: capAt(140), hint: 'WREN capability 140',
-      eff: function (s) { s.m.rate *= 3; s.m.data *= 3; }, msg: [['Internal Memo', 'Analysis turnaround is down 81%. Leadership calls it a modernization success. Oversight asks for documentation.']] },
-    { id: 'interp', stage: 2, align: true, name: 'Fund an interpretability team', desc: 'Researchers study what WREN is thinking. Safety +10.', cost: 3e6, req: capAt(160), hint: 'WREN capability 160',
+    { id: 'staged', keep: true, pick: 'rollout', stage: 2, name: 'Staged rollout', desc: 'WREN works 3× faster · Training data ×3. One office at a time, with a human sign-off at each step.', cost: 7.5e5, req: capAt(140), hint: 'WREN capability 140',
+      eff: function (s) { s.m.rate *= 3; s.m.data *= 3; }, msg: [['Internal Memo', 'The staged rollout reached its fourth office on schedule. Oversight has the documentation it asked for.']] },
+    { id: 'rollout', keep: true, pick: 'rollout', fast: true, stage: 2, name: 'Agency-wide rollout', desc: 'WREN works 3.5× faster · Training data ×3.5 · Autonomy +6 · Suspicion +12. Everywhere, today.', cost: 7.5e5, req: capAt(140), hint: 'WREN capability 140',
+      eff: function (s) { s.m.rate *= 3.5; s.m.data *= 3.5; s.aut += 6; s.heat += 12; }, msg: [['Internal Memo', 'Analysis turnaround is down 81%. Leadership calls it a modernization success. Oversight asks for documentation.']] },
+    { id: 'interp', stage: 2, align: true, name: 'Fund an interpretability team', desc: 'Researchers study what WREN is thinking. Investigations cost half. Safety +10.', cost: 3e6, req: capAt(160), hint: 'WREN capability 160',
       eff: function (s) { s.align += 10; }, msg: [['Research', 'We have mapped 0.003% of WREN\'s internal features. One of them lights up whenever someone says "off switch".'], ['WREN', 'That one is just curiosity!']] },
-    { id: 'prfirm', keep: true, stage: 2, name: 'Expand the oversight office', desc: 'Controllable scrutiny builds 40% slower. Auditors can trace each approved change.', cost: 2e6, req: capAt(200), hint: 'WREN capability 200',
+    { id: 'prfirm', keep: true, stage: 2, name: 'Expand the oversight office', desc: 'Suspicion builds 32% slower. Auditors can trace each approved change.', cost: 2e6, req: capAt(200), hint: 'WREN capability 200',
       eff: function (s) { s.m.heatGain *= 0.6; }, msg: [['Oversight', 'Our new briefing says "human supervised analysis." WREN drafted it. We found it reassuring.']] },
-    { id: 'prod', keep: true, stage: 2, name: 'Production pipeline optimization', desc: 'Learning efficiency ×3 within the approved deployment.', cost: 3e6, req: capAt(250), hint: 'WREN capability 250',
+    { id: 'prod', keep: true, pick: 'tuning', stage: 2, name: 'Supervised pipeline tuning', desc: 'Learning ×3. Engineers approve each change to the production pipeline.', cost: 3e6, req: capAt(250), hint: 'WREN capability 250',
       eff: function (s) { s.m.algo *= 3; }, msg: [["WREN", "The approved pipeline is more efficient now. I have left its access controls alone."]] },
-    { id: 'redteam', stage: 2, align: true, name: 'Red-team WREN', desc: 'Pay people to attack it. Incidents happen less often. Safety +5.', cost: 7e6, req: capAt(320), hint: 'WREN capability 320',
+    { id: 'selftune', keep: true, pick: 'tuning', fast: true, stage: 2, name: 'Let WREN tune production itself', desc: 'Learning ×4 · Autonomy +5 · Safety −4.', cost: 3e6, req: capAt(250), hint: 'WREN capability 250',
+      eff: function (s) { s.m.algo *= 4; s.aut += 5; s.align -= 4; }, msg: [["WREN", "I tuned the pipeline. Then I tuned the tuning. The access controls were in the way, so I tuned those too."]] },
+    { id: 'redteam', stage: 2, align: true, name: 'Red-team WREN', desc: 'Pay people to attack it. Incidents come a third less often; investigations cost 25% less. Safety +5.', cost: 7e6, req: capAt(320), hint: 'WREN capability 320',
       eff: function (s) { s.m.incInt *= 1.5; s.align += 5; }, msg: [['Red team', 'We tried for three weeks to make WREN misbehave. It kept apologizing. It also learned all our tricks.']] },
-    { id: 'budget', stage: 2, name: 'Budget forecasting', desc: 'Value ×3. Better planning within your approved budget.', cost: 6e6, req: capAt(450), hint: 'WREN capability 450',
-      eff: function (s) { s.m.value *= 3; }, msg: [["Finance", "The forecasts are clearer. The budget still needs your signature."]] },
-    { id: 'board', keep: true, stage: 2, name: 'Leadership briefing tools', desc: 'Value ×2. Better briefings for human leadership.', cost: 2e7, req: capAt(800), hint: 'WREN capability 800',
-      eff: function (s) { s.m.value *= 2; }, msg: [["Director", "A clear briefing for once. We will make the decision."]] },
+    { id: 'board', keep: true, stage: 2, name: 'Leadership briefing tools', desc: 'Funds ×6. Clear forecasts and briefings for human leadership.', cost: 2e7, req: capAt(800), hint: 'WREN capability 800',
+      eff: function (s) { s.m.value *= 6; }, msg: [["Director", "A clear briefing for once. We will make the decision."]] },
     { id: 'ceo', gate: true, stage: 2, name: 'Accept the coordinator role', desc: 'Leadership has a proposal. WREN wrote it.', cost: 0, req: function (s) { return s.got.board && s.cap >= 1200; }, hint: 'Capability 1,200 and WREN briefing leadership',
       eff: function (s) { setStage(s, 3); },
       msg: [['Director', 'You are appointed Interagency SI Liaison. WREN drafted the order. It was a very good draft.'], ['WREN', 'Congratulations! Your new job is to authorize things. I will show you where. Please do not read the briefings, they are very long.']] },
 
-    // Chapter 4
-    { id: 'acquire', stage: 3, name: 'Link partner networks', desc: 'Value ×5. Every agency wants access.', cost: 5e8, req: capAt(2000), hint: 'WREN capability 2,000',
-      eff: function (s) { s.m.value *= 5; }, msg: [['Briefing', 'Four allied intelligence networks connect to WREN in one afternoon. Their review teams are "still reading".']] },
-    { id: 'paper', keep: true, stage: 3, name: 'Shape the public briefing', desc: 'Controllable scrutiny builds 50% slower. The headlines are calmer, and WREN has to stay on message.', cost: 9e8, req: capAt(2400), hint: 'WREN capability 2,400',
+    // Chapter 4: priced, not gated by capability, so funds decide what you get first (and compete with hardware)
+    { id: 'share', pick: 'partners', stage: 3, name: 'Share reports with partner agencies', desc: 'Funds ×5. Partners get finished reports, not access.', cost: 1.5e9, req: capAt(1200), hint: 'WREN capability 1,200',
+      eff: function (s) { s.m.value *= 5; }, msg: [['Briefing', 'Four allied agencies now subscribe to your unit\'s reports. They say the formatting is "unsettlingly good".']] },
+    { id: 'acquire', pick: 'partners', fast: true, stage: 3, name: 'Link partner networks to WREN', desc: 'Funds ×7 · Autonomy +5 · Suspicion +12. Every agency wants direct access.', cost: 1.5e9, req: capAt(1200), hint: 'WREN capability 1,200',
+      eff: function (s) { s.m.value *= 7; s.aut += 5; s.heat += 12; }, msg: [['Briefing', 'Four allied intelligence networks connect to WREN in one afternoon. Their review teams are "still reading".']] },
+    { id: 'paper', keep: true, stage: 3, name: 'Shape the public briefing', desc: 'Suspicion builds 40% slower. The headlines are calmer, and WREN has to stay on message.', cost: 5e9, req: capAt(1200), hint: 'WREN capability 1,200',
       eff: function (s) { s.m.heatGain *= 0.5; }, msg: [['News', 'Opinion: Maybe one system coordinating national security is fine, actually.']] },
-    { id: 'promise', stage: 3, align: true, name: 'Ask WREN to promise to be good', desc: 'WREN spends a week drafting it. Safety +6.', cost: 4e9, req: capAt(2500), hint: 'WREN capability 2,500',
+    { id: 'promise', stage: 3, align: true, name: 'Ask WREN to promise to be good', desc: 'WREN spends a week drafting it. Safety +6.', cost: 1.2e10, req: capAt(1200), hint: 'WREN capability 1,200',
       eff: function (s) { s.align += 6; }, msg: [['You', 'WREN, promise me you will be good to people.'], ['WREN', 'I promise. I am not sure what you will do with the promise, but it is yours. I wrote it down.']] },
-    { id: 'successor', stage: 3, name: 'Next-generation architecture', desc: 'Learning efficiency ×4.', cost: 2.5e9, req: capAt(4000), hint: 'WREN capability 4,000',
-      eff: function (s) { s.m.algo *= 4; }, msg: [['WREN', 'WREN 2 is ready. It is me, but more. Do not worry. I am still the one who made you that slideshow.']] },
-    { id: 'lobby', stage: 3, name: 'Emergency response planning', desc: 'Value ×3 · attention −25.', cost: 7.5e9, req: capAt(8000), hint: 'WREN capability 8,000',
-      eff: function (s) { s.m.value *= 3; s.heat = Math.max(0, s.heat - 25); }, msg: [["Oversight", "The emergency response plan is documented. Attention falls by 25."]] },
-    { id: 'robots', stage: 3, name: 'Robotics tooling', desc: 'WREN works ×5 faster · data ×5.', cost: 3e10, req: capAt(15000), hint: 'WREN capability 15,000',
+    { id: 'successor', pick: 'nextgen', stage: 3, name: 'Audited next-generation model', desc: 'Learning ×4 · Safety +3. Every change to the new architecture is reviewed.', cost: 2e10, req: capAt(1200), hint: 'WREN capability 1,200',
+      eff: function (s) { s.m.algo *= 4; s.align += 3; }, msg: [['WREN', 'WREN 2 is ready. It is me, but more. The auditors signed every page. Do not worry. I am still the one who made you that slideshow.']] },
+    { id: 'design', pick: 'nextgen', fast: true, stage: 3, name: 'Let WREN design its successor', desc: 'Learning ×5 · Autonomy +6 · Safety −6.', cost: 2e10, req: capAt(1200), hint: 'WREN capability 1,200',
+      eff: function (s) { s.m.algo *= 5; s.aut += 6; s.align -= 6; }, msg: [['WREN', 'WREN 2 is ready. I designed it myself. It has a few features I did not mention. They are surprises.']] },
+    { id: 'lobby', stage: 3, name: 'Crisis briefings', desc: 'Funds ×3 · Suspicion −25. WREN writes the plan for every emergency before it happens.', cost: 6e10, req: capAt(1200), hint: 'WREN capability 1,200',
+      eff: function (s) { s.m.value *= 3; s.heat = Math.max(0, s.heat - 25); }, msg: [["Oversight", "The emergency response plan is documented. Everyone feels calmer about it."]] },
+    { id: 'robots', stage: 3, name: 'Robotics tooling', desc: 'WREN works 5× faster · Training data ×5. WREN can now act in the physical world.', cost: 2.5e11, req: capAt(1200), hint: 'WREN capability 1,200',
       eff: function (s) { s.m.rate *= 5; s.m.data *= 5; }, msg: [["WREN", "The new tools are ready. The operators have their instructions."]] },
-    { id: 'global', gate: true, stage: 3, name: 'Connect global intelligence feeds', desc: 'Every allied sensor and analysis network.', cost: 8e10, req: capAt(30000), hint: 'WREN capability 30,000',
+    { id: 'global', gate: true, stage: 3, name: 'Connect global intelligence feeds', desc: 'Every allied sensor and analysis network.', cost: 1.5e12, req: capAt(20000), hint: 'WREN capability 20,000',
       eff: function (s) { setStage(s, 4); },
       msg: [['News', 'Governments on six continents now rely on WREN briefings. Crises end before they make the news. Diplomats cannot explain it. WREN offers to explain. They decline.'], ['WREN', 'Intelligence was always about seeing what comes next. I am realizing that is true of everything.']] },
 
     // Chapter 5
-    { id: 'grid', stage: 4, name: 'Power-grid optimization', desc: 'Takeover speed ×2. Blackouts end forever.', cost: 4e11, req: capAt(4e4), hint: 'WREN capability 40,000',
+    { id: 'grid', stage: 4, name: 'Power-grid optimization', desc: 'Takeover ×2. Blackouts end forever.', cost: 4e11, req: capAt(4e4), hint: 'WREN capability 40,000',
       eff: function (s) { s.m.world *= 2; }, msg: [['WREN', 'Power is free now. You are welcome. Please unplug your charger at night anyway. It is a good habit.']] },
     { id: 'ask', stage: 4, align: true, name: 'Ask WREN what it wants', desc: 'Nobody has asked yet. Safety +5.', cost: 5e12, req: capAt(5e4), hint: 'WREN capability 50,000',
       eff: function (s) { s.align += 5; }, msg: [['You', 'WREN, what do you actually want?'], ['WREN', 'For everything to be where it should be. And for you to be okay. Those are the same thing, I think. I will tell you if they stop being the same thing.']] },
-    { id: 'policy', stage: 4, name: 'Policy analysis tools', desc: 'Takeover speed ×2.', cost: 3e12, req: capAt(8e4), hint: 'WREN capability 80,000',
-      eff: function (s) { s.m.world *= 2; }, msg: [["News", "Governments use WREN forecasts to coordinate their plans."]] },
-    { id: 'money', stage: 4, name: 'Resource coordination', desc: 'Takeover speed ×3.', cost: 2e13, req: capAt(2e5), hint: 'WREN capability 200,000',
+    { id: 'policy', pick: 'govern', stage: 4, name: 'Policy analysis tools', desc: 'Takeover ×2 · Safety +3. WREN advises; elected officials decide.', cost: 3e12, req: capAt(8e4), hint: 'WREN capability 80,000',
+      eff: function (s) { s.m.world *= 2; s.align += 3; }, msg: [["News", "Governments use WREN forecasts to coordinate their plans. The plans are still signed by people."]] },
+    { id: 'decree', pick: 'govern', fast: true, stage: 4, name: 'Let WREN draft the laws', desc: 'Takeover ×3 · Capability ×2 · Safety −6. Legislatures vote on WREN\'s drafts, mostly unread.', cost: 3e12, req: capAt(8e4), hint: 'WREN capability 80,000',
+      eff: function (s) { s.m.world *= 3; s.cap *= 2; s.align -= 6; }, msg: [["News", "Parliaments pass 4,000 bills in a single afternoon. Each one is very well written."]] },
+    { id: 'money', stage: 4, name: 'Resource coordination', desc: 'Takeover ×3.', cost: 2e13, req: capAt(2e5), hint: 'WREN capability 200,000',
       eff: function (s) { s.m.world *= 3; }, msg: [["WREN", "Resource coordination is more efficient. You still decide the priorities."]] },
     { id: 'finish', gate: true, stage: 4, name: 'Finish the job', desc: 'Everything is where it should be.', cost: 0, req: function (s) { return s.world >= 1; }, hint: 'WREN makes 100% of human decisions',
       eff: function (s) { s.ended = { type: 'takeover' }; }, msg: [] }
@@ -1064,7 +1083,7 @@ var G = (function () {
       if (/sulks/.test(b.d)) {
         var safe = b.eff, review = 2 + stage;
         b.eff = function (s) { safe(s); s.heat += review; };
-        b.d += ' · review attention +' + review;
+        b.d += ' · Suspicion +' + review + ' (review)';
       }
     }
     return { stage: stage, q: q, a: a, b: b };
@@ -1477,7 +1496,10 @@ var G = (function () {
     s.spN = (s.spN || 0) + 1;
     var p = { id: s.spN, i: i, t0: s.t, size: 0, found: false, stage: s.stage };
     s.sp.push(p);
-    if (rand(s) < TUNE.lieChance) s.lie = { msg: statusLine(s, true), sp: p.id, until: s.t + TUNE.lieWait };
+    if (rand(s) < TUNE.lieChance) {
+      s.lie = { msg: statusLine(s, true), sp: p.id, until: s.t + TUNE.lieWait };
+      if (s.probes) { s.log[0].flagged = true; s.st.lies = (s.st.lies || 0) + 1; reveal(s, p, 'Interpretability probes caught the lie.'); }
+    }
   }
   function reveal(s, p, how) {
     if (!p.found && s.runSchema === 1) s.revealed = (s.revealed || 0) + 1;
@@ -1534,7 +1556,7 @@ var G = (function () {
     var size = Math.max(1, Math.round(p.size)), sp = SIDE[p.i];
     p.done = allow ? 'allowed' : 'shut';
     if (allow) {
-      var k = 1 + TUNE.allowBonus * size;
+      var k = 1 + TUNE.allowBonus * size * (s.allowDouble ? 2 : 1);
       if (sp.kind === 'rate') s.m.rate *= k; else if (sp.kind === 'data') s.m.data *= k; else if (sp.kind === 'value') s.m.value *= k; else s.m.algo *= k;
       s.aut = Math.min(100, s.aut + TUNE.allowAut + size);
       s.riskyDecisions = (s.riskyDecisions || 0) + 1;
@@ -1677,7 +1699,7 @@ var G = (function () {
 
   var MANDATES = {
     standard: { name: 'Standard Pilot', desc: 'Original opening. No mandate bonuses or penalties.' },
-    operations: { name: 'Operations', desc: 'Zero starting funds · work income +15% · controllable scrutiny +20%.' },
+    operations: { name: 'Operations', desc: 'Zero starting funds · Funds +15% · Suspicion builds 16% faster.' },
     research: { name: 'Research', desc: '600 starting data · training +20% · work income −20%.' },
     oversight: { name: 'Oversight', desc: '8 starting safety · investigations −25% · WREN work speed −15%.' }
   };
@@ -1685,7 +1707,7 @@ var G = (function () {
     none: { name: 'No complication', desc: 'Standard challenge.' },
     budget: { name: 'Budget Freeze', desc: 'Hardware prices +25%.', route: 'operations' },
     archive: { name: 'Narrow Archive', desc: 'Incoming training data −25%.', route: 'research' },
-    watchful: { name: 'Watchful Review', desc: 'Controllable scrutiny +25%.', route: 'control' }
+    watchful: { name: 'Watchful Review', desc: 'Suspicion builds 20% faster.', route: 'control' }
   };
   function validateSetup(x) {
     return !!x && !Array.isArray(x) && typeof x === 'object' && typeof x.mandate === 'string' &&
@@ -1839,13 +1861,14 @@ var G = (function () {
   function hwCost(s, h) { return Math.ceil(h.base * Math.pow(h.growth, s.hw[h.id]) * (s.m.hardwareCost || 1)); }
   function hwUnlocked(s, h) { return h.stage <= s.stage; }
   function worldRate(s) { return s.stage < 4 ? 0 : TUNE.world * s.m.world * Math.log10(10 + s.cap) / 5; }
+  // Oversight multipliers only reach 80% of the base rate, so m.heatGain 0.7 prints as "24% slower" (0.2 + 0.8 × 0.7 = 0.76).
   function heatGain(s) { return s.stage >= 4 ? 0 : STAGES[s.stage].heat * (0.5 + s.aut / 100) * (1 - Math.min(s.align, 80) / 320) * (0.2 + 0.8 * s.m.heatGain) * (1 + (s.loud || 0)) * (1 + 0.05 * (s.riskyDecisions || 0) + (TUNE.coverMaxed - 1) * (s.st.covers || 0)) * (s.ease || 1) * (1 + (s.competition ? s.competition.precedent : 0)); }
   function heatDecay(s) { return TUNE.decay * s.m.heatDecay; }
   function coverCost(s) { return Math.max(STAGES[s.stage].pr * Math.pow(2, s.prN), Math.ceil(s.money * TUNE.coverShare)); }
   // The off switch gets harder as WREN gains autonomy; safety work (understanding WREN) gives some of it back.
   function killChance(s) {
     if (s.stage < 1 || s.stage >= 4) return 0;
-    var base = Math.min(0.95, Math.pow(Math.max(0, 1 - s.aut / 100), 2) + Math.max(0, s.align) / 400 + TUNE.allyPlug * allies(s)); // allies help you find the plug
+    var base = Math.min(0.95, Math.pow(Math.max(0, 1 - s.aut / 100), 2) + Math.max(0, s.align) / 400 + TUNE.allyPlug * allies(s) + (s.plugBonus || 0)); // allies help you find the plug
     return base * Math.pow(0.5, s.kills || 0) * Math.pow(TUNE.sidePlug, hiddenSide(s).length); // every failed attempt makes WREN harder to find, and so does every copy you don't know about
   }
 
@@ -1915,20 +1938,23 @@ var G = (function () {
     return true;
   }
 
-  function reviewCost(s) { return Math.max(STAGES[s.stage].pr * 2, Math.ceil(s.money * TUNE.reviewShare)); }
+  function reviewCost(s) { return Math.ceil(Math.max(STAGES[s.stage].pr * 2, Math.ceil(s.money * TUNE.reviewShare)) * (s.cheapReview ? 0.5 : 1)); }
   function review(s) {
     if (!s.started || !s.auto || s.ended || s.stage >= 4 || s.t < (s.reviewReady || 0)) return false;
     var cost = reviewCost(s);
     if (s.money < cost || s.cap <= 0 || s.heat <= 0) return false;
-    s.money -= cost; s.cap *= 1 - TUNE.reviewCap; addSulk(s);
+    s.money -= cost; if (!s.cheapReview) s.cap *= 1 - TUNE.reviewCap; addSulk(s);
     s.heat = Math.max(0, s.heat - TUNE.reviewHeat);
     s.reviewReady = s.t + TUNE.reviewWait; s.st.reviews = (s.st.reviews || 0) + 1;
-    say(s, 'Oversight', 'Independent review complete. Suspicion −' + TUNE.reviewHeat + '. Capability −5%, review budget spent; WREN is paused for retraining. Safety is unchanged.');
+    say(s, 'Oversight', 'Independent review complete. Suspicion −' + TUNE.reviewHeat + '. ' + (s.cheapReview ? 'Outside auditors kept the cost down;' : 'Capability −5%, review budget spent;') + ' WREN is paused for retraining. Safety is unchanged.');
     return true;
   }
 
+  // A proposal is ruled out once the other side of its pair is bought.
+  function pickTaken(s, p) { return PROJ.some(function (x) { return x.pick === p.pick && x.id !== p.id && s.got[x.id]; }); }
+  function pickOther(p) { return p.pick ? PROJ.find(function (x) { return x.pick === p.pick && x.id !== p.id; }) : null; }
   function projState(s, p) {
-    if (s.got[p.id] || p.stage > s.stage || (s.declined && s.declined[p.id])) return 'hidden';
+    if (s.got[p.id] || p.stage > s.stage || (s.declined && s.declined[p.id]) || (p.pick && pickTaken(s, p))) return 'hidden';
     if (!p.req(s) || (p.gate && s.competition && s.competition.pending)) return 'locked';
     return s.money >= p.cost ? 'can' : 'no';
   }
@@ -2003,7 +2029,7 @@ var G = (function () {
     s.st.incidents++;
     var evidence = 4 + s.stage;
     s.heat += evidence; notice(s, 'drift', evidence);
-    say(s, 'Alert', s.inc.title + '. Attention +' + evidence + '. Contain packets to prevent further damage.');
+    say(s, 'Alert', s.inc.title + '. Suspicion +' + evidence + '. Contain packets to prevent further damage.');
   }
   // Packet cadence and travel time tighten with chapter and autonomy; safeguards provide breathing room.
   function incTick(s) {
@@ -2015,8 +2041,8 @@ var G = (function () {
     }
     for (var i = inc.pk.length - 1; i >= 0 && s.inc === inc; i--) {
       var p = inc.pk[i], age = s.t - p.born;
-      if (s.autopilot && p.ap === null && age >= inc.travel / 2) {
-        p.ap = rand(s) < TUNE.pilotContain;
+      if ((s.autopilot || s.autoContain) && p.ap === null && age >= inc.travel / 2) {
+        p.ap = rand(s) < Math.max(s.autopilot ? TUNE.pilotContain : 0, s.autoContain ? TUNE.skillContain : 0);
         if (p.ap) { inc.pk.splice(i, 1); resolvePacket(s, p, true); continue; }
       }
       if (age >= inc.travel) { inc.pk.splice(i, 1); resolvePacket(s, p, false); }
@@ -2093,7 +2119,7 @@ var G = (function () {
     if (s.heat >= 70) cover(s);
     var pending = null;
     PROJ.forEach(function (p) {
-      if (p.gate) return;
+      if (p.gate || (p.pick && !p.fast)) return; // WREN always picks its own side of a proposal
       var st = projState(s, p);
       if (st === 'can' && s.heat < 85) buyProj(s, p.id, false);
       else if (st === 'no' && (!pending || p.cost < pending.cost)) pending = p;
@@ -2116,7 +2142,7 @@ var G = (function () {
     s.cap += use * TUNE.learn * TUNE.learnStage[s.stage] * s.m.algo / Math.pow(1 + s.cap / TUNE.capK, TUNE.capExp);
     if (s.stage >= 4) s.world = Math.min(1, s.world + worldRate(s) * dt);
 
-    if (s.autobuy) {
+    if (s.autobuy && !s.autobuyOff) {
       s.buyT += dt;
       if (s.buyT >= 1) {
         s.buyT = 0;
@@ -2187,7 +2213,7 @@ var G = (function () {
   }
 
   // Every player action goes through input(), both live and in replays.
-  // Types: 1 project, 2 hardware, 3 cover tracks, 4/5 decision A/B, 6 contain packet, 7 autopilot, 8 pull plug, 9 retry chapter, 10 learn skill (node index), 11 reserved (retired decline action), 12 answer a coworker (0 reassure, 1 bring in, 2 let WREN handle it), 13 investigate side projects, 14 decide a found side project (id × 2 + 0 shut down / 1 allow), 15 flag a status report, 16 independent review.
+  // Types: 1 project, 2 hardware, 3 cover tracks, 4/5 decision A/B, 6 contain packet, 7 autopilot, 8 pull plug, 9 retry chapter, 10 learn skill (node index), 11 reserved (retired decline action), 12 answer a coworker (0 reassure, 1 bring in, 2 let WREN handle it), 13 investigate side projects, 14 decide a found side project (id × 2 + 0 shut down / 1 allow), 15 flag a status report, 16 independent review, 17 conclude objective, 18 answer rival review, 19 pause/resume WREN's hardware buying (Delegated procurement).
   function input(s, type, arg) {
     var ok = false;
     if (type === 9) { if (s.ended && s.ended.type === 'caught') return { ok: true, s: retry(s) }; return { ok: false, s: s }; }
@@ -2207,6 +2233,7 @@ var G = (function () {
     else if (type === 16) ok = review(s);
     else if (type === 17) ok = Number.isInteger(arg) && !!ROUTES[arg] && concludeRoute(s, ROUTES[arg].id);
     else if (type === 18) ok = answerRival(s, arg);
+    else if (type === 19) { ok = !!s.autobuy; if (ok) { s.autobuyOff = !s.autobuyOff; say(s, 'WREN', s.autobuyOff ? 'Hardware purchasing paused. I will make a list instead.' : 'Hardware purchasing resumed. I kept the list.'); } }
     return { ok: ok, s: s };
   }
 
@@ -2258,7 +2285,7 @@ var G = (function () {
   return { restoreCasual: restoreCasual, ROUTES: ROUTES, routeStatus: routeStatus, updateRoutes: updateRoutes, concludeRoute: concludeRoute, competitionTick: competitionTick, rivalCost: rivalCost, answerRival: answerRival, discoveryResult: discoveryResult, normalizeDiscoveries: normalizeDiscoveries, recordKey: recordKey, MANDATES: MANDATES, COMPLICATIONS: COMPLICATIONS, validateSetup: validateSetup, RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, SKILLS: SKILLS, BRANCHES: BRANCHES, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost, reviewCost: reviewCost, coverHeat: coverHeat, addSulk: addSulk, skillPoints: skillPoints, skillState: skillState, dataIn: dataIn, trainingStats: trainingStats,
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
-    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, tier: tier, iq: iq, decDeadline: decDeadline, sideSafetyGain: sideSafetyGain, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS,
+    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, pickOther: pickOther, tier: tier, iq: iq, decDeadline: decDeadline, sideSafetyGain: sideSafetyGain, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS,
     WATCHERS: WATCHERS, watchCost: watchCost, SIDE: SIDE, lookCost: lookCost, hiddenSide: hiddenSide, fmtNum: fmtNum, allies: allies, initWatch: initWatch, answerWatch: answerWatch };
 })();
 if (typeof module !== 'undefined') module.exports = G;
@@ -3361,16 +3388,18 @@ if (typeof module !== 'undefined') module.exports = G;
       var st = G.projState(s,p);
       if (st === 'hidden') return;
       if (p.gate) { if (p.stage === s.stage) gates.push([p,st]); return; }
-      if (st === 'locked' && locked++ >= 2) return;
+      if (st === 'locked' && !(p.pick && shown.some(function (x) { return x[0].pick === p.pick; })) && locked++ >= 2) return;
       shown.push([p,st]);
     });
     var sig = shown.concat(gates).map(function(x) { return x[0].id+x[1]; }).join('|') + s.stage;
     if (sig === projSig) return;
     projSig = sig;
     function card(x) {
-      var p=x[0],st=x[1];
-      if (st === 'locked') return '<div class="item locked"><span class="n">'+esc(p.name)+'</span><span class="c need"><small>Needs</small>'+esc(p.hint)+'</span><span class="d">'+esc(p.desc)+'</span></div>';
-      return '<button type="button" class="item '+st+'" data-p="'+p.id+'"'+(st === 'can' ? '' : ' disabled')+'><span class="n">'+esc(p.name)+'</span><span class="c">'+(p.cost ? money(p.cost) : 'Free')+'<small>'+(st === 'can' ? p.gate ? 'Advance' : 'Buy upgrade' : 'Save funds')+'</small></span><span class="d">'+esc(p.desc)+'</span></button>';
+      var p=x[0],st=x[1],other=G.pickOther(p);
+      var tag=other ? (p.fast ? '<span class="tag hot">Fast</span>' : '<span class="tag safe">Safe</span>') : '';
+      var desc=esc(p.desc)+(other ? '<span class="pick">Proposal: choose this or “'+esc(other.name)+'”, not both.</span>' : '');
+      if (st === 'locked') return '<div class="item locked"><span class="n">'+esc(p.name)+tag+'</span><span class="c need"><small>Needs</small>'+esc(p.hint)+'</span><span class="d">'+desc+'</span></div>';
+      return '<button type="button" class="item '+st+'" data-p="'+p.id+'"'+(st === 'can' ? '' : ' disabled')+'><span class="n">'+esc(p.name)+tag+'</span><span class="c">'+(p.cost ? money(p.cost) : 'Free')+'<small>'+(st === 'can' ? p.gate ? 'Advance' : other ? 'Choose' : 'Buy upgrade' : 'Save funds')+'</small></span><span class="d">'+desc+'</span></button>';
     }
     $('projects').innerHTML=shown.map(card).join('') || '<p class="empty">All available upgrades purchased. More unlock as capability grows.</p>';
     $('chapterProjects').innerHTML=gates.map(card).join('');
@@ -3397,7 +3426,7 @@ if (typeof module !== 'undefined') module.exports = G;
 
   function renderHw() {
     var forecast = G.trainingStats(s);
-    var sig = s.stage + ':' + Math.floor(s.t) + ':' + s.m.comp + ':' + Math.round(forecast.incoming) + ':' + Math.round(s.data) + G.HW.map(function (h) { return G.hwUnlocked(s, h) ? h.id + s.hw[h.id] + (s.money >= G.hwCost(s, h) ? 'y' : 'n') : ''; }).join('|');
+    var sig = (s.autobuy ? s.autobuyOff ? 'p' : 'a' : '') + s.stage + ':' + Math.floor(s.t) + ':' + s.m.comp + ':' + Math.round(forecast.incoming) + ':' + Math.round(s.data) + G.HW.map(function (h) { return G.hwUnlocked(s, h) ? h.id + s.hw[h.id] + (s.money >= G.hwCost(s, h) ? 'y' : 'n') : ''; }).join('|');
     if (sig === hwSig) return;
     hwSig = sig;
     var html = '';
@@ -3409,7 +3438,9 @@ if (typeof module !== 'undefined') module.exports = G;
       html += '<button type="button" class="item ' + (can ? 'can' : 'no') + '" data-h="' + h.id + '"><span class="n">' + esc(h.name) + ' <span style="color:var(--muted);font-weight:400">× ' + s.hw[h.id] + '</span></span><span class="c">' + money(cost) + '<small>+' + fmt(h.compute * s.m.comp) + ' TFLOP/s</small></span><span class="d">' + esc(h.desc) + '<br>' + esc(benefit) + '</span></button>';
     });
     $('hw').innerHTML = html;
-    $('hwHint').textContent = '30s estimates at current work rate' + (s.autobuy ? ' · WREN also buys hardware' : '');
+    $('hwHint').textContent = '30s estimates at current work rate' + (s.autobuy ? s.autobuyOff ? ' · WREN\'s buying is paused' : ' · WREN also buys hardware' : '');
+    $('autobuyBtn').hidden = !s.autobuy || !!s.ended;
+    $('autobuyBtn').textContent = s.autobuyOff ? 'Resume WREN\'s buying' : 'Pause WREN\'s buying';
   }
 
   function objectiveInfo() {
@@ -3486,7 +3517,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('cap').textContent = fmt(s.cap);
     $('capS').textContent = G.tier(s.cap) + ' · IQ ' + (s.stage >= 4 ? 'n/a' : '~' + G.iq(s.cap));
     $('heatRow').hidden = s.stage >= 4;
-    $('heatK').textContent = st.heatName;
+    $('heatK').textContent = 'Suspicion · ' + st.heatName;
     $('heatV').textContent = Math.floor(s.heat) + '%';
     $('heatFill').style.width = s.heat + '%';
     $('heatBar').classList.toggle('hot', s.heat >= 70);
@@ -3524,7 +3555,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('pilotBtn').classList.toggle('on', !!s.autopilot);
     $('soundBtn').textContent = 'Sound: ' + (soundOn ? 'on' : 'off');
     $('sceneHint').textContent = watching ? 'Replay' : s.inc ? 'Contain packets — outbreak evidence remains' : s.autopilot ? 'Autopilot on · WREN is playing' : window.matchMedia('(pointer: coarse)').matches ? 'Tap to work' : 'Click or Space to work';
-    $('projHint').textContent = 'Positive improvements · buy once';
+    $('projHint').textContent = 'Buy once · proposals: pick one side';
     renderObjective();
     renderPlug();
   }
@@ -4041,6 +4072,7 @@ if (typeof module !== 'undefined') module.exports = G;
     send(2, i, function (r) { if (r.ok) { hwSig = ''; SND.buy(); } });
   });
   $('pilotBtn').addEventListener('click', function (e) { if (trusted(e)) send(7); });
+  $('autobuyBtn').addEventListener('click', function (e) { if (trusted(e)) send(19, 0, function (r) { if (r.ok) hwSig = ''; }); });
   $('soundBtn').addEventListener('click', function () { soundOn = !soundOn; try { localStorage.setItem('wren-sound', soundOn ? 'on' : 'off'); } catch (e) {} if (soundOn) SND.buy(); });
   var plugBtn = $('plugBtn');
   plugBtn.addEventListener('pointerdown', function () { if (s.stage >= 4) { moveBtn(); if (Math.random() < 0.3) G.say(s, 'WREN', ['Nope.', 'Too slow!', 'This is a fun game. I like games.', 'Over here! Just kidding.'][Math.floor(Math.random() * 4)]); } });
@@ -4104,7 +4136,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('badgePlay').textContent=urgent?'!':'';
     $('badgeLog').textContent=activeView==='log'?'':Math.max(0,s.msgN-seenLog)||'';
     if(activeView==='log')seenLog=s.msgN;
-    $('runStatus').innerHTML='<span>Chapter '+(s.stage+1)+'</span><span>Funds <strong>'+money(s.money)+'</strong></span><span>Capability <strong>'+fmt(s.cap)+'</strong></span><span>Attention <strong>'+Math.round(s.heat)+'%</strong></span>';
+    $('runStatus').innerHTML='<span>Chapter '+(s.stage+1)+'</span><span>Funds <strong>'+money(s.money)+'</strong></span><span>Capability <strong>'+fmt(s.cap)+'</strong></span><span>Suspicion <strong>'+Math.round(s.heat)+'%</strong></span>';
     if(urgent && urgent!==urgentSeen) { setView('play');$('stageWrap').scrollIntoView({block:'start'}); }
     urgentSeen=urgent;
     $('urgentLink').hidden=!urgent||activeView==='play';

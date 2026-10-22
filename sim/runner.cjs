@@ -226,6 +226,16 @@ function shop(run, r) {
   G.PROJ.forEach((p, i) => {
     const st = G.projState(s, p);
     if (st === 'hidden' || st === 'locked') return;
+    if (p.pick && G.pickOther(p)) {
+      // pick-one-of-two proposals: decide once per pair, then only ever buy that side
+      bot.picks = bot.picks || {};
+      if (!bot.picks[p.pick]) {
+        const other = G.pickOther(p), safe = p.fast ? other : p, fast = p.fast ? p : other;
+        const want = (P.proposal ? P.proposal(s, safe, fast, r) : safe).id;
+        bot.picks[p.pick] = choicePoint(run, 'proposal', p.pick, [safe.id, fast.id], want);
+      }
+      if (bot.picks[p.pick] !== p.id) return;
+    }
     if (!P.wantProj(s, p, r)) return;
     if (p.gate) { gate = { p, i, st }; if (st === 'no') reserve = Math.min(reserve, p.cost); return; }
     if (st === 'can') { if (act(run, 1, i, P.chaos ? null : 'buy ' + p.id)) logBuy(run, p.id, 'you'); }
@@ -291,7 +301,7 @@ function observe(run, dt) {
     if (w > rec.longest.waiting) { rec.longest.waiting = w; rec.longest.waitingAt = { t: +bot.waitStart.toFixed(1), stage: st }; }
   } else bot.waitStart = null;
   // money sitting around with every remaining project in the chapter already affordable
-  const left = G.PROJ.filter((p) => p.stage === st && !s.got[p.id] && !(s.declined || {})[p.id]);
+  const left = G.PROJ.filter((p) => p.stage === st && G.projState(s, p) !== 'hidden'); // bought, declined and ruled-out proposals don't count
   if (left.length && left.every((p) => s.money >= p.cost * 3)) rec.time.idleMoney[st] += dt;
 
   if (s.clock - bot.lastSample >= SAMPLE || bot.lastSample < 0) {

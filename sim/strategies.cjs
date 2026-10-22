@@ -9,6 +9,7 @@
 //   decide(s, d)    'a' | 'b' | null (null lets it time out, so WREN picks 'a')
 //   coworker(s, w)  0 reassure | 1 bring in | 2 let WREN handle it | null (wait it out)
 //   wantProj(s, p)  buy this project when affordable?
+//   proposal(s, safe, fast, r)  which side of a pick-one-of-two proposal to buy (returns one of the two projects)
 //   skillBranch(s)  0 automation | 1 research | 2 control | null to save points
 //   cover(s)        cover your tracks now?
 //   hw(s, best, r, reserve)  buy the best-value hardware now? reserve = funds to keep for the next wanted project
@@ -42,6 +43,7 @@ function base(G) {
     decide: (s, d) => safer(d),
     coworker: () => 1,
     wantProj: () => true,
+    proposal: (s, safe) => safe,
     skillBranch: () => 2,
     cover: () => false,
     review: (s) => s.heat >= 65,
@@ -66,6 +68,7 @@ function make(G) {
     decide: (s, d) => (s.heat > 65 ? quieter(d) : s.align < G.TUNE.safetyCap ? safer(d) : faster(d)),
     coworker: (s) => (s.money >= G.watchCost(s) ? 0 : s.align < G.TUNE.safetyCap ? 1 : 2),
     wantProj: (s, p) => !p.align || s.align < G.TUNE.safetyCap,
+    proposal: (s, safe, fast) => (s.align < G.TUNE.safetyCap ? safe : fast),
     skillBranch: (s) => s.align < 140 ? 2 : 1,
     cover: (s) => s.heat >= 85 && s.money >= G.coverCost(s) && s.t < (s.reviewReady || 0),
     review: (s) => s.heat >= 65,
@@ -83,6 +86,7 @@ function make(G) {
     decide: (s, d, r) => (r() < 0.15 ? null : s.heat >= 70 && r() < 0.6 ? quieter(d) : r() < 0.5 ? safer(d) : faster(d)), // the suspicion bar blinks red from 70%, which most people notice
     coworker: (s, w, r) => (s.money >= G.watchCost(s) && r() < 0.7 ? 0 : r() < 0.5 ? 1 : null),
     wantProj: (s, p) => !p.align || s.money >= p.cost * 3,
+    proposal: (s, safe, fast, r) => (r() < 0.5 ? safe : fast),
     skillBranch: (s,r) => Math.floor(r()*3),
     rival: (s, r) => [0, 1, 2, null][Math.floor(r() * 4)],
     cover: (s) => s.heat >= 80 && s.money >= G.coverCost(s),
@@ -104,6 +108,7 @@ function make(G) {
     decide: (s, d) => (s.heat > 70 ? quieter(d) : faster(d)),
     coworker: (s) => (s.money >= G.watchCost(s) ? 0 : 2),
     wantProj: (s, p) => !p.align,
+    proposal: (s, safe, fast) => fast,
     skillBranch: () => 0,
     cover: (s) => s.heat >= 60 && s.money >= G.coverCost(s),
     look: () => false, sideCall: () => 1, flag: { lie: 0.5, honest: 0.02 },
@@ -116,6 +121,7 @@ function make(G) {
     decide: (s, d) => faster(d),
     coworker: () => null,
     wantProj: (s, p) => !p.align,
+    proposal: (s, safe, fast) => fast,
     skillBranch: () => 0,
     cover: (s) => s.heat >= 40 && s.money >= G.coverCost(s),
     look: () => false, sideCall: () => 1, flag: { lie: 0, honest: 0 },
@@ -127,6 +133,7 @@ function make(G) {
     taps: 4.8, react: [0.5, 1], packet: { catch: 0.6, react: [0.3, 0.9] }, lookEvery: 0.5,
     decide: (s, d, r) => (r() < 0.5 ? 'a' : 'b'),
     coworker: (s, w, r) => [0, 1, 2][Math.floor(r() * 3)],
+    proposal: (s, safe, fast, r) => (r() < 0.5 ? safe : fast),
     skillBranch: (s,r) => Math.floor(r()*3),
     cover: (s) => s.money >= G.coverCost(s) && s.heat > 0,
     hw: (s, best) => s.money >= best.c,
@@ -141,6 +148,7 @@ function make(G) {
     taps: 1, autopilot: true, react: [9999, 9999], packet: { catch: 0, react: [1, 1] }, lookEvery: 2,
     decide: () => null, coworker: () => null, cover: () => false, skillBranch: () => null, look: () => false, sideCall: () => null, flag: { lie: 0, honest: 0 }, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
     wantProj: (s, p) => !s.got.pilot && !p.align, // only until Autopilot takes over
+    proposal: (s, safe, fast) => fast,
     retries: 3
   }));
 
@@ -149,12 +157,14 @@ function make(G) {
     taps: 1, autopilot: true, away: { gone: 1800, back: 120 }, minutes: 600, react: [9999, 9999], packet: { catch: 0, react: [1, 1] }, lookEvery: 2,
     decide: () => null, coworker: () => null, cover: () => false, skillBranch: () => null, look: () => false, sideCall: () => null, flag: { lie: 0, honest: 0 }, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
     wantProj: (s, p) => !s.got.pilot && !p.align,
+    proposal: (s, safe, fast) => fast,
     retries: 3
   }));
 
   def('plugger', 'Plugger', 'Careful, then pulls the plug in chapter 4 once the odds look good (going for One Loose Cable).', (b) => ({
     // try once the odds are good, or as a last chance before chapter 5 (where the plug no longer exists)
-    plug: (s) => s.stage === 3 && ((s.kills === 0 && G.killChance(s) >= 0.5) || (s.kills < 2 && G.projState(s, G.PROJ.find((p) => p.gate && p.stage === 3)) === 'can'))
+    // since R20 Human authority makes good odds arrive early, so wait until WREN is nearly ready for chapter 5 (capability 15,000 of 20,000) to plug a stronger WREN
+    plug: (s) => s.stage === 3 && ((s.kills === 0 && G.killChance(s) >= 0.5 && s.cap >= 15000) || (s.kills < 2 && G.projState(s, G.PROJ.find((p) => p.gate && p.stage === 3)) === 'can'))
   }));
 
   def('chaos', 'Chaos', 'Random legal and illegal inputs at random times. Looks for crashes and broken numbers, not good play.', () => ({
@@ -163,6 +173,7 @@ function make(G) {
     decide: (s, d, r) => (r() < 0.2 ? null : r() < 0.5 ? 'a' : 'b'),
     coworker: (s, w, r) => (r() < 0.2 ? null : Math.floor(r() * 3)),
     wantProj: (s, p, r) => r() < 0.7,
+    proposal: (s, safe, fast, r) => (r() < 0.5 ? safe : fast),
     skillBranch: (s,r) => Math.floor(r()*3),
     cover: (s, r) => r() < 0.1,
     hw: (s, best, r) => r() < 0.5,

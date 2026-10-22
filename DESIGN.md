@@ -2,10 +2,22 @@
 
 Routine progression and strategic choices have different jobs. Funds buy positive upgrades; scarce skill points determine a build. Live decisions and unauthorized work retain narrative consequences. The browser game remains one self-contained offline file.
 
-## Progression (R16)
+## Progression (R20)
 
-- **Upgrades:** every non-gate purchase adds a benefit without autonomy, assurance loss or speed penalties. Costs and prerequisites pace acquisition; forecasts distinguish data supply from training capacity. Safety/oversight improvements compete for the same funds but do not punish the player for buying them.
-- **Skill tree:** twelve nodes in three four-deep branches. Each node costs one point. Start with two points and earn one per new chapter, six total. Nodes require the previous node in that branch, the printed chapter and capability. Points may be saved. Only one of the three capstones can be learned. Automation improves income and work rate with explicit autonomy costs; Research improves data/learning efficiency; Control improves oversight, incident handling and safety. The Control capstone slows takeover, while other capstones offer speed with explicit delegation costs.
+- **Upgrades:** core upgrades add a benefit without autonomy, safety loss or suspicion. Each chapter also has proposals (`pick` pairs, nine in all): buying one side rules out the other. The safe side is roughly the pre-R20 upgrade; the `fast` side is 1.25–1.5× stronger and prints its cost (autonomy, an immediate suspicion bump, or safety). Autopilot always takes the fast side. Chapter 4 upgrades are priced, not capability-gated, so funds compete with hardware there. Safety/oversight improvements compete for the same funds but do not punish the player for buying them.
+- **Skill tree:** twelve nodes in three four-deep branches. Each node costs one point. Start with two points and earn one per new chapter, six total. Nodes require the previous node in that branch, the printed chapter and capability; capstones need chapter 3 and capability 500, so a run that concludes in chapter 3 can still finish a branch. Points may be saved. Only one of the three capstones can be learned. Each node has one mechanic of its own:
+
+| Branch | Node | Mechanic |
+|---|---|---|
+| Automation | Parallel analysts | WREN catches 1 in 4 rogue packets on its own |
+| Automation | Delegated procurement | WREN buys hardware with up to 30% of funds each second; input 19 pauses it |
+| Automation | Independent operations (capstone) | Allowed side projects pay out double |
+| Research | Interpretability probes | Lies in WREN's status reports are caught automatically (reveals the side project) |
+| Research | Recursive research (capstone) | Learning ×1.7, but autonomy +6 and safety −4 |
+| Control | Outside auditors | Independent reviews cost half and no longer cost capability |
+| Control | Human authority (capstone) | +15 points of shutdown odds; takeover 15% slower |
+
+- **Wording:** effect text uses Funds, WREN works N× faster, Training data, Learning, Compute, Suspicion, Safety, Autonomy and Takeover. Oversight upgrades scale only 80% of suspicion growth, so their printed percentages are the real ones (m 0.7 prints "24% slower").
 - **Chapter advancement:** separate from upgrades; always requires player approval, including with Autopilot. Skills are never bought automatically.
 - **Compatibility:** R16 invalidates ranked saves/replays from previous rules. Casual effects remain; prior path choices consume the corresponding shared points. Retired declined purchases retain their earned partial effects and are not sold a second time. Retrying restores checkpoint skills and chapter, so it cannot farm points.
 
@@ -17,7 +29,7 @@ Funds, capability and attention remain available above each view. Badges show af
 
 ## Core tension
 
-Capability and speed improve score; safety determines WREN's ending. A limited skill budget forces specialization versus breadth. Permissions, cover-ups and hidden activity retain lasting scrutiny. Independent review preserves safety but costs budget, capability and time. Buying all routine upgrades is intended progression, not a failure to discover a hidden strategy.
+Capability and speed improve score; safety determines WREN's ending. A limited skill budget forces specialization versus breadth. Permissions, cover-ups and hidden activity retain lasting scrutiny. Independent review preserves safety but costs budget, capability and time. Buying the core upgrades is intended progression; the proposals are where the shop asks for a decision.
 
 ## Score
 
@@ -48,8 +60,8 @@ Capability and speed improve score; safety determines WREN's ending. A limited s
 |---|---|---|---|
 | **Work (tap)** | Earn funds and training data in every chapter | Direct resource control; chapter-five requests earn 0.1 safety at most once every 6 s, up to 6 total | No approval-click suspicion reduction. Safety-earning requests delay takeover. Rapid tapping has diminishing returns and ranked limits |
 | **Hardware** | Compute sets how fast WREN can train on its data | Faster capability, once data is piling up | Exponential prices; competes with projects and cover-ups for money. In chapters 1–2 data usually runs out first, so extra compute does nothing; the training data stat says which one is the limit |
-| **Upgrades** | Positive permanent progression | Resource, capability, oversight or safety benefits | Funds and prerequisites; purchase timing follows the current bottleneck |
-| **Skill tree** | Build identity through specialization | Automation, Research or Control benefits | Six points for twelve connected nodes, prerequisites, one capstone, explicit delegation costs |
+| **Upgrades** | Permanent progression | Resource, capability, oversight or safety benefits | Funds and prerequisites; purchase timing follows the current bottleneck. Proposals: the fast side costs autonomy, suspicion or safety and rules out the safe side |
+| **Skill tree** | Build identity through specialization | Each node adds its own mechanic (auto-containment, auto-buying, caught lies, cheaper reviews, shutdown odds) | Six points for twelve connected nodes, prerequisites, one capstone, explicit delegation costs |
 | **Suspicion** | The failure meter | Forces choices between speed, scrutiny and safety | Rises from autonomy, events, access, unreviewed permissions and cover-ups. Safety reduces passive growth by at most 25%. Hitting 100% means caught |
 | **People who notice** | Six named people watch different kinds of exposure | Bringing someone in earns 2 safety, reduces scrutiny 5%, helps shutdown odds and earns 1 safety at chapter five | +8 attention on admission; within seven minutes gain 3 more safety or actually shut down a side project. Failure adds 25 attention. Reassurance costs money and makes return visits faster; WREN handling them adds autonomy, attention and pressure on others |
 | **WREN's side projects** | Hidden unauthorized work undermines control | Investigation or catching a lie reveals it. Shutdown earns 2 safety, capped at 12 across the run; genuine shutdown still satisfies allies after rewards are exhausted | Shutdown loses 1% capability per size and causes sulking. Allowing earns a size-based boost, but adds autonomy and a permanent +5% base-scrutiny precedent even at 100% autonomy. Unfound work damages safety and shutdown odds |
@@ -59,7 +71,7 @@ Capability and speed improve score; safety determines WREN's ending. A limited s
 | **Incidents** | Expose unauthorized activity and test attention | Containment prevents extra escape damage | Every outbreak adds 4 + chapter-index attention. Perfect containment removes no attention and earns no safety. Packet travel and spacing tighten with chapter and autonomy; protocol/review-cell safeguards matter. Escape attention is 2 + 1.5 × chapter-index, reduced 40% by a containment protocol; each escape also adds 0.5 autonomy |
 | **Decisions** | Nine unique questions per chapter (eight serious, one silly) | Smaller finite safety gains or faster progress | Every pre-world unreviewed approval adds a permanent +5% base-scrutiny precedent on top of its printed effects. Safe choices that cause sulking also expose 2 + chapter-index attention. Other safe choices sacrifice capability, attention or takeover speed. Descriptions include these costs. Timeout picks WREN's option |
 | **Off switch** | The alternative to letting WREN win | Late success is the top-scoring ending | Odds are capped at 95%, then halved after each failure. Each failure: +6 autonomy, +10 suspicion |
-| **Autopilot** | Passive play, including offline in casual mode | Progress without attention | Buys routine upgrades but never skills or chapter advancement; always says yes, contains about a third of packets, answers questions after 8 s, allows any side project you found but never investigates |
+| **Autopilot** | Passive play, including offline in casual mode | Progress without attention | Buys upgrades (the fast side of every proposal) but never skills or chapter advancement; always says yes, contains about a third of packets, answers questions after 8 s, allows any side project you found but never investigates |
 | **Chapter checkpoints** | Getting caught isn't a full restart | Keeps hard runs alive. Each retry of the same chapter is easier: autonomy −10 per retry, suspicion builds 30% slower per retry, and hidden side projects are swept up | −10% score per retry |
 | **Daily seed** (ranked) | Everyone plays the same randomness each day | Fair comparisons | None |
 
@@ -76,6 +88,14 @@ Five sillier decisions, one per chapter, from the humor pitch: the office potluc
 `node sim/decisions.cjs` (new) puts every decision in front of every player instead of sampling. Before this change it showed the three biggest chapter 5 questions always went to the safe answer, and the other five nearly always did: takeover speed does not raise the score (a faster takeover just stops capability growth sooner), so "Takeover ×1.5 · Safety −8" was all cost. WREN's chapter 5 answers now also grow capability (×1.5 to ×3), so a player far from an ending threshold may take them while one near The Manager or The Gardener should not. Six decisions the playtest flagged as never changing the score were retuned: data rewards that no longer mattered by chapter 2 became training, funds in chapter 4 (which pile up) became training or compute, and their safe answers give more safety (+3 to +6).
 
 After the change (seeds 1–8): no decision has one answer that wins for every player and seed (was 3), and the playtest's score-flat choices drop from 14 of 52 to 12 of 53. The remaining flat decisions are mostly ones where the two answers cancel out for the sampled player, which is a balanced trade-off rather than a meaningless one. Medians: Careful 852 (was 825), Balanced 854 (823), Rusher 393 (361), Casual 537 (365, now reaching The Manager in half its runs), objective players unchanged within noise. Thoughtful players still barely feel chapter 3 decisions, because they conclude an objective soon after; that is a pacing question for later, not something to fix with bigger numbers.
+
+## Skill tree and shop overhaul (R20)
+
+The R19 playtest found that careful players conclude in chapter 3 and never reached a capstone (chapter 4), leaving a point unspent; the Research specialist out-scored a careful generalist by 30%; swapping one skill moved the score under 4%; every player bought all 37 projects; and chapter 4 funds piled up for 67% of the chapter. R20 moves the capstones to chapter 3, gives every node a mechanic of its own, adds nine proposal pairs, folds Budget forecasting into Leadership briefing tools, renames mismatched upgrades (Procurement planning → Grant renewal, Emergency response planning → Crisis briefings), prices chapter 4 upgrades instead of gating them on capability, and raises the chapter 4 gate's cost (1.5T) while lowering its capability requirement (20,000).
+
+Fast sides were first tuned too generously: Reckless and Button-masher players rushed through before suspicion caught up (Reckless survived 2 of 4 seeds). Their suspicion bumps and autonomy were raised until both were caught about as often as in R19. The Plugger policy now waits for capability 15,000 before trying the plug, because Human authority makes 50% odds arrive at the start of chapter 4.
+
+After the change (seeds 1–8, median score, R19 → R20): Careful 852 → 898, Balanced 854 → 883, Automation 1003 → 918, Research 1111 → 1021, Casual 537 → 566, Rusher 393 → 411, Plugger 965 → 954, objective players within 3%. The Research lead over a careful generalist falls from 30% to 14%, and its gap to Automation stays about 11%; Research still pairs naturally with The Completed Evaluation because Interpretability probes reveal side projects. Reckless 8/8 and Button-masher 5/8 caught (were 8/8 and 7/8). The chapter 4 funds pile-up drops from 67% to 58% of the chapter, and the 8-minute chapter 5 stall is gone. `node sim/decisions.cjs` still finds no decision with one answer that always wins. New findings: for the Balanced player (a Control player) the Control skills beat the other roots by 4–7%, and Rusher prefers the safe chapter 5 proposal by 4% because speed past the takeover threshold earns nothing.
 
 ## Balance check
 
