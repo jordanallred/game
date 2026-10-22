@@ -48,3 +48,9 @@ Players read the same text the UI shows ("Safety +3 · Suspicion +4", project fl
 These players can't tell you whether something is fun, clear or funny. They tell you where to look.
 
 R14 adds checked input type 16 for independent review. Careful policies use it to preserve safety at a capability, funds and sulking cost; response choice points replay review versus cover-up alternatives. Permission and path safety descriptions can include fractional rewards.
+
+## Replayability matrix
+
+`node sim/replayability.cjs` runs 288 natural-play cases (8 seeds × 3 mandates × 3 target objectives × 4 complication settings), plus six reckless/idle baselines. Four worker threads parallelize independent simulations. No funds, safety, allies or capability are injected. Nine sampled successes are reconstructed through ranked replay rules. `--quick` runs the nine mandate/objective cases at one seed. JSON output goes to ignored `sim/out/replayability.json`.
+
+Target policies use two taps per second, realistic packet reaction delays, safety choices, investigations, allies and checked input types 17 (objective conclusion) and 18 (rival response). They defer chapter promotion when pursuing an objective in that chapter. Reported spending covers successful checked player actions, not self-approved purchases. These deliberately informed players establish reachability rather than human enjoyment or retention.

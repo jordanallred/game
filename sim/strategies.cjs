@@ -166,6 +166,17 @@ function make(G) {
     chaos: true, gateWait: 30
   }));
 
+  for (const target of ['operations','research','control']) {
+    S['route_'+target] = Object.assign(base(G), {
+      name: 'route_'+target, target, taps: 2, retries: 0,
+      packet: {catch:1,react:[0.5,0.9]}, flag:{lie:1,honest:0},
+      rival: (s)=>s.money>=G.rivalCost(s)*2?0:1,
+      look:(s)=>G.hiddenSide(s).length>0,
+      advance:(s)=>s.stage < (target==='control'?3:2),
+      review:(s)=>s.heat>=48,
+      gateWait:300
+    });
+  }
   return S;
 }
 

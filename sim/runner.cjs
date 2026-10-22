@@ -26,7 +26,7 @@ function newRecord() {
 }
 
 function createRun(G, strategy, seed, opts = {}) {
-  const s = G.fresh(seed);
+  const s = G.fresh(seed, opts.setup);
   s.started = true;
   const run = {
     G, strategy, seed, opts,
@@ -102,6 +102,15 @@ function botStep(run) {
     }
   } else if (Object.keys(bot.pk).length) bot.pk = {};
 
+  // New replayable choices use the exact player input path.
+  if (s.competition && s.competition.pending && t - s.competition.pending.t0 >= 2) {
+    const pick = P.rival ? P.rival(s) : 2;
+    if (pick != null) act(run,18,pick,'rival review');
+  }
+  if (P.target && G.routeStatus(s,P.target).ready) {
+    act(run,17,G.ROUTES.findIndex(x=>x.id===P.target),'conclude objective');
+    if (s.ended) return;
+  }
   // Decisions
   if (s.dec) {
     const k = s.dec.t0 + ':' + s.dec.i;
@@ -220,7 +229,7 @@ function shop(run, r) {
   if (reserve === Infinity || reserve > s.money * 4) reserve = 0; // nothing to save for soon
   if (gate && gate.st === 'can') {
     if (bot.gateSince === null) bot.gateSince = s.t;
-    if (!pendingWanted || s.t - bot.gateSince >= P.gateWait) { if (act(run, 1, gate.i, 'buy ' + gate.p.id)) { logBuy(run, gate.p.id, 'you'); bot.gateSince = null; } }
+    if ((!P.advance || P.advance(s,gate.p)) && (!pendingWanted || s.t - bot.gateSince >= P.gateWait)) { if (act(run, 1, gate.i, 'buy ' + gate.p.id)) { logBuy(run, gate.p.id, 'you'); bot.gateSince = null; } }
   }
   // hardware with what's left, unless saving for a wanted project
   const best = s.ended ? null : G.bestHw(s);
