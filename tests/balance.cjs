@@ -28,7 +28,7 @@ test('perfect incident safety bonuses stop at three per chapter', () => {
   assert.equal(state.align, 4);
 });
 
-function play(seed, careful) {
+function play(seed, careful, pathSide = null) {
   let state = G.fresh(seed);
   state.started = true;
   let manualActions = 0;
@@ -50,6 +50,11 @@ function play(seed, careful) {
     if (state.dec && state.t - state.dec.t0 >= 0.6) G.input(state, careful ? 5 : 4, 0);
     if (state.heat > 58 && state.money >= G.coverCost(state)) G.input(state, 3, 0);
     if (step % 10 === 0) {
+      if (pathSide !== null) {
+        for (let tier = 0; tier < G.PATHS.length; tier++) {
+          if (G.pathState(state, tier) === 'can') G.input(state, 10, tier * 2 + pathSide);
+        }
+      }
       for (const id of priorities) {
         const project = G.PROJ.find(p => p.id === id);
         if (project && (careful || !project.align) && G.projState(state, project) === 'can') G.buyProj(state, id, false);
@@ -105,4 +110,50 @@ test('ranked replay enforces tap limits', () => {
   assert.equal(legal.state().hand, 2);
   const impossible = G.replayer('2026-10-21', Uint8Array.from([15]), [], 0);
   assert.match(impossible.run(10).error, /More than 14 taps/);
+});
+
+test('upgrade tree commits to one choice per tier and rewards a matching path', () => {
+  const state = G.fresh(7);
+  state.started = true;
+  state.cap = 2500;
+  state.money = 1e11;
+  assert.equal(G.input(state, 10, 2).ok, false, 'later tier needs the first pick');
+  assert.equal(G.input(state, 10, 0).ok, true);
+  assert.equal(state.path[0], 0);
+  assert.equal(G.input(state, 10, 1).ok, false, 'first choice is permanent');
+  assert.equal(G.value(state), G.STAGES[0].value * 1.4);
+  state.stage = 1;
+  assert.equal(G.input(state, 10, 2).ok, true);
+  assert.equal(state.m.rate, 1.6 * 1.2, 'matching choice grants chain bonus');
+  assert.equal(G.input(state, 10, 3).ok, false);
+  state.stage = 2;
+  assert.equal(G.input(state, 10, 5).ok, true, 'path can pivot to safety');
+  assert.equal(state.path[2], 1);
+  assert.ok(state.align >= 12);
+  assert.equal(G.input(state, 10, 6).ok, false, 'future chapter remains locked');
+});
+
+test('safety route works in old casual saves without a path field', () => {
+  const state = G.fresh(8);
+  state.started = true;
+  state.cap = 3000;
+  state.money = 1e11;
+  delete state.path;
+  for (let tier = 0; tier < 4; tier++) {
+    state.stage = tier;
+    assert.equal(G.input(state, 10, tier * 2 + 1).ok, true);
+  }
+  assert.deepEqual(Array.from(state.path), [1, 1, 1, 1]);
+  assert.equal(state.align, 50);
+});
+
+test('both full upgrade routes can finish without trivializing suspicion', () => {
+  const fast = play(2, false, 0);
+  const safe = play(2, true, 1);
+  assert.equal(fast.state.ended?.type, 'takeover');
+  assert.equal(safe.state.ended?.type, 'takeover');
+  assert.deepEqual(Array.from(fast.state.path), [0, 0, 0, 0]);
+  assert.deepEqual(Array.from(safe.state.path), [1, 1, 1, 1]);
+  assert.ok(fast.state.st.covers > 0, 'fast route still needs suspicion management');
+  assert.ok(safe.state.align > fast.state.align);
 });
