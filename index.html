@@ -205,12 +205,36 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
 .stat .k span + span { color: var(--ink); font-size: 14px; }
 
 /* ---------- layout ---------- */
-.grid { display: grid; gap: 22px; grid-template-columns: 1fr; }
+/* Phones: one column (play, inbox, then everything you can buy).
+   900px+: play and shop stacked on the left, people and inbox pinned on the right.
+   1280px+: three columns. The scene and meters stay pinned on the left, the shop scrolls in the middle,
+   people and inbox stay pinned on the right. Desktop is where nearly every run happens. */
+.grid { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); }
+.main, .shop { display: grid; gap: 22px; min-width: 0; align-content: start; }
 @media (min-width: 900px) {
-  .grid { grid-template-columns: minmax(0, 1.52fr) minmax(280px, .78fr); align-items: start; }
-  .side { position: sticky; top: 14px; }
+  .grid { grid-template-columns: minmax(0, 1.52fr) minmax(280px, .78fr); grid-template-areas: "main side" "shop side"; align-items: start; }
+  .main { grid-area: main; }
+  .shop { grid-area: shop; }
+  .side { grid-area: side; position: sticky; top: 14px; max-height: calc(100vh - 28px); display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+  .side > section { flex: none; }
+  .side #inboxWrap { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 200px; }
+  .side .inbox { flex: 1 1 auto; min-height: 0; max-height: none; }
+  .side .people { grid-template-columns: minmax(0, 1fr); }
+  .side .people .stat.half { grid-column: 1 / -1; }
+  .side #peopleSection { max-height: 44vh; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--hi) transparent; }
 }
-.main { display: grid; gap: 22px; min-width: 0; }
+@media (min-width: 1280px) {
+  .wrap { max-width: 1840px; }
+  .grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(290px, .64fr); grid-template-areas: "main shop side"; gap: 22px 24px; }
+  .main { position: sticky; top: 14px; max-height: calc(100vh - 28px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--hi) transparent; gap: 14px; }
+  /* the scene takes whatever height the buttons and meters leave */
+  #scene { height: clamp(230px, calc(100vh - 650px), 480px); }
+  .act { min-height: 70px; padding-block: 10px 14px; }
+  .main .stat { padding: 7px 11px 8px; }
+  .main .stat .v { font-size: 25px; }
+  .main .stat .s { font-size: 18px; line-height: 1.05; }
+  .main .bar { margin: 4px 0 3px; }
+}
 h2 { font: 400 15px/1.2 var(--f-label); text-transform: uppercase; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; color: var(--yellow); }
 h2::before { content: ""; width: 8px; height: 8px; background: var(--yellow); flex: none; align-self: center; margin-right: -2px; }
 h2 small { font: 400 19px/1 var(--f-body); letter-spacing: 0; text-transform: none; color: var(--muted); text-align: right; margin-left: auto; }
@@ -264,7 +288,6 @@ h2 small { font: 400 19px/1 var(--f-body); letter-spacing: 0; text-transform: no
 
 /* ---------- inbox ---------- */
 .inbox { background: var(--panel); max-height: 300px; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--hi) var(--panel); }
-@media (min-width: 900px) { .inbox { max-height: calc(100vh - 110px); } }
 .msg { padding: 9px 13px 10px; border-bottom: var(--px) solid var(--lo); display: grid; gap: 3px; animation: in .4s steps(3); }
 .msg:last-child { border-bottom: 0; }
 @keyframes in { from { background: var(--wren-soft); } }
@@ -483,7 +506,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
   </section>
 
   <div class="grid" id="game" hidden>
-    <div class="main">
+    <div class="main" id="main">
       <div class="stage-wrap" id="stageWrap">
         <div class="scene-head" aria-hidden="true"><span class="scene-mark">WREN<span class="scene-mark-dot">.</span></span><span class="scene-head-center" id="sceneChapter">01 / SIGNALS ANALYSIS</span><span class="scene-head-right"><i></i> LIVE EVALUATION</span></div>
         <canvas id="scene" aria-label="Animated view of WREN's world. Tap to work."></canvas>
@@ -529,7 +552,9 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
       </div>
 
       <section id="inboxMobileSlot"></section>
+    </div>
 
+    <div class="shop" id="shop">
       <section id="peopleSection" hidden>
         <h2>People who notice <small id="peopleHint">When a meter fills, they come to you</small></h2>
         <div class="stats people" id="people"></div>
@@ -3301,10 +3326,19 @@ if (typeof module !== 'undefined') module.exports = G;
   var sceneVisible = true;
   if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { sceneVisible = es[0].isIntersecting; }).observe($('scene'));
   function showGame() { $('intro').hidden = true; $('game').hidden = false; resize(); }
+  // Phones read the inbox right under the meters and people just above the upgrade path;
+  // wider screens keep both in the pinned right column.
   function placeInbox() {
     var narrow = window.matchMedia('(max-width: 899px)').matches;
     var target = narrow ? $('inboxMobileSlot') : $('side');
     if ($('inboxWrap').parentNode !== target) target.appendChild($('inboxWrap'));
+    var ppl = $('peopleSection');
+    if (narrow && ppl.parentNode !== $('shop')) $('shop').insertBefore(ppl, $('pathSection'));
+    if (!narrow && ppl.parentNode !== $('side')) $('side').insertBefore(ppl, $('inboxWrap'));
+    // Three columns: the next objective heads the shop column it points into, so the pinned play column fits the screen.
+    var obj = $('objective'), wide = window.matchMedia('(min-width: 1280px)').matches;
+    if (wide && obj.parentNode !== $('shop')) $('shop').insertBefore(obj, $('shop').firstChild);
+    if (!wide && obj.parentNode !== $('main')) $('main').insertBefore(obj, $('main').querySelector('.stats'));
   }
   window.addEventListener('resize', function () { placeInbox(); if (!$('game').hidden) resize(); });
 
