@@ -41,10 +41,12 @@ Players read the same text the UI shows ("Safety +3 · Suspicion +4", project fl
 
 ## Adding a feature
 
-- New entries in `PROJ`, `DEC`, `WATCHERS`, `PATHS` or `HW` are picked up automatically.
+- New entries in `PROJ`, `DEC`, `WATCHERS`, `SKILLS` or `HW` are picked up automatically.
 - A new kind of player choice (a new `input()` type): teach the players in `strategies.cjs` (add a hook to `base()` and override it where a player type should behave differently), call it from `botStep`/`shop` in `runner.cjs`, and wrap the call in `choicePoint(...)` so the explorer replays it both ways.
 - A new thing to flag: add a check in `analyze.cjs`. Findings are `add(severity, area, title, detail, evidence)`.
 
 These players can't tell you whether something is fun, clear or funny. They tell you where to look.
 
 R14 adds checked input type 16 for independent review. Careful policies use it to preserve safety at a capability, funds and sulking cost; response choice points replay review versus cover-up alternatives. Permission and path safety descriptions can include fractional rewards.
+
+R16 replaces paired paths and project declines with a finite connected skill tree (input 10). Simulation policies include dedicated Automation and Research specialists, and Control-first careful players. Skill choice exploration forks only legal available nodes. Upgrade timing still competes with hardware and compliance costs.

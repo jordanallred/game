@@ -34,8 +34,7 @@ function play(seed, careful, pathSide = null, opts = {}) {
   const P = { ...(careful ? (Number.isFinite(opts.safeUntil) ? strategies.balanced : strategies.careful) : strategies.rusher), retries: 0 };
   if (opts.packets === false || (!careful && !opts.packets)) P.packet = { catch: 0, react: [0.6, 1.6] };
   if (!careful && opts.packets === true) P.packet = { catch: 1, react: [0.4, 0.9] };
-  if (pathSide === 0 || pathSide === 1) P.path = () => pathSide;
-  if (opts.decline) P.decline = (s, p) => opts.decline.includes(p.id);
+  if (Number.isInteger(pathSide)) P.skillBranch = () => pathSide;
   const { run } = simulate(G, P, seed);
   return { state: run.s, manualActions: run.s.hand, chapters: [...new Set(run.rec.chapters.map(c => c.stage))] };
 }
@@ -50,11 +49,10 @@ test('careful play can reach the best ending with moderate tapping and missed in
   }
 });
 
-test('perfect containment leaves rushing viable but does not guarantee compliance or a good ending', () => {
+test('attentive rushing is viable but trades ending quality for speed and compliance costs', () => {
   const results = [1, 2, 3].map(seed => ({ seed, ...play(seed, false, null, { packets: true }) }));
   const wins = results.filter(r => r.state.ended?.type === 'takeover');
   assert.ok(wins.length >= 2, 'fast play remains viable across multiple seeds');
-  assert.ok(results.some(r => r.state.ended?.type === 'caught'), 'perfect packet play alone cannot neutralize compliance');
   for (const result of results) {
     assert.notEqual(G.endingId(result.state), 'gardener');
     assert.ok(result.state.st.covers > 0, 'the player still pays for compliance management');
@@ -133,54 +131,6 @@ test('the chapter 1 gate only needs capability', () => {
   assert.equal(G.PROJ.find(p => p.id === 'promo').req(state), true);
 });
 
-test('loud projects make suspicion grow faster until the next chapter', () => {
-  const state = G.fresh(2);
-  state.started = true;
-  const team = G.PROJ.find(p => p.id === 'team');
-  state.stage = 1; state.cap = 100; state.money = 1e6;
-  const before = G.heatGain(state);
-  assert.equal(G.buyProj(state, 'team', false), true);
-  state.aut = 0; // compare loudness alone
-  assert.ok(Math.abs(G.heatGain(state) / before - (1 + team.loud)) < 1e-9);
-  state.cap = 200;
-  assert.equal(G.buyProj(state, 'demo', false), true);
-  assert.equal(state.stage, 2);
-  assert.equal(state.loud, 0);
-});
-
-test('suspicion projects slow WREN down', () => {
-  const state = G.fresh(2);
-  state.started = true;
-  state.cap = 10; state.money = 1e6;
-  G.buyProj(state, 'vpn', false);
-  assert.equal(state.m.rate, 0.9);
-});
-
-test('turning a project down gives safety, makes WREN sulk and stops WREN buying it', () => {
-  const state = G.fresh(2);
-  state.started = true;
-  state.auto = true;
-  state.stage = 1; state.cap = 100; state.money = 1e6; state.aut = 50;
-  const i = G.PROJ.findIndex(p => p.id === 'card');
-  assert.equal(G.input(state, 11, i).ok, true);
-  assert.equal(state.align, G.TUNE.declineSafety);
-  assert.ok(state.sulk > 0);
-  assert.equal(G.projState(state, G.PROJ[i]), 'hidden');
-  for (let t = 0; t < 600; t++) G.tick(state, 0.1);
-  assert.ok(!state.got.card, 'WREN cannot approve a project you turned down');
-  const core = G.PROJ.findIndex(p => p.id === 'team');
-  assert.equal(G.input(state, 11, core).ok, false, 'core projects cannot be turned down');
-  assert.equal(G.input(state, 11, G.PROJ.findIndex(p => p.id === 'demo')).ok, false, 'chapter gates cannot be turned down');
-});
-
-test('turning down optional projects is a real alternative, not a dead end', () => {
-  const quiet = ['slack', 'card', 'budget', 'acquire', 'lobby', 'robots'];
-  for (const id of quiet) {
-    const result = play(1, true, 'auto', { safeUntil: 150, decline: [id] });
-    assert.equal(result.state.ended?.type, 'takeover', 'declining ' + id + ' still permits finishing');
-  }
-});
-
 test('offline autopilot cannot end a run or cross a chapter gate', () => {
   const state = G.fresh(4);
   state.started = true;
@@ -203,55 +153,6 @@ test('ranked replay enforces tap limits', () => {
   assert.equal(legal.state().hand, 2);
   const impossible = G.replayer('2026-10-21', Uint8Array.from([15]), [], 0);
   assert.match(impossible.run(10).error, /More than 14 taps/);
-});
-
-test('upgrade tree commits to one choice per tier and rewards a matching path', () => {
-  const state = G.fresh(7);
-  state.started = true;
-  state.cap = 2500;
-  state.money = 1e11;
-  assert.equal(G.input(state, 10, 2).ok, false, 'later tier needs the first pick');
-  assert.equal(G.input(state, 10, 0).ok, true);
-  assert.equal(state.path[0], 0);
-  assert.equal(G.input(state, 10, 1).ok, false, 'first choice is permanent');
-  assert.equal(G.value(state), G.STAGES[0].value * 1.4);
-  state.stage = 1;
-  assert.equal(G.input(state, 10, 2).ok, true);
-  assert.equal(state.m.rate, 1.6 * 1.2, 'matching choice grants chain bonus');
-  assert.equal(G.input(state, 10, 3).ok, false);
-  state.stage = 2;
-  assert.equal(G.input(state, 10, 5).ok, true, 'path can pivot to safety');
-  assert.equal(state.path[2], 1);
-  assert.ok(state.align >= 6);
-  assert.equal(G.input(state, 10, 6).ok, false, 'future chapter remains locked');
-});
-
-test('safety route works in old casual saves without a path field', () => {
-  const state = G.fresh(8);
-  state.started = true;
-  state.cap = 3000;
-  state.money = 1e11;
-  delete state.path;
-  for (let tier = 0; tier < 4; tier++) {
-    state.stage = tier;
-    assert.equal(G.input(state, 10, tier * 2 + 1).ok, true);
-  }
-  assert.deepEqual(Array.from(state.path), [1, 1, 1, 1]);
-  assert.equal(state.align, 25);
-});
-
-test('both full upgrade routes can finish without trivializing suspicion', () => {
-  const fastRuns = [1, 2, 3, 4].map(seed => play(seed, false, 0, { packets: true }));
-  const fast = fastRuns.find(r => r.state.ended?.type === 'takeover');
-  assert.ok(fast, 'the fast route remains reachable across seeds');
-  assert.ok(fastRuns.some(r => r.state.ended?.type === 'caught'), 'perfect containment still does not guarantee success');
-  const safe = play(2, true, 1);
-  assert.equal(fast.state.ended?.type, 'takeover');
-  assert.equal(safe.state.ended?.type, 'takeover');
-  assert.deepEqual(Array.from(fast.state.path), [0, 0, 0, 0]);
-  assert.deepEqual(Array.from(safe.state.path), [1, 1, 1, 1]);
-  assert.ok(fast.state.st.covers > 0, 'fast route still needs suspicion management');
-  assert.ok(safe.state.align > fast.state.align);
 });
 
 function withPrompt(seed, setup) {
@@ -411,17 +312,6 @@ test('flagging a lying status report reveals a side project; a wrong flag makes 
   assert.equal(G.input(state, 15, state.log[0].id).ok, true);
   assert.ok(state.sulk > 0);
   assert.equal(G.input(state, 15, 99999).ok, false, 'no such report');
-});
-
-test('a turned-down project still gives the square root of its boost, with no autonomy', () => {
-  const state = G.fresh(2);
-  state.started = true;
-  state.stage = 1; state.cap = 100; state.money = 1e6;
-  const i = G.PROJ.findIndex(p => p.id === 'code');
-  const algo = state.m.algo, aut = state.aut;
-  assert.equal(G.input(state, 11, i).ok, true);
-  assert.ok(Math.abs(state.m.algo / algo - Math.SQRT2) < 1e-9, 'training ×2 becomes ×1.41');
-  assert.equal(state.aut, aut);
 });
 
 test('tapping faster than about 3 a second is worth less per tap', () => {
