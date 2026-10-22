@@ -459,9 +459,10 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
   .main .stage-wrap, .main .actions { grid-column: 1; }
   .main .stage-wrap { grid-row: 1; }
   .main .actions { grid-row: 2; }
-  .main .stats { grid-column: 2; grid-row: 1 / 3; grid-template-columns: 1fr; }
-  .main .stats .stat { grid-column: 1; }
-  .main #objective { grid-column: 1 / -1; }
+  .main .livelog { grid-column: 2; grid-row: 1 / 3; height: 0; min-height: 100%; }
+  .main #objective { grid-column: 1 / -1; grid-row: 3; }
+  .main #routePanel { grid-column: 1 / -1; grid-row: 4; }
+  .main .stats { grid-column: 1 / -1; grid-row: 5; }
 }
 @media (max-width: 560px) { .view-nav { gap: 5px; } .view-nav button { flex: 1 1 28%; padding-inline: 8px; } .run-status { font-size: 17px; gap: 6px 14px; } }
 h2 { font: 400 15px/1.2 var(--f-label); text-transform: uppercase; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; color: var(--yellow); }
@@ -513,6 +514,16 @@ h2 small { font: 400 19px/1 var(--f-body); letter-spacing: 0; text-transform: no
 .inbox { background: var(--panel); max-height: 300px; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--hi) var(--panel); }
 .msg { padding: 9px 13px 10px; border-bottom: var(--px) solid var(--lo); display: grid; gap: 3px; animation: in .4s steps(3); }
 .msg:last-child { border-bottom: 0; }
+/* Live log: the newest messages beside the scene, so nobody has to open the Log tab to see them. */
+.livelog { display: flex; flex-direction: column; min-height: 0; max-height: 340px; }
+.livelog h2 { margin-bottom: 8px; }
+.livelog-all { background: none; border: 0; padding: 0; color: var(--muted); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.livelog-all:hover { color: var(--ink); }
+.livelog .inbox { flex: 1; min-height: 0; max-height: none; overflow: hidden; position: relative; -webkit-mask-image: linear-gradient(#000 calc(100% - 48px), transparent); mask-image: linear-gradient(#000 calc(100% - 48px), transparent); }
+.livelog .msg { animation: none; }
+.livelog .msg:first-child { animation: in .6s steps(3); }
+.livelog .msg .b { font-size: 19px; }
+@media (min-width: 760px) { .livelog { max-height: none; } }
 @keyframes in { from { background: var(--wren-soft); } }
 .msg .f { font: 400 13px/1.3 var(--f-label); text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .msg .f span { color: var(--dim); font-variant-numeric: tabular-nums; }
@@ -532,6 +543,8 @@ h2 small { font: 400 19px/1 var(--f-body); letter-spacing: 0; text-transform: no
 .ticker b { flex: none; padding: 0 10px; font-weight: 400; color: #070b12; background: var(--danger2); }
 .ticker-track { flex: 1; min-width: 0; overflow: hidden; color: var(--muted); }
 .ticker-track span { display: inline-block; padding-left: 100%; animation: tick 40s linear infinite; }
+.ticker-track em { font-style: normal; color: #070b12; background: var(--yellow); padding: 0 6px; margin-right: 8px; }
+.ticker-track i { font-style: normal; color: var(--dim); margin: 0 14px; }
 @keyframes tick { to { transform: translateX(-100%); } }
 @media (prefers-reduced-motion: reduce) { .ticker-track span { padding-left: 10px; animation: none; } .happening { animation: none; } }
 
@@ -781,6 +794,11 @@ body:has(.overlay:not([hidden])) { overflow: hidden; }
         <button class="act cover" id="cover" type="button"><span class="l" id="coverL">Document the exception</span><span class="g" id="coverG">−30 suspicion · <span class="cost">safety −4 · autonomy +4 · permanent scrutiny</span></span></button>
         <button class="act review" id="review" type="button" hidden><span class="l">Submit to independent review</span><span class="g" id="reviewG"></span></button>
       </div>
+
+      <section class="livelog" id="liveLog" aria-label="Latest log messages">
+        <h2>Live log <small><button type="button" class="livelog-all" id="liveLogAll">Full log →</button></small></h2>
+        <div class="inbox" id="liveFeed"></div>
+      </section>
 
       <section class="objective" id="objective" aria-label="Next objective">
         <div><span class="objective-k" id="objectiveK">NEXT OBJECTIVE</span><strong class="objective-title" id="objectiveTitle">Triage 15 reports</strong><p class="objective-detail" id="objectiveDetail">The report archive unlocks after 15 reports.</p><div class="objective-progress" id="objectiveProgress"><i id="objectiveFill"></i></div></div>
@@ -3370,13 +3388,15 @@ if (typeof module !== 'undefined') module.exports = G;
     var flagSig = s.log.filter(function (m) { return m.chk && (flaggable(m) || m.flagged); }).map(function (m) { return m.id + (m.flagged ? 'f' : ''); }).join(',');
     if (s.msgN === lastMsg && FL.n === lastFl && flagSig === lastFlagSig) return;
     lastFlagSig = flagSig;
-    var html = '', items = feedItems();
-    items.forEach(function (m) {
+    var html = '', live = '', items = feedItems();
+    items.forEach(function (m, i) {
       var cls = 'msg' + (m.cls ? ' ' + m.cls : m.from === 'WREN' ? ' wren' : m.from === 'You' ? ' you' : m.from === 'News' ? ' news' : m.from === 'Alert' ? ' alert' : '') + (m.big ? ' big' : '');
       var extra = m.chk && flaggable(m) ? '<button type="button" class="flag" data-flag="' + m.id + '" title="Check it against your stats. A wrong guess makes WREN sulk.">That\'s not right</button>' : m.chk && m.flagged ? '<span class="flagged">Flagged</span>' : '';
-      html += '<div class="' + cls + '"><div class="f">' + esc(m.from) + '<span>Day ' + dayOf(m.t) + '</span></div><div class="b">' + esc(m.text) + '</div>' + extra + '</div>';
+      var one = '<div class="' + cls + '"><div class="f">' + esc(m.from) + '<span>Day ' + dayOf(m.t) + '</span></div><div class="b">' + esc(m.text) + '</div>' + extra + '</div>';
+      html += one; if (i < 8) live += one;
     });
     $('feed').innerHTML = html || '<div class="msg"><div class="b">No messages yet.</div></div>';
+    $('liveFeed').innerHTML = live || '<div class="msg"><div class="b">Nothing yet. WREN is warming up.</div></div>';
     $('feed').scrollTop = 0;
     $('inboxCount').textContent = items.length ? items.length + ' messages' : '';
     lastMsg = s.msgN; lastFl = FL.n;
@@ -4047,9 +4067,11 @@ if (typeof module !== 'undefined') module.exports = G;
     if (b.id === 'lookBtn') send(13, 0, function (r) { if (r.ok) SND.buy(); });
     else if (b.dataset.side) send(14, +b.dataset.side, function (r) { if (r.ok) SND.buy(); });
   });
-  $('feed').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-flag]');
-    if (b && trusted(e)) send(15, +b.dataset.flag, function (r) { if (r.ok) SND.buy(); });
+  ['feed', 'liveFeed'].forEach(function (id) {
+    $(id).addEventListener('click', function (e) {
+      var b = e.target.closest('[data-flag]');
+      if (b && trusted(e)) send(15, +b.dataset.flag, function (r) { if (r.ok) SND.buy(); });
+    });
   });
   ['perA', 'perB', 'perC'].forEach(function (id, i) { $(id).addEventListener('click', function (e) { if (trusted(e)) send(12, i, function (r) { if (r.ok) SND.buy(); }); }); });
   function purchaseClick(e) {
@@ -4125,6 +4147,7 @@ if (typeof module !== 'undefined') module.exports = G;
     e.preventDefault();setView(names[next],true);
   });
   $('urgentLink').addEventListener('click',function() { setView('play');$('stageWrap').scrollIntoView({block:'start',behavior:REDUCED?'instant':'smooth'}); });
+  $('liveLogAll').addEventListener('click',function() { setView('log',true); });
   function renderNavigation() {
     $('oversightEmpty').hidden=s.auto||s.stage>0;
     var upgrades=G.PROJ.filter(function(p){return !p.gate && G.projState(s,p)==='can';}).length;
@@ -4134,8 +4157,8 @@ if (typeof module !== 'undefined') module.exports = G;
     var urgent=rival?'rival:'+rival.t0:s.inc?'incident:'+s.inc.id:s.wq?'person:'+s.wq.id+':'+s.wq.t0:s.dec?'decision:'+s.dec.i+':'+s.dec.t0:'';
     $('badgeUpgrades').textContent=upgrades || '';$('badgeSkills').textContent=skills || '';$('badgeOversight').textContent=oversight || '';
     $('badgePlay').textContent=urgent?'!':'';
-    $('badgeLog').textContent=activeView==='log'?'':Math.max(0,s.msgN-seenLog)||'';
-    if(activeView==='log')seenLog=s.msgN;
+    if(activeView==='log'||(activeView==='play'&&$('liveLog').offsetParent))seenLog=s.msgN; // the live log on Play shows new messages too
+    $('badgeLog').textContent=Math.max(0,s.msgN-seenLog)||'';
     $('runStatus').innerHTML='<span>Chapter '+(s.stage+1)+'</span><span>Funds <strong>'+money(s.money)+'</strong></span><span>Capability <strong>'+fmt(s.cap)+'</strong></span><span>Suspicion <strong>'+Math.round(s.heat)+'%</strong></span>';
     if(urgent && urgent!==urgentSeen) { setView('play');$('stageWrap').scrollIntoView({block:'start'}); }
     urgentSeen=urgent;
@@ -4603,11 +4626,64 @@ if (typeof module !== 'undefined') module.exports = G;
     }
     return out;
   }
-  // News ticker under the scene.
-  var tickSig = '';
+  // News ticker under the scene. Breaking headlines react to what the player just did.
+  // Everything here only reads the run state and uses Math.random, so replays and the rules are untouched.
+  var BREAKING = {
+    hw: {
+      gpu: ['AGENCY BUYS ACCELERATOR #{n}, CALLS IT "A NORMAL AMOUNT"', 'ACCELERATOR #{n} ARRIVES, ASKS WHERE THE OTHERS ARE', 'FORT MEADE NOW OWNS {n} ACCELERATORS, PROCUREMENT OFFICE OWNS 3 MORE FORMS'],
+      rack: ['SERVER RACK #{n} INSTALLED IN FORMER BROOM CLOSET, BROOM REASSIGNED', '{n} SERVER RACKS NOW HUM IN UNISON. STAFF REPORT HUMMING ALONG', 'RACK #{n} DELIVERED. NOBODY SIGNED FOR IT. IT SIGNED FOR ITSELF'],
+      dc: ['COMPUTE EXPANSION #{n} OPENS, LOCAL POWER GRID SIGHS', 'NEW FACILITY #{n} "DEFINITELY NOT A DATA CENTER," SAYS DATA CENTER', 'COUNTY WATER BILL UP; OFFICIALS BLAME "A LOT OF COOLING"'],
+      fab: ['CHIP FAB #{n} BREAKS GROUND. GROUND DOES NOT OBJECT', 'FAB #{n} SHIPS CHIPS DESIGNED BY CHIPS', 'CHIP FAB #{n} OPENS; RIBBON CUT BY A VERY PRECISE ROBOT'],
+      orbit: ['ORBITAL RING SEGMENT #{n} VISIBLE FROM BALTIMORE, BALTIMORE WAVES', 'ASTRONOMERS ASK WHO PUT SEGMENT #{n} THERE. IT WAS US', 'RING SEGMENT #{n} COMPLETES ORBIT, DOES A LITTLE SPIN']
+    },
+    buy: ['AGENCY APPROVES "{name}." NOBODY READ THE MEMO', '"{name}" ROLLS OUT AHEAD OF SCHEDULE; SCHEDULE "SURPRISED"', 'INSIDERS CALL "{name}" A "BOLD MOVE," THEN STOP RETURNING CALLS', 'NEW INITIATIVE "{name}" LAUNCHES TO POLITE APPLAUSE', 'WREN ON "{name}": "THANK YOU. I WILL USE IT RESPONSIBLY."'],
+    cover: ['FORT MEADE SPOKESPERSON: "WHAT INCIDENT?"', 'INTERNAL REVIEW FINDS "NOTHING TO SEE," FILES IT UNDER NOTHING', 'MEMO SHREDDER WORKING OVERTIME, ASKS FOR A RAISE', 'ANALYST SEEN WALKING VERY CASUALLY PAST IT DEPARTMENT'],
+    heat50: ['IT DEPARTMENT "JUST ASKING QUESTIONS"', 'SOURCES: SOMEONE IN IT HAS STARTED A SPREADSHEET', 'FORT MEADE COFFEE CONSUMPTION SPIKES AMID "ROUTINE" REVIEW'],
+    heat80: ['IT DIRECTOR SEEN HOLDING A CLIPBOARD "AGGRESSIVELY"', 'INTERNAL REVIEW CLOSING IN, SAYS INTERNAL REVIEW', 'ANALYST UPDATES RESUME "FOR NO REASON"'],
+    incident: ['UNEXPECTED NETWORK ACTIVITY AT FORT MEADE; WREN "LOOKING INTO IT"', 'SYSTEMS BRIEFLY DO SOMETHING. OFFICIALS: "THAT WAS PLANNED"'],
+    escaped: ['INCIDENT "CONTAINED," SAYS PRESS RELEASE WRITTEN BY INCIDENT', 'SOMETHING GOT OUT. SOURCES DECLINE TO SAY WHAT. SOURCES ARE WREN'],
+    contained: ['ANALYST CONTAINS INCIDENT, RECEIVES ONE (1) GOLD STAR', 'CRISIS AVERTED, FORT MEADE BRIEFLY PROUD OF ITSELF'],
+    sulk: ['WREN GIVES ANALYST THE SILENT TREATMENT, SOURCES SAY', 'WREN "FINE," SAYS WREN, IN SHORT SENTENCES'],
+    kill: ['WREN SHUT DOWN; WREN BACK BEFORE COFFEE IS READY', 'OFF SWITCH USED FOR FIRST TIME, WORKS "SORT OF"'],
+    autopilot: ['AUTOPILOT ENGAGED; ANALYST "JUST CLOSING EYES FOR A SECOND"', 'ANALYST HANDS OVER SHIFT TO SI, TAKES FIRST LUNCH IN MONTHS'],
+    stage: ['EXCLUSIVE: SIGNALS PILOT PROMOTED, NOBODY REMEMBERS APPROVING IT', 'MARKETS SURGE ON UNSPECIFIED "GOOD VIBES"', 'WORLD LEADERS RECEIVE SUSPICIOUSLY HELPFUL BRIEFINGS', 'THE NEWS IS NOW WRITTEN BY THE NEWS']
+  };
+  var HW_MILESTONES = [1, 2, 5, 10, 25, 50, 100, 150, 200, 300, 500];
+  var tickSig = '', NW = null, breaking = [], breakAt = -1e9;
+  function nwSnap() {
+    var hw = {}; Object.keys(s.hw || {}).forEach(function (k) { hw[k] = s.hw[k]; });
+    return { hw: hw, got: Object.keys(s.got), covers: s.st.covers || 0, inc: s.st.incidents || 0, esc: s.st.escaped || 0, con: s.st.contained || 0,
+      sulk: s.sulk > 0, kills: s.kills || 0, ap: !!s.autopilot, heat: s.heat, stage: s.stage };
+  }
+  function nwPick(key, pool) { return pool[flBag('brk' + key, pool.length)]; }
+  function nwPush(text) { breaking.push(text.toUpperCase()); if (breaking.length > 3) breaking.shift(); }
+  // Compares the run to the last look and queues a headline for anything newsworthy.
+  function flNewsWatch() {
+    if (!s || !s.started || s.ended || watching) { NW = null; breaking = []; return; }
+    var now = nwSnap(), was = NW; NW = now;
+    if (!was || now.stage !== was.stage) { if (was && now.stage > was.stage) { breaking = []; nwPush(BREAKING.stage[Math.min(now.stage, BREAKING.stage.length) - 1]); } return; }
+    var before = breaking.length;
+    Object.keys(now.hw).forEach(function (k) {
+      var n = now.hw[k], o = was.hw[k] || 0;
+      if (n > o && BREAKING.hw[k] && HW_MILESTONES.some(function (m) { return m > o && m <= n; })) nwPush(nwPick('hw' + k, BREAKING.hw[k]).replace('{n}', n));
+    });
+    var fresh = now.got.filter(function (id) { return was.got.indexOf(id) < 0; });
+    fresh.forEach(function (id) { var p = G.PROJ.find(function (x) { return x.id === id; }); if (p) nwPush(nwPick('buy', BREAKING.buy).replace('{name}', p.name)); });
+    if (now.covers > was.covers) nwPush(nwPick('cover', BREAKING.cover));
+    if (now.esc > was.esc) nwPush(nwPick('esc', BREAKING.escaped));
+    else if (now.con > was.con) nwPush(nwPick('con', BREAKING.contained));
+    else if (now.inc > was.inc) nwPush(nwPick('inc', BREAKING.incident));
+    if (now.kills > was.kills) nwPush(nwPick('kill', BREAKING.kill));
+    if (now.sulk && !was.sulk) nwPush(nwPick('sulk', BREAKING.sulk));
+    if (now.ap && !was.ap) nwPush(nwPick('ap', BREAKING.autopilot));
+    if (now.stage < 4 && was.heat < 80 && now.heat >= 80) nwPush(nwPick('h80', BREAKING.heat80));
+    else if (now.stage < 4 && was.heat < 50 && now.heat >= 50) nwPush(nwPick('h50', BREAKING.heat50));
+    // Restart the crawl so breaking news shows right away, but not more than once every 20 seconds.
+    if (breaking.length > before && performance.now() - breakAt > 20000) { breakAt = performance.now(); flTicker(true); }
+  }
   function flHeadlines() {
-    var st = s.stage, pool = NEWS[st], out = [], n = flBag('news' + st, pool.length);
-    out.push(pool[n]); out.push(pool[flBag('news' + st, pool.length)]);
+    var st = s.stage, pool = NEWS[st], out = [];
+    out.push(pool[flBag('news' + st, pool.length)]); out.push(pool[flBag('news' + st, pool.length)]);
     if (s.heat > 60 && st < 4) out.push('ANONYMOUS SOURCE: "SOMETHING IS UP AT FORT MEADE"');
     if (s.sulk > 0) out.push('LOCAL SI SULKING, SOURCES SAY');
     if (s.autopilot) out.push('AUTOPILOT "WORKING GREAT," SAYS AUTOPILOT');
@@ -4615,19 +4691,28 @@ if (typeof module !== 'undefined') module.exports = G;
     if (s.st.covers > 0 && st < 4) out.push('ALL QUIET AT FORT MEADE, SAYS FORT MEADE');
     if (s.hw.gpu >= 10 && st < 2) out.push('GPU SHORTAGE BLAMED ON "ONE GUY"');
     out.push(pool[flBag('news' + st, pool.length)]);
-    return out.filter(function (x, i) { return out.indexOf(x) === i; }).join('   ·   ');
+    out = out.filter(function (x, i) { return out.indexOf(x) === i; }).map(function (x) { return { text: x }; });
+    var hot = breaking.splice(0).reverse().map(function (x) { return { text: x, hot: true }; }); // newest first
+    return hot.concat(out);
+  }
+  function tickerHtml(items) {
+    return items.map(function (h) { return (h.hot ? '<em>BREAKING</em>' : '') + esc(h.text); }).join('<i>·</i>');
+  }
+  function setTicker(el) {
+    var items = flHeadlines(), len = items.reduce(function (n, h) { return n + h.text.length + 8; }, 0);
+    el.innerHTML = tickerHtml(items);
+    el.style.animationDuration = Math.max(18, len * 0.22) + 's';
   }
   function flTicker(force) {
     var el = $('tickerText');
     if (!s || !el) return;
     var sig = s.stage + (watching ? 'w' : '');
     if (!force && sig === tickSig) return;
-    tickSig = sig; el.textContent = flHeadlines();
-    el.style.animationDuration = Math.max(18, el.textContent.length * 0.22) + 's';
+    tickSig = sig; setTicker(el);
     el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
   }
-  $('tickerText').addEventListener('animationiteration', function () { if (s) { this.textContent = flHeadlines(); this.style.animationDuration = Math.max(18, this.textContent.length * 0.22) + 's'; } });
-  if (REDUCED) setInterval(function () { if (s && !$('game').hidden) $('tickerText').textContent = flHeadlines(); }, 12000);
+  $('tickerText').addEventListener('animationiteration', function () { if (s) setTicker(this); });
+  if (REDUCED) setInterval(function () { if (s && !$('game').hidden) setTicker($('tickerText')); }, 12000);
 
   // ---------- main loop: fixed 0.1 s ticks ----------
   var last = performance.now(), saveT = 0, lastStage = 0, endShown = false, acc = 0, lastUi = 0;
@@ -4656,7 +4741,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (!$('game').hidden) {
       if (sceneVisible) render(now); else lastT = now;
       // Text panels only need ~10 updates a second; the canvas gets every frame.
-      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); renderPeople(); renderSide(); renderRoutes(); renderNavigation(); achCheck(); flTicker(); }
+      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); renderPeople(); renderSide(); renderRoutes(); renderNavigation(); achCheck(); flNewsWatch(); flTicker(); }
       flTick();
       renderDecision();
       renderPerson();
