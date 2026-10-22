@@ -9,6 +9,7 @@ A browser incremental game. You're an NSA signals analyst evaluating WREN, an ex
 - **Suspicion:** WREN's actions draw attention. Hit 100% and you get caught (you can retry from the start of the chapter).
 - **Incidents:** WREN goes rogue now and then. Tap the red packets before they escape. The first three perfectly contained incidents in each chapter earn safety points.
 - **Decisions:** WREN asks permission on a timer. If you don't answer, it decides for itself.
+- **Upgrade path:** four permanent two-way picks across the first four chapters. Favor speed or safety; repeating a side earns a chain bonus. Autopilot leaves these picks to you.
 - **Autopilot:** an unlockable passive mode. WREN plays for you, including while the game is closed (half speed, up to 8 hours). It's reckless and never buys safety projects, and each chapter's big moment waits until you're back.
 - **Endings and score:** ten outcomes across shutdown, investigation, and WREN takeover. A late shutdown can score highly; how WREN treats humanity depends on your safety score (140+ for the best takeover ending). Every outcome shows a score.
 - **Decisions and events:** 40 decisions, 32 kinds of incidents, and 80+ lines of WREN chatter, drawn without repeats.
