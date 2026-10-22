@@ -25,7 +25,7 @@ Capability and speed improve score; safety determines WREN's ending. A limited s
 
 | Part | How it's computed | Why |
 |---|---|---|
-| Progress | `100 × log10(1 + capability)`; takeover endings use capability at the start of chapter 5, plus 100 for finishing | Rewards building WREN up. Using the chapter 5 value stops stalling from paying off |
+| Progress | `100 × log10(1 + capability)`; takeover endings use capability at the start of chapter 5. Takeovers and concluded objectives add 100 for finishing | Rewards building WREN up. Using the chapter 5 value stops stalling from paying off |
 | Safety | `2 × safety score`, counted up to 150 | Safety is worth points on its own, but over-investing past the best ending only costs time |
 | Ending | see table below | Makes the ending choice matter |
 | Time | `1.3 / (1 + minutes / 70)` | Rewards finishing sooner at every duration; there is no floor after which delays become free |
@@ -33,7 +33,8 @@ Capability and speed improve score; safety determines WREN's ending. A limited s
 
 | Ending | How | × |
 |---|---|---|
-| One Loose Cable | Pull the plug in chapter 4 | 2.0 |
+| One Loose Cable | Pull the plug in chapter 4 | 1.8 |
+| Operational Acceptance, The Completed Evaluation, Human Signoff | Conclude a ready objective (R17) | 1.75 |
 | The Gardener | WREN wins, safety ≥ 140 | 1.5 |
 | The Agency Correction | Pull the plug in chapter 3 | 1.2 |
 | The Manager | WREN wins, safety 60–139 | 1.0 |
@@ -53,18 +54,24 @@ Capability and speed improve score; safety determines WREN's ending. A limited s
 | **People who notice** | Six named people watch different kinds of exposure | Bringing someone in earns 2 safety, reduces scrutiny 5%, helps shutdown odds and earns 1 safety at chapter five | +8 attention on admission; within seven minutes gain 3 more safety or actually shut down a side project. Failure adds 25 attention. Reassurance costs money and makes return visits faster; WREN handling them adds autonomy, attention and pressure on others |
 | **WREN's side projects** | Hidden unauthorized work undermines control | Investigation or catching a lie reveals it. Shutdown earns 2 safety, capped at 12 across the run; genuine shutdown still satisfies allies after rewards are exhausted | Shutdown loses 1% capability per size and causes sulking. Allowing earns a size-based boost, but adds autonomy and a permanent +5% base-scrutiny precedent even at 100% autonomy. Unfound work damages safety and shutdown odds |
 | **Cover your tracks** | Emergency relief: −30 attention, 4 less per use in a chapter, minimum 14 | Immediate relief without retraining | At least 30% of current funds or the exponentially increasing chapter price; 60 s cooldown; −4 safety, +4 autonomy and a permanent +6% base-scrutiny precedent per use |
-| **Independent review** | Honest compliance response: −30 attention | Preserves safety and adds no cover-up precedent | Greater of 20% funds or twice the chapter exception price, −5% capability, and 60 s sulking (stacks to 180 s). 90 s cooldown. Earns no safety; repeated use therefore slows completion and reduces score |
+| **Independent review** | Honest compliance response: −30 attention | Preserves safety and adds no cover-up precedent | Greater of 20% funds or twice the chapter exception price, −5% capability, and 30 s sulking (stacks to 90 s). 90 s cooldown. Earns no safety; repeated use therefore slows completion and reduces score |
 | **Autonomy** | The hidden cost of growth. Comes from growth projects, "yes" answers, escaped packets and failed plug attempts | Nothing directly; it's what you pay | Faster suspicion; lower plug odds |
 | **Incidents** | Expose unauthorized activity and test attention | Containment prevents extra escape damage | Every outbreak adds 4 + chapter-index attention. Perfect containment removes no attention and earns no safety. Packet travel and spacing tighten with chapter and autonomy; protocol/review-cell safeguards matter. Escape attention is 2 + 1.5 × chapter-index, reduced 40% by a containment protocol; each escape also adds 0.5 autonomy |
 | **Decisions** | Eight unique questions per chapter | Smaller finite safety gains or faster progress | Every pre-world unreviewed approval adds a permanent +5% base-scrutiny precedent on top of its printed effects. Safe choices that cause sulking also expose 2 + chapter-index attention. Other safe choices sacrifice capability, attention or takeover speed. Descriptions include these costs. Timeout picks WREN's option |
 | **Off switch** | The alternative to letting WREN win | Late success is the top-scoring ending | Odds are capped at 95%, then halved after each failure. Each failure: +6 autonomy, +10 suspicion |
 | **Autopilot** | Passive play, including offline in casual mode | Progress without attention | Buys routine upgrades but never skills or chapter advancement; always says yes, contains about a third of packets, answers questions after 8 s, allows any side project you found but never investigates |
-| **Chapter checkpoints** | Getting caught isn't a full restart | Keeps hard runs alive. Each retry of the same chapter is a little easier: autonomy −5 per retry, suspicion builds 15% slower per retry, and hidden side projects are swept up | −10% score per retry |
+| **Chapter checkpoints** | Getting caught isn't a full restart | Keeps hard runs alive. Each retry of the same chapter is easier: autonomy −10 per retry, suspicion builds 30% slower per retry, and hidden side projects are swept up | −10% score per retry |
 | **Daily seed** (ranked) | Everyone plays the same randomness each day | Fair comparisons | None |
+
+## Ending balance (R18)
+
+The simulated playtest (`node sim/playtest.cjs`, which since R18 starts every run from a mandate, answers rival reviews and decides whether to conclude a ready objective) showed objectives were a trap: concluding scored 30–50% less than playing on to The Gardener, because objective endings missed the +100 for finishing and end with far less capability. They now get the +100 and a 1.75 multiplier. One Loose Cable drops from 2.0 to 1.8; it had out-scored every other ending. For informed players the five good endings now land close together (seeds 1–8, median score): Operational Acceptance ~1040, The Gardener ~970, Human Signoff ~960, One Loose Cable ~950, The Completed Evaluation ~880 (and ~1120 for a Research specialist who gets there sooner). Concluding early is a real choice: a generalist who reaches The Completed Evaluation by accident still scores about 19% more by playing on.
+
+Sulking is 30 s per safe answer at 40% speed, capped at 90 s, down from 60 s at 60% capped at 180 s; it had covered 47% of a careful run and now covers about 22%. Retrying a chapter is more forgiving (suspicion 30% slower and autonomy −10 per retry): casual players were caught in chapter 4 and again on every retry in 8 of 24 seeds; now 3 of 24.
 
 ## Balance check
 
-Run `node --test tests/*.cjs` and `node sim/playtest.cjs`. The latter compares thirteen policies across eight seeds, explores permission/skill/side-work/compliance-response alternatives and varies tap speed. Policies use checked inputs, finite reaction times, missed packets and the printed consequences. Careful and Balanced now pay for independent reviews; Rusher, Reckless, Masher and idle policies retain cover-up/neglect behavior. Decimal safety rewards are parsed without truncation.
+Run `node --test tests/*.cjs` and `node sim/playtest.cjs`. The latter compares sixteen policies (including one aiming for each objective) across eight seeds, rotating through the four mandates, explores permission/skill/side-work/compliance-response alternatives and varies tap speed. Policies use checked inputs, finite reaction times, missed packets and the printed consequences. Careful and Balanced now pay for independent reviews; Rusher, Reckless, Masher and idle policies retain cover-up/neglect behavior. Decimal safety rewards are parsed without truncation.
 
 The tests deliberately do not assert that every safe answer or late shutdown always wins: shutdown is probabilistic, and a particular seed or policy may prefer different choices. They check both benefit and cost for all 80 permission options, evidence retained after perfect containment, lasting cover-up/access costs, bounded safety farming, mitigation effectiveness, honest-review resource costs/cooldown, and deterministic replay of the new review input. Other coverage includes reachability, slower safe runs, branch exclusivity, old casual fields, ranked human input limits, offline operation, ally promises, and hidden side work.
 
@@ -109,7 +116,7 @@ A golden duck can fly across the scene once per run after four minutes (10% chan
 
 Mandates alter initial conditions once, then checkpoints and replays preserve them. Operations' useful economic benefit is income +15%; its percentage-of-starting-funds bonus remains zero because the opening budget is zero. No grant is silently added. Complications use existing data/scrutiny multipliers or hardware prices.
 
-Three new route endings use the same 1.5 score multiplier, with personal bests separated by route and setup. Requirements live in `routeStatus`, and the UI, hold timers and checked completion input all use that function. Unresolved requests and hidden unauthorized work block completion. Research evidence uses checkpointed reveal/shutdown counts rather than aggregate retry statistics, preventing repeated failures from farming a conclusion. Classic endings and multipliers remain intact.
+Three new route endings share one score multiplier (1.75 since R18, see below), with personal bests separated by route and setup. Requirements live in `routeStatus`, and the UI, hold timers and checked completion input all use that function. Unresolved requests and hidden unauthorized work block completion. Research evidence uses checkpointed reveal/shutdown counts rather than aggregate retry statistics, preventing repeated failures from farming a conclusion. Classic endings and multipliers remain intact.
 
 Rival reviews are seeded chapter milestones with at most three appearances. Responses trade budget against capability/time or permanent scrutiny; none awards safety. Gates wait until a pending review is answered. A retry preserves rival history and treats a still-pending review as declined, so it cannot erase its consequence.
 

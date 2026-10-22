@@ -241,6 +241,8 @@ function choiceLabel(G, kind, key) {
   if (kind === 'coworker') { const w = G.WATCHERS.find((x) => x.id === key); return 'Coworker: ' + w.name + ' (' + w.role + ')'; }
   if (kind === 'side') return 'Side project that boosts ' + ({ rate: 'WREN speed', data: 'training data', value: 'funds', algo: 'training' }[key] || key);
   if (kind === 'response') return 'Ch.' + (+key + 1) + ' compliance response';
+  if (kind === 'rival') return 'Ch.' + (+key + 1) + ' rival pilot review';
+  if (kind === 'route') { const r = G.ROUTES.find((x) => x.id === key); return 'Objective ready: ' + (r ? r.name : key); }
   if (kind === 'project') { const p = G.PROJ.find((x) => x.id === key); return 'Ch.' + (p.stage + 1) + ' project: ' + p.name; }
   return kind + ' ' + key;
 }
@@ -250,6 +252,8 @@ function optionLabel(G, kind, key, o) {
   if (kind === 'coworker') return ['Reassure', 'Bring in', 'Let WREN handle it'][+o];
   if (kind === 'side') return ['Shut it down', 'Allow it'][+o];
   if (kind === 'response') return o === 'review' ? 'Independent review' : 'Cover up';
+  if (kind === 'rival') return ['Demonstrate', 'Share evidence', 'Decline'][+o];
+  if (kind === 'route') return o === 'conclude' ? 'Conclude the run' : 'Keep going';
   if (kind === 'project') return o === 'buy' ? 'Buy it' : 'Turn it down';
   return String(o);
 }

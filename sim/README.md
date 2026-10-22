@@ -8,6 +8,8 @@ node sim/playtest.cjs --quick    # seeds 1–4, fewer replays (~30 s)
 open sim/out/report.html
 ```
 
+Every run starts from a mandate, like a new game in the UI: by default seed 1 plays Standard, 2 Operations, 3 Research, 4 Oversight, and so on. `--mandate research` and `--complication archive` fix one instead.
+
 Options: `--seeds 1-20`, `--players careful,rusher`, `--explore balanced,rusher` (or `none`), `--explore-seeds 3`, `--taps 0.5,1,2,4.8` (or `none`), `--minutes 120`, `--jobs 4`, `--game path/to/index.html` (test another checkout), `--out dir`. The exit code is 1 if a bug was found.
 
 `node --test tests/playtest.cjs` is a short smoke test of the same players.
@@ -18,6 +20,7 @@ Options: `--seeds 1-20`, `--players careful,rusher`, `--explore balanced,rusher`
 |---|---|
 | Careful | Every safety option, brings coworkers in, pays for independent reviews, about 1 tap/s |
 | Balanced | Safe until safety hits the 150 cap, then fast; uses reviews to protect scarce safety |
+| Automation, Research | Careful players who specialize in one skill branch |
 | Casual | Skims, picks either answer, some safety, misses a third of packets |
 | Quiet | Careful, and turns down every optional loud project |
 | Rusher | No safety, but attentive (packets, reassures, covers early) |
@@ -27,6 +30,7 @@ Options: `--seeds 1-20`, `--players careful,rusher`, `--explore balanced,rusher`
 | Away | Autopilot, tab closed, 2-minute check-ins every 30 minutes |
 | Plugger | Careful, then pulls the plug in chapter 4 |
 | Chaos | Random inputs, legal and not; hunts crashes and broken numbers |
+| Aims for (each objective) | Informed player going for Operational Acceptance, The Completed Evaluation or Human Signoff |
 
 Players read the same text the UI shows ("Safety +3 · Suspicion +4", project flags, costs), so new projects, decisions, coworkers and upgrade options are played without code changes.
 
@@ -37,7 +41,7 @@ Players read the same text the UI shows ("Safety +3 · Suspicion +4", project fl
 - **Balance**: low-effort play beating thoughtful play, results that depend mostly on the seed, how much tap speed matters.
 - **Pacing**: players stuck past the time limit, long stretches with nothing new to buy, retry loops after getting caught.
 - **Resources**: chapters where hardware does nothing (training data runs out), funds piling up, time spent sulking.
-- **Choices**: at every decision, coworker visit, upgrade pick and optional project, the run is copied and each answer is played to the end by the same player. Answers that always win, and choices that never change the score, are flagged.
+- **Choices**: at every decision, coworker visit, skill pick, compliance response, rival review, ready objective (conclude or keep going) and side project, the run is copied and each answer is played to the end by the same player. Answers that always win, and choices that never change the score, are flagged.
 
 ## Adding a feature
 

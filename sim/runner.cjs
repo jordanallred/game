@@ -17,7 +17,7 @@ function hashName(str) { let h = 2166136261; for (const c of str) h = Math.imul(
 
 function newRecord() {
   return {
-    events: [], samples: [], flags: [], sides: [], buys: {}, declines: [], paths: [], decisions: [], coworkers: [], plugs: [], refused: [], problems: [],
+    events: [], samples: [], flags: [], sides: [], rivals: [], routes: [], buys: {}, declines: [], paths: [], decisions: [], coworkers: [], plugs: [], refused: [], problems: [],
     chapters: [{ stage: 0, t: 0 }], caught: [], retries: 0,
     time: { sulk: 0, danger: 0, waiting: 0, dataLimited: [0, 0, 0, 0, 0], chapter: [0, 0, 0, 0, 0], gateLocked: [0, 0, 0, 0, 0], gateMoney: [0, 0, 0, 0, 0], idleMoney: [0, 0, 0, 0, 0] },
     longest: { noProgress: 0, noProgressAt: null, waiting: 0, waitingAt: null },
@@ -102,14 +102,28 @@ function botStep(run) {
     }
   } else if (Object.keys(bot.pk).length) bot.pk = {};
 
-  // New replayable choices use the exact player input path.
-  if (s.competition && s.competition.pending && t - s.competition.pending.t0 >= 2) {
-    const pick = P.rival ? P.rival(s) : 2;
-    if (pick != null) act(run,18,pick,'rival review');
+  // Rival pilot reviews (chapters 2–4): demonstrate (funds), share evidence (capability, sulk) or decline (lasting scrutiny)
+  if (s.competition && s.competition.pending) {
+    const c = s.competition.pending, k = c.stage + ':' + c.t0;
+    if (!bot.rv || bot.rv.k !== k) bot.rv = { k, at: c.t0 + Math.max(2, between(bot, P.react)) };
+    if (t >= bot.rv.at && !bot.rv.done) {
+      bot.rv.done = true;
+      let pick = P.rival ? P.rival(s, r) : 2;
+      if (pick === 0 && s.money < G.rivalCost(s)) pick = 1;
+      pick = choicePoint(run, 'rival', c.stage, [0, 1, 2], pick);
+      if (pick !== null && pick !== undefined && act(run, 18, pick, 'rival review') && run.rec) run.rec.rivals.push({ t: +s.clock.toFixed(1), stage: c.stage, pick });
+    }
   }
-  if (P.target && G.routeStatus(s,P.target).ready) {
-    act(run,17,G.ROUTES.findIndex(x=>x.id===P.target),'conclude objective');
-    if (s.ended) return;
+  // Objectives: when one is ready, the player can conclude the run there or keep going
+  if (s.runSchema === 1 && !s.routeRequest) {
+    for (const route of G.ROUTES) {
+      const key = 'route:' + route.id;
+      if (bot.offered[key] || !G.routeStatus(s, route.id).ready) continue;
+      bot.offered[key] = true;
+      let pick = P.target ? (P.target === route.id ? 'conclude' : 'continue') : (P.conclude && P.conclude(s, route.id, r) ? 'conclude' : 'continue');
+      pick = choicePoint(run, 'route', route.id, ['conclude', 'continue'], pick);
+      if (pick === 'conclude' && act(run, 17, G.ROUTES.indexOf(route), 'conclude objective')) { if (run.rec) run.rec.routes.push({ t: +s.clock.toFixed(1), id: route.id }); break; }
+    }
   }
   // Decisions
   if (s.dec) {

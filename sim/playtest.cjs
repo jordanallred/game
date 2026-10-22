@@ -5,6 +5,7 @@
 //   node sim/playtest.cjs --quick         fewer seeds and replays (under a minute)
 //   node sim/playtest.cjs --seeds 1-20 --players careful,rusher --explore none
 //   node sim/playtest.cjs --game ../other-checkout/index.html
+//   node sim/playtest.cjs --mandate research --complication archive   (default: mandates rotate by seed)
 //
 // Writes sim/out/report.html (open it in a browser), sim/out/report.md and sim/out/runs.json.
 
@@ -14,7 +15,7 @@ const os = require('node:os');
 const { Worker, isMainThread, parentPort, workerData } = require('node:worker_threads');
 
 function parseArgs(argv) {
-  const o = { seeds: '1-8', players: 'all', explore: 'balanced,rusher', exploreSeeds: 3, taps: '0.5,1,2,4.8', tapSeeds: 3, out: path.join(__dirname, 'out'), jobs: Math.max(1, Math.min(8, os.cpus().length)), game: path.join(__dirname, '..', 'index.html'), minutes: null };
+  const o = { seeds: '1-8', players: 'all', explore: 'balanced,rusher', exploreSeeds: 3, taps: '0.5,1,2,4.8', tapSeeds: 3, out: path.join(__dirname, 'out'), jobs: Math.max(1, Math.min(8, os.cpus().length)), game: path.join(__dirname, '..', 'index.html'), minutes: null, mandate: 'mix', complication: 'none' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], v = () => argv[++i];
     if (a === '--quick') { o.seeds = '1-4'; o.exploreSeeds = 1; o.tapSeeds = 1; }
@@ -27,6 +28,8 @@ function parseArgs(argv) {
     else if (a === '--jobs') o.jobs = +v();
     else if (a === '--game') o.game = path.resolve(v());
     else if (a === '--minutes') o.minutes = +v();
+    else if (a === '--mandate') o.mandate = v();
+    else if (a === '--complication') o.complication = v();
     else if (a === '--help' || a === '-h') { console.log(fs.readFileSync(__filename, 'utf8').split('\n').slice(1, 10).join('\n')); process.exit(0); }
     else { console.error('Unknown option ' + a); process.exit(2); }
   }
@@ -38,6 +41,10 @@ function seedList(spec) {
   return out;
 }
 
+// Every new run in the game starts from a mandate. By default seeds rotate through them so each player sees all four.
+const MANDATE_ORDER = ['standard', 'operations', 'research', 'oversight'];
+function setupFor(o, seed) { return { mandate: o.mandate === 'mix' ? MANDATE_ORDER[(seed - 1) % MANDATE_ORDER.length] : o.mandate, complication: o.complication }; }
+
 // ---------- worker
 function work({ job, game }) {
   const { loadGame } = require('./game.cjs');
@@ -48,15 +55,15 @@ function work({ job, game }) {
   const G = loadGame(game), S = make(G);
   if (job.type === 'play') {
     const P = S[job.strategy];
-    const { sum, rec } = play(G, P, job.seed, { minutes: job.minutes });
+    const { sum, rec } = play(G, P, job.seed, { minutes: job.minutes, setup: job.setup });
     if (!job.keepSamples) rec.samples = [];
     rec.events = rec.events.slice(0, 200);
     return { type: 'play', label: P.label, blurb: P.blurb, sum, rec };
   }
-  if (job.type === 'explore') return Object.assign({ type: 'explore' }, explore(G, S[job.strategy], job.seed));
+  if (job.type === 'explore') return Object.assign({ type: 'explore' }, explore(G, S[job.strategy], job.seed, { setup: job.setup }));
   if (job.type === 'taps') {
     const P = Object.assign({}, S.balanced, { taps: job.rate, name: 'balanced' });
-    const { sum, rec } = play(G, P, job.seed);
+    const { sum, rec } = play(G, P, job.seed, { setup: job.setup });
     return { type: 'taps', rate: job.rate, seed: job.seed, score: sum.score, minutes: sum.minutes, ending: sum.ending, chapters: chapterTimes(rec, sum) };
   }
   throw new Error('unknown job ' + job.type);
@@ -102,9 +109,9 @@ async function main() {
   const seeds = seedList(o.seeds);
   const exNames = o.explore === 'none' ? [] : o.explore.split(',');
   const jobs = [];
-  for (const n of exNames) for (const seed of seeds.slice(0, o.exploreSeeds)) jobs.push({ type: 'explore', strategy: n, seed }); // slowest first
-  for (const n of names) for (const seed of seeds) jobs.push({ type: 'play', strategy: n, seed, minutes: o.minutes, keepSamples: seed === seeds[0] });
-  if (o.taps !== 'none') for (const rate of o.taps.split(',').map(Number)) for (const seed of seeds.slice(0, o.tapSeeds)) jobs.push({ type: 'taps', rate, seed });
+  for (const n of exNames) for (const seed of seeds.slice(0, o.exploreSeeds)) jobs.push({ type: 'explore', strategy: n, seed, setup: setupFor(o, seed) }); // slowest first
+  for (const n of names) for (const seed of seeds) jobs.push({ type: 'play', strategy: n, seed, setup: setupFor(o, seed), minutes: o.minutes, keepSamples: seed === seeds[0] });
+  if (o.taps !== 'none') for (const rate of o.taps.split(',').map(Number)) for (const seed of seeds.slice(0, o.tapSeeds)) jobs.push({ type: 'taps', rate, seed, setup: setupFor(o, seed) });
 
   const t0 = Date.now();
   process.stderr.write('Playing ' + jobs.length + ' runs on ' + o.jobs + ' threads…\n');
@@ -112,7 +119,7 @@ async function main() {
   if (process.stderr.isTTY) process.stderr.write('\n');
   const data = {
     runs: res.filter((r) => r.type === 'play'), explorations: res.filter((r) => r.type === 'explore'), taps: res.filter((r) => r.type === 'taps'),
-    meta: { rules: G.RULES, seeds, players: names, explore: exNames, exploreSeeds: seeds.slice(0, o.exploreSeeds), when: new Date().toISOString(), seconds: Math.round((Date.now() - t0) / 1000), game: path.relative(process.cwd(), o.game) || o.game }
+    meta: { rules: G.RULES, seeds, mandates: seeds.map((x) => setupFor(o, x).mandate + (o.complication !== 'none' ? '/' + o.complication : '')), players: names, explore: exNames, exploreSeeds: seeds.slice(0, o.exploreSeeds), when: new Date().toISOString(), seconds: Math.round((Date.now() - t0) / 1000), game: path.relative(process.cwd(), o.game) || o.game }
   };
   const A = analyze(G, data);
   fs.mkdirSync(o.out, { recursive: true });

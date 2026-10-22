@@ -34,7 +34,7 @@ test('lost conditions reset holds; hidden work and pending questions block concl
  s.sp=[];s.dec={};assert.equal(G.routeStatus(s,'research').ready,false);s.dec=null;s.offline=true;assert.equal(G.input(s,17,1).ok,false);
 });
 test('three conclusions use equal multipliers and cannot finish themselves',()=>{
- for(let i=0;i<3;i++){const id=['operations','research','control'][i],s=qualified(id);s.routes[id]=100;assert.equal(s.ended,null);assert.equal(G.input(s,17,i).ok,true);G.tick(s,.1);assert.equal(G.endingId(s),id);assert.equal(G.scoreParts(s).mult,1.5);assert.equal(G.input(s,17,i).ok,false);}
+ for(let i=0;i<3;i++){const id=['operations','research','control'][i],s=qualified(id);s.routes[id]=100;assert.equal(s.ended,null);assert.equal(G.input(s,17,i).ok,true);G.tick(s,.1);assert.equal(G.endingId(s),id);assert.equal(G.scoreParts(s).mult,G.ENDINGS.operations.mult);assert.equal(G.input(s,17,i).ok,false);}
 });
 test('rivals are seeded, queued, capped and have an always affordable decline',()=>{
  assert.equal(typeof G.competitionTick,'function');
@@ -89,4 +89,10 @@ test('a conclusion request cannot beat an ally breaking their promise on the sam
 });
 test('setup requirements include currently satisfied conditions',()=>{
  const st=G.routeStatus(fresh(),'operations');assert.ok(Array.isArray(st.requirements));assert.ok(st.requirements.includes('Scrutiny below 50%'));assert.ok(st.requirements.some(x=>/hidden work/.test(x)));
+});
+test('concluding an objective counts as finishing the run, like a takeover',()=>{
+ const s=qualified('research');s.routes.research=100;G.input(s,17,1);G.tick(s,.1);
+ const p=G.scoreParts(s);assert.equal(p.id,'research');
+ assert.ok(Math.abs(p.progress-(100*Math.log10(1+s.cap)+100))<1e-9,'objective endings get the same +100 for finishing as a takeover');
+ assert.ok(G.ENDINGS.research.mult>G.ENDINGS.gardener.mult,'an objective ends earlier with less capability, so its multiplier is higher than The Gardener');
 });
