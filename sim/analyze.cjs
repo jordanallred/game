@@ -244,6 +244,7 @@ function choiceLabel(G, kind, key) {
   if (kind === 'rival') return 'Ch.' + (+key + 1) + ' rival pilot review';
   if (kind === 'route') { const r = G.ROUTES.find((x) => x.id === key); return 'Objective ready: ' + (r ? r.name : key); }
   if (kind === 'project') { const p = G.PROJ.find((x) => x.id === key); return 'Ch.' + (p.stage + 1) + ' project: ' + p.name; }
+  if (kind === 'proposal') { const ps = G.PROJ.filter((x) => x.pick === key); return 'Ch.' + (ps[0].stage + 1) + ' proposal: ' + ps.map((x) => x.name).join(' / '); }
   return kind + ' ' + key;
 }
 function optionLabel(G, kind, key, o) {
@@ -255,6 +256,7 @@ function optionLabel(G, kind, key, o) {
   if (kind === 'rival') return ['Demonstrate', 'Share evidence', 'Decline'][+o];
   if (kind === 'route') return o === 'conclude' ? 'Conclude the run' : 'Keep going';
   if (kind === 'project') return o === 'buy' ? 'Buy it' : 'Turn it down';
+  if (kind === 'proposal') { const p = G.PROJ.find((x) => x.id === o); return p ? p.name : o; }
   return String(o);
 }
 

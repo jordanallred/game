@@ -82,7 +82,7 @@ test('independent operations spends assurance and creates autonomy through a del
  const s=state(3);s.cap=3000;const before=s.align,aut=s.aut;
  for(const i of [0,1,2,3])assert.equal(G.input(s,10,i).ok,true);
  assert.ok(s.align<before);assert.ok(s.aut>aut);
- assert.match(G.SKILLS[3].desc,/safety −8/);
+ assert.match(G.SKILLS[3].desc,/Safety −8/);
 });
 
 test('ranked replay reproduces independent reviews and their costs exactly',()=>{
@@ -131,4 +131,19 @@ test('simulated players discard stale status flags after crossing into the world
  const run=createRun(G,make(G).plugger,2);run.s.stage=4;run.s.auto=true;
  run.s.log=[{id:1,chk:true,t:0}];run.bot.flags={1:{go:true,at:0}};run.bot.lastMsg=1;
  step(run);assert.equal(run.rec.refused.length,0);
+});
+
+test('R20 skill mechanics do what their text says',()=>{
+ const learn=(s,i)=>{for(let j=i-(G.SKILLS[i].level);j<=i;j++)assert.equal(G.input(s,10,j).ok,true,G.SKILLS[j].name);};
+ // Control: cheaper reviews without capability loss; better shutdown odds
+ let s=state(2);s.cap=600;s.money=1e9;s.heat=50;s.align=20;
+ const cost=G.reviewCost(s);learn(s,10);assert.ok(G.reviewCost(s)<=Math.ceil(cost/2)+1);
+ const cap=s.cap;assert.equal(G.input(s,16,0).ok,true);assert.equal(s.cap,cap,'no capability lost');
+ s=state(2);s.cap=600;s.aut=60;const odds=G.killChance(s);learn(s,11);assert.ok(G.killChance(s)>odds);
+ // Automation: hardware buying can be paused and resumed (input 19)
+ s=state(2);s.cap=600;assert.equal(G.input(s,19,0).ok,false,'nothing to pause yet');learn(s,2);
+ s.money=1e12;assert.equal(G.input(s,19,0).ok,true);const hw=JSON.stringify(s.hw);G.tick(s,2);assert.equal(JSON.stringify(s.hw),hw,'paused');
+ assert.equal(G.input(s,19,0).ok,true);G.tick(s,2);assert.notEqual(JSON.stringify(s.hw),hw,'resumed');
+ // Research: probes catch lies on their own
+ s=state(1);s.cap=600;s.stage=2;learn(s,6);assert.equal(s.probes,true);
 });

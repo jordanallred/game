@@ -4,7 +4,7 @@ const {loadGame}=require('../sim/game.cjs');
 const G=loadGame();
 const ready=(stage=0)=>Object.assign(G.fresh(7),{started:true,auto:true,stage,cap:1e6,money:1e16,align:50,aut:20,heat:30,tasks:100});
 test('ordinary upgrades improve their purpose without adding risk or slowing another resource',()=>{
- for(const p of G.PROJ.filter(p=>!p.gate)){
+ for(const p of G.PROJ.filter(p=>!p.gate && !p.fast)){
   const s=ready(p.stage);s.hw.gpu=5;s.world=.5;
   const before=JSON.parse(JSON.stringify(s));
   assert.equal(G.buyProj(s,p.id,false),true,p.id);
@@ -14,6 +14,25 @@ test('ordinary upgrades improve their purpose without adding risk or slowing ano
   assert.ok(s.m.heatGain<=before.m.heatGain,p.id+' scrutiny');
   assert.ok(!p.loud && !p.safetyCost,p.id+' hidden cost');
   assert.equal(G.input(s,11,G.PROJ.indexOf(p)).ok,false,'upgrades are never declined for safety');
+ }
+});
+test('proposals come in pairs: the fast side pays a printed cost, and buying either side rules out the other',()=>{
+ const groups={};for(const p of G.PROJ.filter(p=>p.pick))(groups[p.pick]=groups[p.pick]||[]).push(p);
+ assert.ok(Object.keys(groups).length>=8,'every chapter has proposals');
+ for(const [k,ps] of Object.entries(groups)){
+  assert.equal(ps.length,2,k);assert.equal(ps.filter(p=>p.fast).length,1,k+' has one fast side');
+  const [a,b]=ps;assert.equal(a.stage,b.stage,k);assert.equal(a.cost,b.cost,k+' same price');
+  const fast=ps.find(p=>p.fast),safe=ps.find(p=>!p.fast);
+  assert.match(fast.desc,/Autonomy \+|Safety −|Suspicion \+/,k+' fast side prints its cost');
+  for(const first of ps){
+   const s=ready(first.stage);s.hw.gpu=5;s.world=.5;const other=ps.find(p=>p!==first);
+   assert.equal(G.projState(s,other),'can');
+   assert.equal(G.buyProj(s,first.id,false),true,first.id);
+   assert.equal(G.projState(s,other),'hidden',k+': the other side is ruled out');
+   assert.equal(G.buyProj(s,other.id,false),false);
+  }
+  const s1=ready(fast.stage),s2=ready(fast.stage);G.buyProj(s1,fast.id,false);G.buyProj(s2,safe.id,false);
+  assert.ok(s1.aut>s2.aut||s1.align<s2.align||s1.heat>s2.heat,k+' fast side costs more');
  }
 });
 test('skill tree has connected branches, a finite shared budget and exclusive capstones',()=>{
