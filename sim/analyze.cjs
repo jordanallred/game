@@ -165,7 +165,7 @@ function analyze(G, data) {
     return row;
   });
   const whistles = act.reduce((a, r) => a + (r.sum.st.whistles || 0), 0), allies = act.reduce((a, r) => a + people.filter((p) => r.sum.w[p.id] && (r.sum.w[p.id].st === 'ally' || r.sum.w[p.id].st === 'blew')).length, 0);
-  if (allies && whistles / allies > 0.2) add('note', 'People who notice', 'Allies blow the whistle ' + pct(whistles / allies) + ' of the time, even for careful players', 'Bringing someone in asks for +' + G.TUNE.allyNeed + ' safety within ' + G.TUNE.allyTime / 60 + ' minutes. Players who already finished their safety work (or have no safety project unlocked yet) can miss it without doing anything wrong.',
+  if (allies && whistles / allies > 0.2) add('note', 'People who notice', 'Allies blow the whistle ' + pct(whistles / allies) + ' of the time, even for careful players', 'Bringing someone in asks for +' + G.TUNE.allyNeed + ' safety or a side-project shutdown within ' + G.TUNE.allyTime / 60 + ' minutes. Players who already finished their safety work (or have no safety project unlocked yet) can miss it without doing anything wrong.',
     act.filter((r) => r.sum.st.whistles).map((r) => r.label + ' seed ' + r.sum.seed + ': ' + r.sum.st.whistles));
 
   // ---- side projects
@@ -240,6 +240,7 @@ function choiceLabel(G, kind, key) {
   if (kind === 'path') return 'Upgrade: ' + G.PATHS[key].name;
   if (kind === 'coworker') { const w = G.WATCHERS.find((x) => x.id === key); return 'Coworker: ' + w.name + ' (' + w.role + ')'; }
   if (kind === 'side') return 'Side project that boosts ' + ({ rate: 'WREN speed', data: 'training data', value: 'funds', algo: 'training' }[key] || key);
+  if (kind === 'response') return 'Ch.' + (+key + 1) + ' compliance response';
   if (kind === 'project') { const p = G.PROJ.find((x) => x.id === key); return 'Ch.' + (p.stage + 1) + ' project: ' + p.name; }
   return kind + ' ' + key;
 }
@@ -248,6 +249,7 @@ function optionLabel(G, kind, key, o) {
   if (kind === 'path') return G.PATHS[key].options[+o].name;
   if (kind === 'coworker') return ['Reassure', 'Bring in', 'Let WREN handle it'][+o];
   if (kind === 'side') return ['Shut it down', 'Allow it'][+o];
+  if (kind === 'response') return o === 'review' ? 'Independent review' : 'Cover up';
   if (kind === 'project') return o === 'buy' ? 'Buy it' : 'Turn it down';
   return String(o);
 }

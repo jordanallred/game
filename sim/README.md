@@ -16,8 +16,8 @@ Options: `--seeds 1-20`, `--players careful,rusher`, `--explore balanced,rusher`
 
 | Player | Plays like |
 |---|---|
-| Careful | Every safety option, brings coworkers in, about 1 tap/s |
-| Balanced | Safe until safety hits the 150 cap, then fast |
+| Careful | Every safety option, brings coworkers in, pays for independent reviews, about 1 tap/s |
+| Balanced | Safe until safety hits the 150 cap, then fast; uses reviews to protect scarce safety |
 | Casual | Skims, picks either answer, some safety, misses a third of packets |
 | Quiet | Careful, and turns down every optional loud project |
 | Rusher | No safety, but attentive (packets, reassures, covers early) |
@@ -46,3 +46,5 @@ Players read the same text the UI shows ("Safety +3 · Suspicion +4", project fl
 - A new thing to flag: add a check in `analyze.cjs`. Findings are `add(severity, area, title, detail, evidence)`.
 
 These players can't tell you whether something is fun, clear or funny. They tell you where to look.
+
+R14 adds checked input type 16 for independent review. Careful policies use it to preserve safety at a capability, funds and sulking cost; response choice points replay review versus cover-up alternatives. Permission and path safety descriptions can include fractional rewards.
