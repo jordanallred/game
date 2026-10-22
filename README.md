@@ -91,3 +91,17 @@ Regression checks: `node --test tests/*.cjs`. R15 deliberately invalidates ranke
 ### Progression and navigation (R16)
 
 Routine upgrades no longer add autonomy, consume assurance, or slow other resources. Strategic delegation belongs in the connected skill tree; live permission decisions still carry consequences. Skill prerequisites, point budgets and capstone exclusivity are enforced by the rules and ranked replay input 10. Input 11 (declining an upgrade) is retired. Existing casual runs retain their earned effects; old path choices consume points from the shared budget and previously declined improvements are not sold twice. R16 ranked replays require matching rules.
+
+## Mandates and replayability (R17)
+
+New runs begin with a mandate: Operations earns more per report but attracts more scrutiny; Research trains faster from a larger initial archive but earns less; Oversight starts with assurance and cheaper investigations at a slower work rate. Standard Pilot retains the original opening. Every new mandate can pursue every objective.
+
+Open **Mandate objectives** during play to see current requirements. Operational Acceptance needs a stable deployment and allies; The Completed Evaluation needs capability, assurance and documented unauthorized work; Human Signoff needs chapter-four safeguards and a sustained opportunity for a planned shutdown. These conclusions are deliberate choices. Existing shutdown, investigation and takeover endings remain available.
+
+Vector and Lantern are fictional competing pilots. Up to three comparison reviews ask you to spend funds, surrender capability and time, or accept a permanent scrutiny precedent. A missed review counts as a decline.
+
+Completing the three objectives discovers Budget Freeze (hardware +25%), Narrow Archive (incoming data −25%) and Watchful Review (controllable scrutiny +25%). Select at most one complication for a future run. These are optional challenges, with separate personal bests for every rules version, mode, mandate, complication and ending. Results suggest an unfinished objective and let you retry the same setup.
+
+R17 ranked replays include their setup and cannot load earlier ranked versions. Old casual saves continue without the new systems; start a fresh run to play mandates. Everything remains inside the offline HTML file.
+
+Validation: `node --test tests/*.cjs`, `node sim/replayability.cjs` and `node sim/playtest.cjs --quick`. Browser tests use an installed Playwright Chromium; set `WREN_CHROME` to an existing Chromium executable if needed. They explicitly skip when browser tooling is absent. See [validation evidence](docs/replayability-validation.md).

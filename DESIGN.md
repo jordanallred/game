@@ -104,3 +104,13 @@ Jokes that never touch the game state or the rules' random numbers, so they don'
 | Extra line on the caught screen | 4 |
 
 A golden duck can fly across the scene once per run after four minutes (10% chance each minute); catching it skips that tap and unlocks an achievement. Six silly achievements: Poke, Desk inspector, Hidden channel, Duck season, Have you tried turning it off and on again?, Night shift.
+
+## Replayable mandates and objectives (R17)
+
+Mandates alter initial conditions once, then checkpoints and replays preserve them. Operations' useful economic benefit is income +15%; its percentage-of-starting-funds bonus remains zero because the opening budget is zero. No grant is silently added. Complications use existing data/scrutiny multipliers or hardware prices.
+
+Three new route endings use the same 1.5 score multiplier, with personal bests separated by route and setup. Requirements live in `routeStatus`, and the UI, hold timers and checked completion input all use that function. Unresolved requests and hidden unauthorized work block completion. Research evidence uses checkpointed reveal/shutdown counts rather than aggregate retry statistics, preventing repeated failures from farming a conclusion. Classic endings and multipliers remain intact.
+
+Rival reviews are seeded chapter milestones with at most three appearances. Responses trade budget against capability/time or permanent scrutiny; none awards safety. Gates wait until a pending review is answered. A retry preserves rival history and treats a still-pending review as declined, so it cannot erase its consequence.
+
+Discovery storage is separate from active state and has no influence on replay verification. A checker can reproduce a declared challenge even when the local player has not discovered it. Watching a replay never writes discoveries or scenario records. UI setup/results use the existing overlay; objective details collapse in normal play, and message history lives in the Log tab. The document is the sole game scroll surface. Control objectives count learned Control skills (the R16 skill tree replaced paired path choices).

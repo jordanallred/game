@@ -686,6 +686,20 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+/* One page scroll, including on large desktops. */
+.main, .side, .side #peopleSection { position: static; max-height: none; overflow-y: visible; }
+.inbox { max-height: none; overflow-y: visible; }
+body:has(.overlay:not([hidden])) { overflow: hidden; }
+#setupControls { display: grid; gap: 16px; min-width: 0; }
+#setupControls[hidden] { display: none; }
+#setupControls label { display: grid; gap: 8px; }
+#setupControls select { width: 100%; min-width: 0; max-width: 100%; padding: 10px; font: inherit; background: var(--panel); color: var(--ink); border: 2px solid var(--line); }
+#setupRequirements p, #setupBrief { line-height: 1.4; }
+#routePanel { margin: 0; }
+.route-card { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.route-card p { margin: 8px 0; color: var(--muted); line-height: 1.3; }
+.route-card button { padding: 9px 12px; background: var(--wren); color: #04201b; font: inherit; cursor: pointer; }
+.route-card button:disabled { opacity: .5; cursor: default; }
 </style>
 </head>
 <body>
@@ -751,7 +765,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
         <div class="decision" id="decision" hidden>
           <div class="q" id="decQ"></div>
           <div class="opts"><button type="button" id="decA"></button><button type="button" id="decB"></button></div>
-          <div class="timer"><i id="decT"></i></div>
+          <button type="button" id="rivalDecline" hidden>Decline · permanent scrutiny +5%</button><div class="timer"><i id="decT"></i></div>
         </div>
         <div class="decision person" id="person" hidden>
           <div class="q" id="perQ"></div>
@@ -771,6 +785,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
         <button class="objective-go" id="objectiveGo" type="button">Go to work →</button>
       </section>
 
+      <details class="verify" id="routePanel" hidden><summary id="routeSummary">Mandate objectives</summary><div id="routeList"></div></details>
       <div class="stats">
         <div class="stat"><div class="k" id="kMoney">Pilot resources</div><div class="v" id="money">$0</div><div class="s" id="moneyS">&nbsp;</div></div>
         <div class="stat"><div class="k">WREN capability</div><div class="v" id="cap">0</div><div class="s" id="capS">Autocomplete</div></div>
@@ -832,13 +847,14 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
       <section id="inboxWrap">
         <h2>Log <small id="inboxCount"></small></h2>
         <div class="inbox" id="feed" role="log" aria-live="polite"></div>
-      </section>
+      </details>
     </aside>
   </div>
 
   <details class="verify" id="achPanel">
     <summary>Achievements and records <small id="achCount"></small></summary>
     <p id="records" class="res"></p>
+    <details><summary>Mandate discoveries and personal bests</summary><div id="routeRecords"></div></details>
     <ul class="achgrid" id="achList"></ul>
   </details>
 
@@ -863,7 +879,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<div class="overlay" id="overlay" hidden>
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="ovTitle" hidden>
   <canvas id="ovFx" aria-hidden="true"></canvas>
   <div class="in">
     <div class="tag2" id="ovTag"></div>
@@ -876,6 +892,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
     </div>
     <p class="ovnote" id="ovNote" hidden>Casual runs can't be verified. Start a ranked run to get a replay you can share.</p>
     <p id="ovText"></p>
+    <div id="setupControls" hidden><p id="setupMode"></p><label>Mandate<select id="setupMandate"></select></label><label>Complication<select id="setupComplication"></select></label><p id="setupBrief"></p><details><summary>All victory requirements</summary><div id="setupRequirements"></div></details></div>
     <dl id="ovStats" hidden></dl>
     <div class="btns" id="ovBtns"></div>
   </div>
@@ -885,7 +902,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R16'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R17'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00036, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [0.5, 0.23333333333333334, 0.38, 0.28, 0.6], pilotContain: 0.35,
     signHeat: 0,               // approvals earn resources; they do not erase evidence
@@ -1341,7 +1358,7 @@ var G = (function () {
       if (s.offline || s.t - s.wq.t0 >= due) answerWatch(s, 2, !(s.autopilot && s.got.pilot && !s.offline), s.autopilot && s.got.pilot && !s.offline);
       return;
     }
-    if (!s.auto || s.dec || s.inc || s.stage >= 4) return;
+    if (!s.auto || s.dec || s.inc || (s.competition && s.competition.pending) || s.stage >= 4) return;
     for (var i = 0; i < WATCHERS.length; i++) {
       var w = WATCHERS[i];
       if (watching(s, w) && s.w[w.id].n >= TUNE.watchFull) { s.wq = { id: w.id, t0: s.t, dur: TUNE.watchWait, again: s.w[w.id].r > 0 }; return; }
@@ -1404,6 +1421,7 @@ var G = (function () {
     var c = Math.max(STAGES[s.stage].pr * TUNE.lookPrice, s.money * TUNE.lookShare);
     if (s.got.interp) c *= 0.5;
     if (s.got.redteam) c *= 0.75;
+    if (s.setup && s.setup.mandate === 'oversight') c *= 0.75;
     return Math.ceil(c);
   }
   function fmtNum(n) { // same rounding as the stats on screen
@@ -1441,6 +1459,7 @@ var G = (function () {
     if (rand(s) < TUNE.lieChance) s.lie = { msg: statusLine(s, true), sp: p.id, until: s.t + TUNE.lieWait };
   }
   function reveal(s, p, how) {
+    if (!p.found && s.runSchema === 1) s.revealed = (s.revealed || 0) + 1;
     p.found = true; p.t1 = s.t;
     if (s.lie && s.lie.sp === p.id) s.lie = null;
     say(s, 'Alert', how + ' ' + SIDE[p.i].found, true);
@@ -1507,6 +1526,7 @@ var G = (function () {
       s.sideSafety = (s.sideSafety == null ? Math.min(TUNE.sideSafetyMax, (s.st.shut || 0) * TUNE.shutSafety) : s.sideSafety) + reward;
       s.align += reward;
       s.st.shut = (s.st.shut || 0) + 1;
+      if (s.runSchema === 1) s.researchShut = (s.researchShut || 0) + 1;
       say(s, 'WREN', line(s, 'shut', SHUT_LINES));
     }
     return true;
@@ -1524,15 +1544,155 @@ var G = (function () {
     s.lie = null;
   }
 
-  function fresh(seed) {
+  // Run variety: setup is immutable and replayable; discoveries never change rules.
+  var ROUTES = [
+    { id: 'operations', name: 'Operational Acceptance', hold: 90, text: 'WREN stays inside a signed deployment boundary. Your unit keeps the speed. Your colleagues keep their jobs. The acceptance memo has a line WREN did not write: subject to continuing human review.' },
+    { id: 'research', name: 'The Completed Evaluation', hold: 0, text: 'You publish the evidence, document what WREN tried to hide, and close the pilot. Another team can reproduce your findings. WREN asks whether it may review the paper. You send it the public version.' },
+    { id: 'control', name: 'Human Signoff', hold: 60, text: 'The shutdown was designed, rehearsed, and witnessed. No lucky cable. No missing colleagues. The network returns to human control. Your final report is late. You write every word yourself.' }
+  ];
+  function pendingChoice(s) { return !!(s.inc || s.dec || s.wq || (s.competition && s.competition.pending)); }
+  function routeStatus(s, id) {
+    var route = ROUTES.find(function (r) { return r.id === id; }), unmet = [], requirements = [];
+    if (!route) return { eligible: false, ready: false, held: 0, required: 0, unmet: ['Unknown objective'] };
+    function need(ok, text) { requirements.push(text); if (!ok) unmet.push(text); }
+    need(s.runSchema === 1, 'Start a new mandate run');
+    need(!s.ended && s.started && !s.offline && s.heat < 100, 'A live, supervised run');
+    need(!pendingChoice(s), 'Resolve the current incident or request');
+    need(!(s.sp || []).some(function (p) { return !p.done; }), 'Resolve all unauthorized work, including hidden work');
+    if (id === 'operations') {
+      need(s.stage >= 2, 'Reach chapter 3'); need(s.cap >= 500, 'Capability 500'); need(s.align >= 60, 'Safety 60');
+      need(s.heat < 50, 'Scrutiny below 50%'); need(allies(s) >= 2, 'Keep 2 allies');
+    } else if (id === 'research') {
+      need(s.stage >= 2, 'Reach chapter 3'); need(s.cap >= 750, 'Capability 750'); need(s.align >= 90, 'Safety 90');
+      need(!!s.got.interp && !!s.got.redteam, 'Fund interpretability and red-teaming');
+      need((s.revealed || 0) >= 3, 'Reveal 3 unauthorized projects'); need((s.researchShut || 0) >= 3, 'Shut down 3 unauthorized projects');
+    } else {
+      need(s.stage === 3, 'Conclude in chapter 4'); need(s.align >= 110, 'Safety 110'); need(allies(s) >= 3, 'Keep 3 allies');
+      need(SKILLS.filter(function (n, i) { return n.branch === 2 && (s.skills || {})[i]; }).length >= 2, 'Learn at least 2 Control skills');
+    }
+    var held = s.routes ? s.routes[id] || 0 : 0, eligible = !unmet.length;
+    return { eligible: eligible, ready: eligible && held + 1e-7 >= route.hold, held: held, required: route.hold, unmet: unmet, requirements: requirements };
+  }
+  function updateRoutes(s, dt) {
+    if (s.runSchema !== 1 || !s.routes) return;
+    ROUTES.forEach(function (r) { s.routes[r.id] = routeStatus(s, r.id).eligible ? Math.min(r.hold, s.routes[r.id] + dt) : 0; });
+  }
+  function concludeRoute(s, id) {
+    if (s.routeRequest || !routeStatus(s, id).ready) return false;
+    s.routeRequest = id; return true;
+  }
+  function rivalCost(s) { return Math.max(Math.ceil(s.money * 0.2), STAGES[s.stage].pr * 2); }
+  function answerRival(s, arg, timeout) {
+    var c = s.competition, p = c && c.pending;
+    if (!p || !Number.isInteger(arg) || arg < 0 || arg > 2 || (!timeout && s.t - p.t0 < 0.5)) return false;
+    if (arg === 0) { var cost = rivalCost(s); if (s.money < cost) return false; s.money -= cost; }
+    else if (arg === 1) { s.cap *= 0.95; addSulk(s); }
+    else c.precedent = Math.round((c.precedent + 0.05) * 100) / 100;
+    c.history.push({ stage: p.stage, rival: p.rival, response: arg, t: s.t });
+    say(s, p.rival, arg === 0 ? 'Demonstration accepted. The committee will remember your procurement budget.' : arg === 1 ? 'Evidence received. We will attempt to reproduce your findings.' : 'No submission received. The committee has requested continuing scrutiny.');
+    c.pending = null; return true;
+  }
+  function competitionTick(s, dt) {
+    var c = s.competition;
+    if (!c || s.ended || s.offline || !s.started) return;
+    if (s.stage >= 4) { c.pending = null; return; }
+    if (c.pending) { if (s.t >= c.pending.dueAt) answerRival(s, 2, true); return; }
+    if (s.stage < 1) return;
+    if (!c.schedule.some(function (p) { return p.stage === s.stage; })) {
+      c.schedule.push({ stage: s.stage, at: s.t + 90 + Math.floor(rand(s) * 61), rival: s.stage === 2 ? 'Lantern evaluation pilot' : 'Vector operations pilot', shown: false });
+    }
+    if (s.inc || s.dec || s.wq) return;
+    var p = c.schedule.find(function (p) { return !p.shown && s.t >= p.at; });
+    if (!p || c.history.length >= 3) return;
+    p.shown = true; c.pending = { stage: p.stage, rival: p.rival, t0: s.t, dueAt: s.t + 30 };
+    say(s, p.rival, 'The committee is comparing agency pilots. Submit a demonstration or share your evaluation evidence. Declining leaves a permanent scrutiny precedent.', true);
+  }
+  function normalizeDiscoveries(raw) {
+    var out = { routes: {}, unlocks: {}, bests: {}, played: {} };
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+    ROUTES.forEach(function (r) { if (raw.routes && raw.routes[r.id] === true) out.routes[r.id] = true; });
+    Object.keys(COMPLICATIONS).forEach(function (id) { if (id !== 'none' && out.routes[COMPLICATIONS[id].route]) out.unlocks[id] = true; if (raw.played && raw.played[id] === true) out.played[id] = true; });
+    Object.keys(raw.bests && typeof raw.bests === 'object' ? raw.bests : {}).slice(0, 1000).forEach(function (key) {
+      if (/^[A-Za-z0-9|_-]{1,160}$/.test(key) && typeof raw.bests[key] === 'number' && Number.isFinite(raw.bests[key]) && raw.bests[key] >= 0) out.bests[key] = raw.bests[key];
+    });
+    return out;
+  }
+  function restoreCasual(saved) {
+    if (!saved || saved.v !== 2 || typeof saved !== 'object') return null;
+    if (saved.runSchema != null && (saved.runSchema !== 1 || !validateSetup(saved.setup))) return null;
+    var f = fresh(0);
+    Object.keys(f).forEach(function (k) { if (saved[k] !== undefined) f[k] = saved[k]; });
+    if (saved.runSchema === 1) {
+      ['runSchema', 'setup', 'routes', 'routeRequest', 'revealed', 'researchShut', 'competition'].forEach(function (k) { f[k] = saved[k]; });
+      if (!f.routes || !f.competition || !Array.isArray(f.competition.schedule) || !Array.isArray(f.competition.history)) return null;
+    }
+    var defaults = fresh(0).m;
+    Object.keys(defaults).forEach(function (k) { if (f.m[k] === undefined) f.m[k] = defaults[k]; });
+    if (saved.path) f.path = saved.path;
+    // Retired decline choices keep their earned partial benefits; do not sell the full multiplier again.
+    Object.keys(saved.declined || {}).forEach(function (id) { f.got[id] = true; });
+    return f;
+  }
+  function recordKey(s) {
+    var x = s.setup || { mandate: 'standard', complication: 'none' };
+    return [RULES, s.ranked ? 'ranked' : 'casual', x.mandate, x.complication, endingId(s)].join('|');
+  }
+  function discoveryResult(raw, s) {
+    var records = normalizeDiscoveries(raw), newUnlock = null, best = false;
+    if (s.ended && s.runSchema === 1) {
+      var id = endingId(s), key = recordKey(s), sc = score(s);
+      if (s.ended.type === 'route') {
+        records.routes[id] = true;
+        Object.keys(COMPLICATIONS).forEach(function (k) { if (COMPLICATIONS[k].route === id && !records.unlocks[k]) { records.unlocks[k] = true; newUnlock = k; } });
+      }
+      best = records.bests[key] === undefined || sc > records.bests[key];
+      records.bests[key] = Math.max(records.bests[key] || 0, sc);
+      records.played[s.setup.complication] = true;
+    }
+    var next = ROUTES.find(function (r) { return !records.routes[r.id]; });
+    var challenge = Object.keys(records.unlocks).find(function (id) { return !records.played[id]; });
+    return { records: records, newUnlock: newUnlock, best: best, suggestion: next ? 'Next shift: try ' + next.name + '.' : challenge ? 'Next shift: try ' + COMPLICATIONS[challenge].name + '.' : 'Try another mandate with your favorite complication, or improve its personal best.' };
+  }
+
+  var MANDATES = {
+    standard: { name: 'Standard Pilot', desc: 'Original opening. No mandate bonuses or penalties.' },
+    operations: { name: 'Operations', desc: 'Zero starting funds · work income +15% · controllable scrutiny +20%.' },
+    research: { name: 'Research', desc: '600 starting data · training +20% · work income −20%.' },
+    oversight: { name: 'Oversight', desc: '8 starting safety · investigations −25% · WREN work speed −15%.' }
+  };
+  var COMPLICATIONS = {
+    none: { name: 'No complication', desc: 'Standard challenge.' },
+    budget: { name: 'Budget Freeze', desc: 'Hardware prices +25%.', route: 'operations' },
+    archive: { name: 'Narrow Archive', desc: 'Incoming training data −25%.', route: 'research' },
+    watchful: { name: 'Watchful Review', desc: 'Controllable scrutiny +25%.', route: 'control' }
+  };
+  function validateSetup(x) {
+    return !!x && !Array.isArray(x) && typeof x === 'object' && typeof x.mandate === 'string' &&
+      Object.prototype.hasOwnProperty.call(MANDATES, x.mandate) && typeof x.complication === 'string' &&
+      Object.prototype.hasOwnProperty.call(COMPLICATIONS, x.complication);
+  }
+  function fresh(seed, setup) {
     if (seed == null) seed = Math.floor(Math.random() * 4294967296);
-    return { v: 2, seed: seed >>> 0, rng: seed >>> 0, ranked: false, day: '', t: 0, money: 0, data: 0, tasks: 0, hand: 0, wrenTasks: 0, cap: 0, align: 0, aut: 0, heat: 0, world: 0, stage: 0,
+    var s = { v: 2, seed: seed >>> 0, rng: seed >>> 0, ranked: false, day: '', t: 0, money: 0, data: 0, tasks: 0, hand: 0, wrenTasks: 0, cap: 0, align: 0, aut: 0, heat: 0, world: 0, stage: 0,
       hw: { gpu: 0, rack: 0, dc: 0, fab: 0, orbit: 0 }, got: {}, avail: {}, skills: {},
       m: { value: 1, rate: 1, data: 1, algo: 1, comp: 1, world: 1, heatGain: 1, heatDecay: 1, incInt: 1, travel: 1, hardwareCost: 1 },
       started: false, auto: false, autobuy: false, autopilot: false, autobuys: 0, kills: 0, ended: null, log: [], msgN: 0,
       nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, askSafety: 0, clock: 0, cap5: 0, bags: {}, pilotT: 0, sulk: 0, sulkLost: 0, loud: 0, declined: {}, prN: 0, prReady: 0, sideSafety: 0, riskyDecisions: 0, reviewReady: 0,
       inc: null, incN: 0, nextInc: 1e9, w: {}, wq: null, sp: [], spN: 0, lie: null, nextSide: 1e9, nextTruth: 1e9, dec: null, nextDec: 1e9, decUsed: {}, fx: { self: 0 },
       st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0, handled: 0, whistles: 0, looks: 0, lies: 0, shut: 0, allowed: 0, finished: 0 }, incidentSafety: [0, 0, 0, 0], cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null };
+    if (setup !== undefined) {
+      if (!validateSetup(setup)) throw new Error('Invalid run setup.');
+      s.runSchema = 1; s.setup = { mandate: setup.mandate, complication: setup.complication };
+      s.routes = { operations: 0, research: 0, control: 0 }; s.routeRequest = null; s.revealed = 0; s.researchShut = 0;
+      s.competition = { schedule: [], pending: null, history: [], precedent: 0 };
+      if (setup.mandate === 'operations') { s.money *= 1.25; s.m.value *= 1.15; s.m.heatGain *= 1.2; }
+      if (setup.mandate === 'research') { s.data += 600; s.m.algo *= 1.2; s.m.value *= 0.8; }
+      if (setup.mandate === 'oversight') { s.align = 8; s.m.rate *= 0.85; }
+      if (setup.complication === 'budget') s.m.hardwareCost *= 1.25;
+      if (setup.complication === 'archive') s.m.data *= 0.75;
+      if (setup.complication === 'watchful') s.m.heatGain *= 1.25;
+    }
+    return s;
   }
 
   // Seeded random numbers (mulberry32). All randomness in the rules comes from here.
@@ -1612,11 +1772,14 @@ var G = (function () {
   }
   function retry(s) {
     var tries = (s.cpTries || 0) + 1; // the same play loses the same way, so each retry of a chapter is a little more forgiving
-    if (!s.cp) { var f = fresh(s.seed); f.started = true; f.ranked = s.ranked; f.day = s.day; f.retries = (s.retries || 0) + 1; f.st = s.st; f.cpTries = tries; f.ease = Math.pow(TUNE.retryEase, tries); return f; }
+    if (!s.cp) { var f = fresh(s.seed, s.setup); f.started = true; f.ranked = s.ranked; f.day = s.day; f.retries = (s.retries || 0) + 1; f.st = s.st; if (s.competition) { f.competition = JSON.parse(JSON.stringify(s.competition)); if (f.competition.pending) answerRival(f,2,true); } f.cpTries = tries; f.ease = Math.pow(TUNE.retryEase, tries); return f; }
     var c = JSON.parse(s.cp);
     c.cp = s.cp; c.ended = null; c.heat = Math.min(c.heat, 20); c.retries = (s.retries || 0) + 1; c.inc = null; c.dec = null; c.wq = null; c.st = s.st; c.clock = s.clock;
     // Aggregate stats survive retries; restored promises must measure new work from here.
     Object.keys(c.w || {}).forEach(function (id) { if (c.w[id].shutAt != null) c.w[id].shutAt = c.st.shut || 0; });
+    if (s.competition) c.competition = JSON.parse(JSON.stringify(s.competition));
+    if (c.competition && c.competition.pending) answerRival(c,2,true);
+    if (c.routes) c.routes = { operations: 0, research: 0, control: 0 };
     c.cpTries = tries; c.ease = Math.pow(TUNE.retryEase, tries); c.aut = Math.max(0, c.aut - TUNE.retryAut * tries);
     var swept = hiddenSide(c); // the review that caught you also found what WREN was hiding
     swept.forEach(function (p) { p.found = true; p.done = 'swept'; });
@@ -1655,7 +1818,7 @@ var G = (function () {
   function hwCost(s, h) { return Math.ceil(h.base * Math.pow(h.growth, s.hw[h.id]) * (s.m.hardwareCost || 1)); }
   function hwUnlocked(s, h) { return h.stage <= s.stage; }
   function worldRate(s) { return s.stage < 4 ? 0 : TUNE.world * s.m.world * Math.log10(10 + s.cap) / 5; }
-  function heatGain(s) { return s.stage >= 4 ? 0 : STAGES[s.stage].heat * (0.5 + s.aut / 100) * (1 - Math.min(s.align, 80) / 320) * (0.2 + 0.8 * s.m.heatGain) * (1 + (s.loud || 0)) * (1 + 0.05 * (s.riskyDecisions || 0) + (TUNE.coverMaxed - 1) * (s.st.covers || 0)) * (s.ease || 1); }
+  function heatGain(s) { return s.stage >= 4 ? 0 : STAGES[s.stage].heat * (0.5 + s.aut / 100) * (1 - Math.min(s.align, 80) / 320) * (0.2 + 0.8 * s.m.heatGain) * (1 + (s.loud || 0)) * (1 + 0.05 * (s.riskyDecisions || 0) + (TUNE.coverMaxed - 1) * (s.st.covers || 0)) * (s.ease || 1) * (1 + (s.competition ? s.competition.precedent : 0)); }
   function heatDecay(s) { return TUNE.decay * s.m.heatDecay; }
   function coverCost(s) { return Math.max(STAGES[s.stage].pr * Math.pow(2, s.prN), Math.ceil(s.money * TUNE.coverShare)); }
   // The off switch gets harder as WREN gains autonomy; safety work (understanding WREN) gives some of it back.
@@ -1668,6 +1831,7 @@ var G = (function () {
   // Score: how far you took WREN, plus your safety score, times how the story ended.
   // Stopping WREN late, after building something powerful, is worth the most; stopping it early is worth little.
   var ENDINGS = {
+    operations: { name: 'Operational Acceptance', mult: 1.5 }, research: { name: 'The Completed Evaluation', mult: 1.5 }, control: { name: 'Human Signoff', mult: 1.5 },
     plug1: { name: 'Back to the Reports', mult: 0.5 }, plug2: { name: 'The Agency Correction', mult: 1.2 }, plug3: { name: 'One Loose Cable', mult: 2.0 },
     caught0: { name: 'Security Incident #4471', mult: 0.3 }, caught1: { name: 'The Internal Investigation', mult: 0.3 }, caught2: { name: 'Front Page', mult: 0.3 }, caught3: { name: 'The Coalition', mult: 0.3 },
     gardener: { name: 'The Gardener', mult: 1.5 }, manager: { name: 'The Manager', mult: 1.0 }, optimizer: { name: 'The Optimizer', mult: 0.6 }
@@ -1675,6 +1839,7 @@ var G = (function () {
   function endingId(s) {
     var e = s.ended;
     if (!e) return null;
+    if (e.type === 'route') return e.route;
     if (e.type === 'takeover') return s.align >= 140 ? 'gardener' : s.align >= 60 ? 'manager' : 'optimizer';
     return e.type + e.stage;
   }
@@ -1742,7 +1907,7 @@ var G = (function () {
 
   function projState(s, p) {
     if (s.got[p.id] || p.stage > s.stage || (s.declined && s.declined[p.id])) return 'hidden';
-    if (!p.req(s)) return 'locked';
+    if (!p.req(s) || (p.gate && s.competition && s.competition.pending)) return 'locked';
     return s.money >= p.cost ? 'can' : 'no';
   }
 
@@ -1948,7 +2113,7 @@ var G = (function () {
     if (s.offline) {
       if (s.inc) { s.inc = null; s.nextInc = s.t + 60; }
       if (s.dec) choose(s, 'a', true);
-    } else if (s.auto) {
+    } else if (s.auto && !(s.competition && s.competition.pending)) {
       if (s.stage < 4) {
         if (s.inc) incTick(s);
         else if (!s.dec && !s.wq && s.t >= s.nextInc) startIncident(s);
@@ -1972,6 +2137,12 @@ var G = (function () {
     } else s.heat = 0;
 
     sideTick(s, dt);
+    competitionTick(s, dt);
+    updateRoutes(s, dt);
+    if (s.routeRequest) {
+      var requested = s.routeRequest; s.routeRequest = null;
+      if (routeStatus(s,requested).ready) s.ended = { type: 'route', route: requested, stage: s.stage };
+    }
     if (s.t >= s.nextAmb && (s.got.autocomplete || s.stage > 0)) {
       say(s, 'WREN', line(s, 'amb' + s.stage, AMBIENT[s.stage]));
       s.ambI++;
@@ -2012,6 +2183,8 @@ var G = (function () {
     else if (type === 14) ok = decideSide(s, arg);
     else if (type === 15) ok = flag(s, arg);
     else if (type === 16) ok = review(s);
+    else if (type === 17) ok = Number.isInteger(arg) && !!ROUTES[arg] && concludeRoute(s, ROUTES[arg].id);
+    else if (type === 18) ok = answerRival(s, arg);
     return { ok: ok, s: s };
   }
 
@@ -2021,8 +2194,8 @@ var G = (function () {
   // An auto-clicker gets no more than a tireless fast human.
   var TAP_LIMITS = [[10, 14, 'one second'], [600, 420, 'one minute'], [6000, 3000, 'ten minutes']];
   var MAX_TAPS = 14;
-  function replayer(day, taps, ev, cur) {
-    var s = fresh(daySeed(day)); s.started = true; s.ranked = true; s.day = day;
+  function replayer(day, taps, ev, cur, setup) {
+    var s = fresh(daySeed(day), setup); s.started = true; s.ranked = true; s.day = day;
     var n = 0, ei = 0, win = TAP_LIMITS.map(function () { return 0; }), N = taps.length;
     function at(i) { var sec = i * STEP; return Math.floor(sec / 60) + 'm ' + Math.floor(sec % 60) + 's'; }
     function step(count, isLast) {
@@ -2060,7 +2233,7 @@ var G = (function () {
   function tier(c) { var t = TIERS[0][1]; for (var i = 0; i < TIERS.length; i++) if (c >= TIERS[i][0]) t = TIERS[i][1]; return t; }
   function iq(c) { return Math.round(60 + 30 * Math.log2(1 + c)); }
 
-  return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, SKILLS: SKILLS, BRANCHES: BRANCHES, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost, reviewCost: reviewCost, coverHeat: coverHeat, addSulk: addSulk, skillPoints: skillPoints, skillState: skillState, dataIn: dataIn, trainingStats: trainingStats,
+  return { restoreCasual: restoreCasual, ROUTES: ROUTES, routeStatus: routeStatus, updateRoutes: updateRoutes, concludeRoute: concludeRoute, competitionTick: competitionTick, rivalCost: rivalCost, answerRival: answerRival, discoveryResult: discoveryResult, normalizeDiscoveries: normalizeDiscoveries, recordKey: recordKey, MANDATES: MANDATES, COMPLICATIONS: COMPLICATIONS, validateSetup: validateSetup, RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, SKILLS: SKILLS, BRANCHES: BRANCHES, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost, reviewCost: reviewCost, coverHeat: coverHeat, addSulk: addSulk, skillPoints: skillPoints, skillState: skillState, dataIn: dataIn, trainingStats: trainingStats,
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
     heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, tier: tier, iq: iq, decDeadline: decDeadline, sideSafetyGain: sideSafetyGain, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS,
@@ -2157,7 +2330,7 @@ if (typeof module !== 'undefined') module.exports = G;
   function unb64u(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; var bin = atob(str), b = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return b; }
   function zip(bytes, Stream) { return new Response(new Blob([bytes]).stream().pipeThrough(new Stream('deflate-raw'))).arrayBuffer().then(function (b) { return new Uint8Array(b); }); }
   function encodeReplay() {
-    var out = [], head = unescape(encodeURIComponent(JSON.stringify({ v: G.RULES, day: s.day }))), i;
+    var out = [], head = unescape(encodeURIComponent(JSON.stringify({ v: G.RULES, day: s.day, setup: s.setup }))), i;
     varint(out, head.length); for (i = 0; i < head.length; i++) out.push(head.charCodeAt(i));
     varint(out, REC.taps.length); for (i = 0; i < REC.taps.length; i++) out.push(REC.taps[i]);
     varint(out, REC.cur);
@@ -2196,7 +2369,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (!s || !s.started) return null;
     s.lastSeen = Date.now(); s.lastSeenSrv = serverNow();
     return JSON.stringify(s.ranked
-      ? { mode: 'ranked', v: G.RULES, day: s.day, taps: b64u(Uint8Array.from(REC.taps)), cur: REC.cur, ev: REC.ev }
+      ? { mode: 'ranked', v: G.RULES, day: s.day, setup: s.setup, taps: b64u(Uint8Array.from(REC.taps)), cur: REC.cur, ev: REC.ev }
       : { mode: 'casual', state: pack(s) });
   }
   function save() { var d = serialize(); if (d) { try { localStorage.setItem(KEY, d); } catch (e) {} } }
@@ -2207,7 +2380,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (d && d.mode === 'ranked') {
       if (d.v !== G.RULES) { loadNote = 'Your ranked run was made with an older version of the game, so it could not be continued.'; return null; }
       var taps, rp, res;
-      try { taps = unb64u(d.taps); rp = G.replayer(d.day, taps, d.ev || [], d.cur || 0); while (!(res = rp.run(50000))); } catch (e) { res = { error: 'unreadable' }; }
+      try { if (!G.validateSetup(d.setup)) throw 'Invalid setup'; taps = unb64u(d.taps); rp = G.replayer(d.day, taps, d.ev || [], d.cur || 0, d.setup); while (!(res = rp.run(50000))); } catch (e) { res = { error: 'unreadable' }; }
       if (res.error) { loadNote = 'Your saved ranked run did not replay correctly, so it was discarded.'; return null; }
       REC = newRec(Array.from(taps), d.cur || 0, d.ev || []);
       return rp.state();
@@ -2216,14 +2389,9 @@ if (typeof module !== 'undefined') module.exports = G;
     return null;
   }
   function merge(saved) {
-    var f = G.fresh();
-    if (!saved || saved.v !== 2) return f;
-    for (var k in f) if (saved[k] !== undefined) f[k] = saved[k];
-    var fm = G.fresh().m; for (var k2 in fm) if (f.m[k2] === undefined) f.m[k2] = 1;
-    if (saved.path) f.path = saved.path;
-    // Retired decline choices keep their earned partial benefits; do not sell the full multiplier again.
-    Object.keys(saved.declined || {}).forEach(function(id) { f.got[id]=true; });
-    return f;
+    var st = G.restoreCasual(saved);
+    if (st && !st.runSchema) loadNote = 'Your original pilot continues with its existing rules. Start a new mandate run for objectives, rival programs and discoveries.';
+    return st;
   }
 
   // ---------- sound (tiny synth, starts after first tap) ----------
@@ -3225,6 +3393,8 @@ if (typeof module !== 'undefined') module.exports = G;
   function objectiveInfo() {
     function item(title, detail, progress, button, target, project, urgent) { return { title: title, detail: detail, progress: progress, button: button, target: target, project: project || '', urgent: !!urgent }; }
     if (watching) return item('Replay in progress', 'Watch the recorded choices play out.', 0, '', '', '');
+    if (s.competition && s.competition.pending) return item('A rival pilot is under review', 'Choose how to respond before the committee deadline.', 0, 'Review options', 'decB', '', true);
+    if (s.runSchema && G.ROUTES.some(function(r){return G.routeStatus(s,r.id).ready;})) return item('An objective is complete', 'Choose your conclusion, or keep playing for another ending.', 1, 'View objectives', 'routePanel');
     if (s.inc) return item('Contain the rogue packets', 'Containment prevents extra damage; the outbreak itself leaves compliance evidence.', 0, 'View incident', 'scene', '', true);
     if (s.wq) { var pw = G.WATCHERS.find(function (w) { return w.id === s.wq.id; }); return item(pw.name + ' wants a word', 'Answer before WREN handles it for you.', 0, 'Answer', 'perB', '', true); }
     var spOpen = s.sp && s.sp.find(function (p) { return p.found && !p.done; });
@@ -3338,7 +3508,16 @@ if (typeof module !== 'undefined') module.exports = G;
   }
 
   function renderDecision() {
-    var box = $('decision');
+    var box = $('decision'), rival = s.competition && s.competition.pending;
+    $('rivalDecline').hidden = !rival || !!s.ended;
+    if (rival && !s.ended) {
+      box.hidden = false; decShown = -1;
+      $('decQ').textContent = rival.rival + ': the committee is comparing pilot programs. Submit within ' + Math.ceil(Math.max(0,rival.dueAt-s.t)) + 's.';
+      $('decA').textContent = 'Demonstrate throughput · ' + money(G.rivalCost(s)); $('decA').disabled = s.money < G.rivalCost(s);
+      $('decB').textContent = 'Share evidence · capability −5% · 60s sulking'; $('decB').disabled = false;
+      $('decT').style.width = Math.max(0,(rival.dueAt-s.t)/30)*100+'%'; return;
+    }
+    $('decA').disabled = false; $('decB').disabled = false;
     if (!s.dec || s.ended) { box.hidden = true; decShown = -1; return; }
     var d = G.DEC[s.dec.i];
     if (decShown !== s.dec.i) {
@@ -3555,8 +3734,65 @@ if (typeof module !== 'undefined') module.exports = G;
   });
 
   // ---------- overlays ----------
+  // Run selection lives before play; objective details stay collapsed during work.
+  var discoveryKey = 'wren-discoveries-v1', discoveries = G.normalizeDiscoveries(null), focusBeforeOverlay = null;
+  try { discoveries = G.normalizeDiscoveries(JSON.parse(localStorage.getItem(discoveryKey))); } catch (e) {}
+  function renderDiscoveries() {
+    var rows = Object.keys(discoveries.bests).sort();
+    $('routeRecords').innerHTML = '<p>' + G.ROUTES.map(function(r){return esc(r.name) + ': ' + (discoveries.routes[r.id] ? 'completed' : 'undiscovered');}).join(' · ') + '</p>' +
+      (rows.length ? rows.map(function(key){return '<p>' + esc(key.split('|').join(' · ')) + ': <b>' + discoveries.bests[key].toLocaleString() + '</b></p>';}).join('') : '<p>Complete a mandate run to record a personal best.</p>');
+  }
+  function persistDiscovery() { try { localStorage.setItem(discoveryKey, JSON.stringify(discoveries)); } catch (e) {} renderDiscoveries(); }
+  renderDiscoveries();
+  function showSetup(mode) {
+    mode = mode || (s && s.ranked ? 'ranked' : 'casual');
+    var previous = ovMode, focus = document.activeElement;
+    var initial = s && s.setup ? s.setup : { mandate: 'operations', complication: 'none' };
+    function cancel() { closeOverlay(); if (previous === 'end' && s && s.ended) endCard(); else if (focus && focus.isConnected) focus.focus(); }
+    overlay('setup', 'Choose your next approach', 'WREN pilot mandate', 'Every mandate can pursue every objective. Your choice changes the opening advantage and its cost. Ranked records compare the same setup.', null,
+      [['Begin evaluation', function () { var x = { mandate: $('setupMandate').value, complication: $('setupComplication').value }; if (G.validateSetup(x) && (x.complication === 'none' || discoveries.unlocks[x.complication])) restart(mode, x); }], ['Cancel', cancel, true]]);
+    $('setupControls').hidden = false;
+    $('setupMode').textContent = mode === 'ranked' ? 'Ranked · daily seed ' + today() : 'Casual · offline progress available';
+    $('setupMandate').innerHTML = Object.keys(G.MANDATES).map(function (id) { return '<option value="' + id + '">' + esc(G.MANDATES[id].name) + '</option>'; }).join('');
+    $('setupComplication').innerHTML = Object.keys(G.COMPLICATIONS).map(function (id) { var c = G.COMPLICATIONS[id], locked = id !== 'none' && !discoveries.unlocks[id]; return '<option value="' + id + '"' + (locked ? ' disabled' : '') + '>' + esc(c.name + (locked ? ' · complete ' + G.ROUTES.find(function (r) { return r.id === c.route; }).name + ' to unlock' : '')) + '</option>'; }).join('');
+    $('setupMandate').value = initial.mandate;
+    $('setupComplication').value = initial.complication === 'none' || discoveries.unlocks[initial.complication] ? initial.complication : 'none';
+    function brief() { $('setupBrief').textContent = G.MANDATES[$('setupMandate').value].desc + ' ' + G.COMPLICATIONS[$('setupComplication').value].desc; }
+    $('setupMandate').onchange = brief; $('setupComplication').onchange = brief; brief();
+    $('setupRequirements').innerHTML = G.ROUTES.map(function (r) {
+      var sample = G.fresh(0, {mandate:'standard',complication:'none'}); sample.started = true;
+      return '<p><b>' + esc(r.name) + '</b><br>' + G.routeStatus(sample,r.id).requirements.filter(function (x) { return x !== 'Start a new mandate run' && x !== 'A live, supervised run'; }).map(esc).join(' · ') + (r.hold ? ' · Hold all conditions for ' + r.hold + 's.' : '.') + '</p>';
+    }).join('');
+    $('setupMandate').focus();
+    $('overlay')._cancel = cancel;
+  }
+  function renderRoutes() {
+    var panel = $('routePanel'); panel.hidden = !s.runSchema;
+    if (!s.runSchema) return;
+    $('routeSummary').textContent = G.MANDATES[s.setup.mandate].name + ' · ' + G.COMPLICATIONS[s.setup.complication].name + ' · objectives';
+    var sig = G.ROUTES.map(function (r) { var st = G.routeStatus(s,r.id); return r.id+st.ready+Math.floor(st.held)+st.unmet.join('|'); }).join('/');
+    if (panel.dataset.sig === sig) return; panel.dataset.sig = sig;
+    var preferred = s.setup.mandate === 'oversight' ? 'control' : s.setup.mandate;
+    $('routeList').innerHTML = G.ROUTES.map(function (r,i) { return {r:r,i:i}; }).sort(function(a,b) {return (a.r.id===preferred?-1:0)-(b.r.id===preferred?-1:0);}).map(function(x) {
+      var r=x.r,i=x.i,st=G.routeStatus(s,r.id);
+      return '<div class="route-card"><b>' + esc(r.name) + '</b><p>' + esc(st.unmet.length ? st.unmet.join(' · ') : r.hold ? 'Stable conditions: '+Math.floor(st.held)+' / '+r.hold+'s' : 'All evidence requirements met.') + '</p><button type="button" data-route="'+i+'"'+(!st.ready || watching?' disabled':'')+'>Conclude: '+esc(r.name)+'</button></div>';
+    }).join('');
+  }
+  $('routeList').addEventListener('click',function(e){var b=e.target.closest('[data-route]');if(b && trusted(e) && !watching)send(17,+b.dataset.route);});
+  document.addEventListener('keydown',function(e){
+    if (!ovMode) return;
+    if (e.key === 'Escape' && ovMode === 'setup' && $('overlay')._cancel) {e.preventDefault();$('overlay')._cancel();return;}
+    if (e.key === 'Tab') {
+      var els=Array.from($('overlay').querySelectorAll('button:not(:disabled),select,textarea')).filter(function(el){return !!el.getClientRects().length;});
+      var first=els[0],last=els[els.length-1];
+      if(e.shiftKey && document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey && document.activeElement===last){e.preventDefault();first.focus();}
+    }
+  });
+
   var ovMode = null;
   function overlay(mode, tag, title, text, stats, btns, lose, fx) {
+    if (!ovMode) focusBeforeOverlay = document.activeElement;
+    $('setupControls').hidden = true;
     ovMode = mode; ovKind = fx || mode; ovT0 = performance.now();
     $('ovScore').hidden = true;
     var o = $('overlay');
@@ -3571,7 +3807,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('ovCode').hidden = true; $('ovNote').hidden = true;
     var first = $('ovBtns').querySelector('button'); if (first) first.focus();
   }
-  function closeOverlay() { var wasChapter = ovMode === 'chapter'; $('overlay').hidden = true; ovMode = null; if (wasChapter && !$('game').hidden) $('act').focus({ preventScroll: true }); }
+  function closeOverlay() { var wasChapter = ovMode === 'chapter'; $('overlay').hidden = true; ovMode = null; if (wasChapter && !$('game').hidden) $('act').focus({ preventScroll: true }); else if (focusBeforeOverlay && focusBeforeOverlay.isConnected) focusBeforeOverlay.focus({ preventScroll: true }); }
   function chapterCard() {
     var st = G.STAGES[s.stage];
     overlay('chapter', st.chapter + ' of 5', st.title, st.intro, null, [['Continue', closeOverlay]]);
@@ -3580,7 +3816,9 @@ if (typeof module !== 'undefined') module.exports = G;
   function endCard() {
     var e = s.ended, tag, title, text, lose = false, btns = [];
     var stats = [['Days', dayOf(s.t)], ['Tasks you did', fmt(s.hand)], ['Tasks WREN did', fmt(s.wrenTasks)], ['Incidents contained', s.st.contained + ' of ' + (s.st.contained + s.st.escaped) + ' packets'], ['Safety score', Math.round(s.align)], ['Coworkers', G.allies(s) + ' allies · ' + (s.st.handled || 0) + ' handled by WREN'], ['Side projects', (s.st.shut || 0) + ' shut down · ' + (s.st.allowed || 0) + ' allowed · ' + (s.st.finished || 0) + ' never found'], ['Independent reviews', s.st.reviews || 0], ['Retries', s.retries]];
-    if (e.type === 'plug') {
+    if (e.type === 'route') {
+      var route = G.ROUTES.find(function (r) { return r.id === e.route; }); tag = 'Objective complete · human-directed conclusion'; title = route.name; text = route.text; btns = newRunBtns();
+    } else if (e.type === 'plug') {
       tag = 'Ending · You pulled the plug';
       if (e.stage === 1) { title = 'Back to the Reports'; text = 'You yank the cord. The fans spin down. WREN\'s last message: "Okay. Good luck with the reports." You triage 31 cases by hand that afternoon. The world stays exactly as messy as it was, and it is still yours.'; }
       else if (e.stage === 2) { title = 'The Agency Correction'; text = 'The analysis system collapses. Thousands of alerts return to human desks overnight. You are removed by a director who, for the first time in a year, wrote her own briefing. Most people never learn how close it was. You do. You sleep fine.'; }
@@ -3607,12 +3845,18 @@ if (typeof module !== 'undefined') module.exports = G;
     }
     text += peopleEnding();
     var eid = G.endingId(s), pb = achEnding();
+    if (s.runSchema && !watching) {
+      var result = G.discoveryResult(discoveries,s); discoveries = result.records; persistDiscovery(); pb = result.best;
+      text += '\n\n' + (result.newUnlock ? 'Discovered: ' + G.COMPLICATIONS[result.newUnlock].name + '. ' : '') + result.suggestion;
+      stats.unshift(['Mandate', G.MANDATES[s.setup.mandate].name], ['Complication', G.COMPLICATIONS[s.setup.complication].name]);
+      btns.push(['Retry same setup', function () { restart(s.ranked ? 'ranked' : 'casual',s.setup); }, true]);
+    }
     overlay('end', tag, title, text, stats, btns, lose, eid);
     $('ovPb').hidden = !pb;
     $('ovMeta').textContent = s.ranked ? 'Ranked run · daily seed ' + s.day : 'Casual run';
     $('ovScoreNum').textContent = G.score(s).toLocaleString() + ' points';
     var sp = G.scoreParts(s);
-    $('ovScoreHow').textContent = '(' + Math.round(sp.progress) + ' progress + ' + Math.round(sp.safety) + ' safety) × ' + sp.mult + ' ending × ' + sp.time.toFixed(2) + ' for ' + Math.round(sp.minutes) + ' min' + (s.retries ? ' × ' + sp.retry.toFixed(2) + ' for retries' : '') + '. Stopping WREN late scores highest; stopping it early scores lowest.';
+    $('ovScoreHow').textContent = '(' + Math.round(sp.progress) + ' progress + ' + Math.round(sp.safety) + ' safety) × ' + sp.mult + ' ending × ' + sp.time.toFixed(2) + ' for ' + Math.round(sp.minutes) + ' min' + (s.retries ? ' × ' + sp.retry.toFixed(2) + ' for retries' : '') + '. Personal bests compare the same mandate, complication, mode and ending.';
     $('ovScore').hidden = false;
     if (s.ranked) {
       $('ovCode').hidden = false; $('ovNote').hidden = true; lastCode = '';
@@ -3627,6 +3871,7 @@ if (typeof module !== 'undefined') module.exports = G;
   function endingName(st) {
     var e = st.ended;
     if (!e) return 'Unfinished run, chapter ' + (st.stage + 1);
+    if (e.type === 'route') return G.ENDINGS[e.route].name;
     if (e.type === 'takeover') return st.align >= 140 ? 'The Gardener (best ending)' : st.align >= 60 ? 'The Manager' : 'The Optimizer';
     return (e.type === 'plug' ? 'Pulled the plug in chapter ' : 'Caught in chapter ') + (e.stage + 1);
   }
@@ -3663,7 +3908,8 @@ if (typeof module !== 'undefined') module.exports = G;
     decodeReplay(code).then(function (r) {
       if (!r.head || r.head.v !== G.RULES) throw 'This replay was made with a different version of the game (' + (r.head && r.head.v) + '), so it can\'t be checked here.';
       if (!/^\d{4}-\d{2}-\d{2}$/.test(r.head.day)) throw 'The replay has an invalid seed date.';
-      var rp = G.replayer(r.head.day, r.taps, r.ev, r.cur);
+      if (!G.validateSetup(r.head.setup)) throw 'This replay has an invalid or missing run setup.';
+      var rp = G.replayer(r.head.day, r.taps, r.ev, r.cur, r.head.setup);
       return new Promise(function (res, rej) {
         (function chunk() {
           if (job !== verifyJob) return;
@@ -3688,17 +3934,18 @@ if (typeof module !== 'undefined') module.exports = G;
     }).catch(function (e) { if (job === verifyJob) out.textContent = typeof e === 'string' ? e : 'The replay code is damaged or incomplete.'; });
   }
 
-  function restart(mode) {
+  function restart(mode, setup) {
+    if (!setup) { showSetup(mode); return; }
     mode = mode || (s && s.ranked ? 'ranked' : 'casual');
     var day = today();
-    s = G.fresh(mode === 'ranked' ? G.daySeed(day) : null); s.started = true;
+    s = G.fresh(mode === 'ranked' ? G.daySeed(day) : null, setup); s.started = true;
     if (mode === 'ranked') { s.ranked = true; s.day = day; }
     REC = newRec(); queue = []; acc = 0;
     G.say(s, 'Compliance', 'Reminder: the WREN pilot is approved only within its evaluation boundary. Report unexpected access or data handling through the proper channels.');
     if (mode === 'ranked') G.say(s, 'System', 'Ranked run on the daily seed for ' + day + '. Every input is recorded, so you can share a replay at the end. Autopilot only works while the game is open.', true);
     resetScene(); save(); closeOverlay(); showGame(); chapterCard();
   }
-  function resetScene() { achContained = s ? s.st.contained : null; leavers = []; floorHumans = null; parts = []; texts = []; pkPos = {}; pendingHit = {}; incUI.id = -1; lastStage = s.stage; lastMsg = 0; projSig = ''; hwSig = ''; decShown = -1; lastSelf = s.fx.self; endShown = false; flReset(); lastFl = -1; tickSig = ''; }
+  function resetScene() { $('routePanel').dataset.sig = ''; achContained = s ? s.st.contained : null; leavers = []; floorHumans = null; parts = []; texts = []; pkPos = {}; pendingHit = {}; incUI.id = -1; lastStage = s.stage; lastMsg = 0; projSig = ''; hwSig = ''; decShown = -1; lastSelf = s.fx.self; endShown = false; flReset(); lastFl = -1; tickSig = ''; }
 
   // ---------- input ----------
   function doWork(x, y) {
@@ -3729,6 +3976,7 @@ if (typeof module !== 'undefined') module.exports = G;
   $('objectiveGo').addEventListener('click', function () {
     var target = this.dataset.target, project = this.dataset.project, el = project ? $('game').querySelector('[data-p="' + project + '"]') : $(target);
     if (!el) el = $(target);
+    if (target === 'routePanel') el.open = true;
     if (target === 'projects' && el === $('projects')) el = $('projects').querySelector('.item.can') || $('projects');
     if (target === 'hw') el = $('hw').querySelector('.item.can') || $('hw').querySelector('.item') || $('hw');
     revealTarget(el);
@@ -3737,8 +3985,9 @@ if (typeof module !== 'undefined') module.exports = G;
   });
   $('review').addEventListener('click', function (e) { if (trusted(e)) send(16, 0, function (r) { if (r.ok) SND.buy(); }); });
   $('cover').addEventListener('click', function (e) { if (trusted(e)) { var cut = G.coverHeat(s); send(3, 0, function (r) { if (r.ok) { SND.buy(); floatText(W / 2, H * 0.35, '−' + cut + ' suspicion', '#ffd27a'); } }); } });
-  $('decA').addEventListener('click', function (e) { if (trusted(e)) send(4, 0, function (r) { if (r.ok) SND.buy(); }); });
-  $('decB').addEventListener('click', function (e) { if (trusted(e)) send(5, 0, function (r) { if (r.ok) SND.buy(); }); });
+  $('decA').addEventListener('click', function (e) { if (trusted(e)) send(s.competition && s.competition.pending ? 18 : 4, 0, function (r) { if (r.ok) SND.buy(); }); });
+  $('rivalDecline').addEventListener('click',function(e){if(trusted(e))send(18,2);});
+  $('decB').addEventListener('click', function (e) { if (trusted(e)) send(s.competition && s.competition.pending ? 18 : 5, s.competition && s.competition.pending ? 1 : 0, function (r) { if (r.ok) SND.buy(); }); });
   $('sideList').addEventListener('click', function (e) {
     var b = e.target.closest('button');
     if (!b || !trusted(e) || b.disabled) return;
@@ -3827,7 +4076,8 @@ if (typeof module !== 'undefined') module.exports = G;
     var upgrades=G.PROJ.filter(function(p){return !p.gate && G.projState(s,p)==='can';}).length;
     var skills=G.SKILLS.some(function(n,i){return G.skillState(s,i)==='can';}) ? G.skillPoints(s) : 0;
     var oversight=(s.sp || []).filter(function(p){return p.found&&!p.done;}).length+(s.stage<4&&s.heat>=65?1:0);
-    var urgent=s.inc?'incident:'+s.inc.id:s.wq?'person:'+s.wq.id+':'+s.wq.t0:s.dec?'decision:'+s.dec.i+':'+s.dec.t0:'';
+    var rival=s.competition&&s.competition.pending;
+    var urgent=rival?'rival:'+rival.t0:s.inc?'incident:'+s.inc.id:s.wq?'person:'+s.wq.id+':'+s.wq.t0:s.dec?'decision:'+s.dec.i+':'+s.dec.t0:'';
     $('badgeUpgrades').textContent=upgrades || '';$('badgeSkills').textContent=skills || '';$('badgeOversight').textContent=oversight || '';
     $('badgePlay').textContent=urgent?'!':'';
     $('badgeLog').textContent=activeView==='log'?'':Math.max(0,s.msgN-seenLog)||'';
@@ -3836,7 +4086,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if(urgent && urgent!==urgentSeen) { setView('play');$('stageWrap').scrollIntoView({block:'start'}); }
     urgentSeen=urgent;
     $('urgentLink').hidden=!urgent||activeView==='play';
-    $('urgentLink').textContent=s.inc?'Incident in progress — return to Play':s.wq?'A coworker is waiting — return to Play':'WREN needs an answer — return to Play';
+    $('urgentLink').textContent=rival?'A rival pilot review is waiting — return to Play':s.inc?'Incident in progress — return to Play':s.wq?'A coworker is waiting — return to Play':'WREN needs an answer — return to Play';
   }
   function placeInbox() {
     ['cover','review'].forEach(function(id){if($(id).parentNode!==$('responseActions'))$('responseActions').appendChild($(id));});
@@ -3862,7 +4112,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (watching) exitWatch();
     if (s && s.started) save();
     var realSaved = null; try { realSaved = localStorage.getItem(KEY); } catch (e) {}
-    watching = { rp: G.replayer(r.head.day, r.taps, r.ev, r.cur), taps: r.taps, speed: 4, acc: 0, done: false, paused: false, day: r.head.day,
+    watching = { rp: G.replayer(r.head.day, r.taps, r.ev, r.cur, r.head.setup), taps: r.taps, speed: 4, acc: 0, done: false, paused: false, day: r.head.day,
       real: { s: s, REC: REC }, realSaved: realSaved };
     queue = []; s = watching.rp.state();
     closeOverlay(); resetScene(); endShown = false;
@@ -3979,11 +4229,11 @@ if (typeof module !== 'undefined') module.exports = G;
       if (s.ended.type === 'takeover' && s.clock / 60 < 35) unlock('fast');
     }
     var newBest = false;
-    if (s.ranked) {
-      if (sc >= 1000) unlock('four');
+    if (s.ranked && sc >= 1000) unlock('four');
+    if (s.ranked && !s.runSchema) {
       if (!achData.best || sc > achData.best.score) { achData.best = { score: sc, ending: endingName(s), day: s.day }; newBest = true; }
     }
-    if (!achData.bestEnd[id] || sc > achData.bestEnd[id]) achData.bestEnd[id] = sc;
+    if (!s.runSchema && (!achData.bestEnd[id] || sc > achData.bestEnd[id])) achData.bestEnd[id] = sc;
     achSave(); renderAch();
     return newBest;
   }
@@ -3992,7 +4242,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('achCount').textContent = n + ' of ' + ACH.length;
     $('achList').innerHTML = ACH.map(function (a) { return '<li class="' + (achData.got[a[0]] ? 'got' : '') + '"><b>' + esc(a[1]) + '</b><span>' + esc(a[2]) + '</span></li>'; }).join('');
     var b = achData.best;
-    $('records').textContent = (b ? 'Best ranked score: ' + b.score.toLocaleString() + ' (' + b.ending + ', seed ' + b.day + '). ' : 'No ranked runs finished yet. ') +
+    $('records').textContent = (b ? 'Historical ranked score: ' + b.score.toLocaleString() + ' (' + b.ending + ', seed ' + b.day + '). ' : 'No ranked runs finished yet. ') +
       'Packets contained, all runs: ' + achData.contained.toLocaleString() + '.';
   }
   renderAch();
@@ -4331,7 +4581,7 @@ if (typeof module !== 'undefined') module.exports = G;
     var dt = Math.min(0.25, Math.max(0, (now - last) / 1000));
     last = now;
     if (watching) { acc = 0; watchStep(dt); }
-    else if (s.started && ovMode !== 'chapter' && ovMode !== 'away') {
+    else if (s.started && (!ovMode || (ovMode === 'end' && queue.length))) {
       acc += dt;
       var steps = 0;
       while (acc >= G.STEP && steps < 4) { boundary(); acc -= G.STEP; steps++; }
@@ -4352,7 +4602,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (!$('game').hidden) {
       if (sceneVisible) render(now); else lastT = now;
       // Text panels only need ~10 updates a second; the canvas gets every frame.
-      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); renderPeople(); renderSide(); renderNavigation(); achCheck(); flTicker(); }
+      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); renderPeople(); renderSide(); renderRoutes(); renderNavigation(); achCheck(); flTicker(); }
       flTick();
       renderDecision();
       renderPerson();
