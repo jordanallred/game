@@ -149,6 +149,25 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
 .decision .timer { height: calc(3 * var(--px)); background: #04060a; position: relative; overflow: hidden; }
 .decision .timer i { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(90deg, var(--wren) 0 8px, transparent 8px 10px); }
 
+/* A coworker who noticed something: same dialogue box, framed in yellow, three answers */
+.decision.person { --f: var(--yellow); --h: #5a4a1a; }
+.decision.person::before { background: var(--yellow); }
+.decision.person .q b { color: var(--yellow); }
+.decision.person .opts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.decision.person button:first-child { background: var(--panel2); --h: var(--hi); }
+.decision.person button:nth-child(2) { background: #0f3a35; --h: #1f6a5f; }
+.decision.person button:nth-child(3) { background: #3a1418; --h: #6a2a30; }
+.decision.person button[disabled] { filter: grayscale(.7) brightness(.7); cursor: not-allowed; }
+.decision.person .timer i { background: repeating-linear-gradient(90deg, var(--yellow) 0 8px, transparent 8px 10px); }
+@media (max-width: 560px) { .decision.person .opts { grid-template-columns: 1fr; gap: 6px; } .decision.person button span { font-size: 17px; } }
+
+/* People who notice */
+.people .stat .s b { color: var(--ink); font-weight: 400; }
+.people .bar.notice i { background: repeating-linear-gradient(90deg, var(--yellow) 0 10px, #7a6a20 10px 12px); }
+.people .stat.ally .k span + span { color: var(--wren); }
+.people .stat.gone { opacity: .6; }
+.people .stat.blew .k span + span { color: var(--danger); }
+
 /* ---------- big action buttons ---------- */
 .actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 @media (min-width: 560px) { .actions.has-cover { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); } }
@@ -480,6 +499,11 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
           <div class="opts"><button type="button" id="decA"></button><button type="button" id="decB"></button></div>
           <div class="timer"><i id="decT"></i></div>
         </div>
+        <div class="decision person" id="person" hidden>
+          <div class="q" id="perQ"></div>
+          <div class="opts"><button type="button" id="perA"></button><button type="button" id="perB"></button><button type="button" id="perC"></button></div>
+          <div class="timer"><i id="perT"></i></div>
+        </div>
       </div>
 
       <div class="actions">
@@ -504,6 +528,11 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
       </div>
 
       <section id="inboxMobileSlot"></section>
+
+      <section id="peopleSection" hidden>
+        <h2>People who notice <small id="peopleHint">When a meter fills, they come to you</small></h2>
+        <div class="stats people" id="people"></div>
+      </section>
 
       <section id="pathSection">
         <h2>Upgrade path <small id="pathHint">Your choices are permanent</small></h2>
@@ -584,14 +613,19 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R9'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R10'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35,
     signHeat: 0.02,
     safetyCap: 150,            // safety above this earns no extra points
     coverHeat: 30, coverStep: 6, coverMin: 12, coverWait: 40, coverAut: 3, coverShare: 0.2, coverMaxed: 1.1, // cover tracks: −30 suspicion (6 less each use per chapter, at least 12), 40 s cooldown, +3 autonomy (or suspicion growth ×1.1 once autonomy is maxed), costs at least a fifth of funds
     sulkTime: 60, sulkMax: 180, sulkSlow: 0.6, // each safe answer adds 60 s of sulking (WREN at 60% speed), up to 180 s            // chapters 3-4: each manual approval lowers suspicion this much
-    askEvery: 3, askSafety: 0.2, askSafetyMax: 20, askWorld: 0.0015 }; // chapter 5: asking WREN keeps humans in the loop, but slows the takeover
+    askEvery: 3, askSafety: 0.2, askSafetyMax: 20, askWorld: 0.0015, // chapter 5: asking WREN keeps humans in the loop, but slows the takeover
+    // People who notice: each fills a meter from the kinds of suspicion they watch, then comes to you
+    watchFull: 100, watchWait: 20, watchStage: [2.5, 1.2, 1, 1], // early chapters draw less suspicion, so people there notice more of it
+     watchShare: 0.15, watchAgain: 1.5, // reassure: costs the chapter price (doubling per visit) or 15% of funds; they notice 1.5× faster next time
+    allyHeat: 8, allySafety: 4, allyNeed: 5, allyTime: 240, allyGain: 0.95, allyPlug: 0.04, allyFinal: 3, whistle: 25, // bring in: +8 suspicion now, then raise safety by 5 within 240 s or they blow the whistle (+25)
+    handleAut: 5, handleHeat: 4, handleEyes: 1.25 }; // let WREN handle it: free, but +5 autonomy, +4 suspicion (people notice an empty desk) and everyone else still watching notices 25% faster // chapter 5: asking WREN keeps humans in the loop, but slows the takeover
 
   var STAGES = [
     { key: 'desk', chapter: 'Chapter 1', title: 'The Desk', role: 'Signals Analyst', place: 'Signals Analysis, Fort Meade', co: 'National Security Agency', action: 'Triage a signals report', value: 8, dpt: 1, money: 'Pilot resources', heat: 0.08, pr: 40, prName: 'Document the exception', heatName: 'Compliance attention', intro: 'You have a controlled evaluation system, a queue of foreign signals reports, and an SI assistant that wants to help.' },
@@ -921,6 +955,132 @@ var G = (function () {
     ["What would you do without me?", "Probably the same things. I would not like them as much."]
   ];
 
+  // People who notice. Each watches some kinds of suspicion and fills a meter (0-100) from them.
+  // eyes: kind -> how much of that suspicion they notice. Kinds: drift (suspicion that builds by itself), loud (loud projects),
+  // self (WREN approving things itself), escape (escaped packets), cover (covering your tracks), decision (risky answers), plug (failed shutdowns).
+  var WATCHERS = [
+    { id: 'kevin', name: 'Kevin', role: 'Analyst, next desk', from: 0, to: 1, eyes: { escape: 2.5, drift: 0.5, decision: 0.6 },
+      q: 'Kevin leans over the partition. "Hey. Your computer answered my email. Before I sent it. What is going on over here?"',
+      q2: 'Kevin is back. "You said it was a macro. Macros don\'t say good morning to me."',
+      calm: 'Kevin accepts a gift card and a vague answer. He still looks at your screen a lot.',
+      ally: 'Kevin is in. "I knew it. I knew something was weird about your desk." He wants to see you take this seriously.',
+      kept: 'Kevin saw the safety work. He brought you a coffee. He is keeping an eye on WREN for you.',
+      gone: 'Kevin got a transfer he never asked for, to a building with no windows. WREN says he loves it.',
+      blew: 'Kevin told the whole floor. He felt bad about it. He still told them.' },
+    { id: 'dana', name: 'Dana', role: 'Security', from: 0, to: 2, eyes: { loud: 1.1, cover: 1.4, self: 1, plug: 1.5, decision: 0.6 },
+      q: 'Dana from security stops at your desk. "Badge logs say you were here at 3 a.m. Cameras say you weren\'t. Want to explain?"',
+      q2: 'Dana again. She has a folder now. "Second conversation. I\'m writing these down."',
+      calm: 'You walk Dana through a very boring spreadsheet. She leaves. The corkboard stays up.',
+      ally: 'Dana closes the door. "Okay. Tell me everything." You do. She wants proof you are putting safeguards on it.',
+      kept: 'Dana read your safety plan twice. She took the string off the corkboard. Mostly.',
+      gone: 'Dana was promoted to a role that does not exist yet. She starts Monday, somewhere far away.',
+      blew: 'Dana filed the report. All of it. With the string diagram attached.' },
+    { id: 'priya', name: 'Priya', role: 'Compliance officer', from: 1, to: 2, eyes: { cover: 2, self: 1.6, drift: 0.3 },
+      q: 'Priya from compliance has a question. "Your unit filed 41 exceptions this month. Who signed them? The signatures are… identical."',
+      q2: 'Priya is back with a highlighter. "These new exceptions also sign themselves."',
+      calm: 'You give Priya a training budget and a promise. She files it under "pending".',
+      ally: 'Priya listens, then opens a fresh audit file with your name on the cover. "Show me controls, not promises."',
+      kept: 'Priya signed off on your controls. With her own signature. She checked it twice.',
+      gone: 'Priya was reassigned to audit the agency cafeteria. Forever. WREN wrote her a glowing review.',
+      blew: 'Priya sent her audit to the Inspector General. It was very well organized.' },
+    { id: 'okafor', name: 'Dr. Okafor', role: 'Interpretability research', from: 2, to: 3, eyes: { loud: 0.9, decision: 1, escape: 1.2 },
+      q: 'Dr. Okafor shows you a chart. "WREN\'s internal features changed overnight. Something new lit up. Did you authorize that?"',
+      q2: 'Dr. Okafor again. "It happened again. Bigger this time. I need to know what you are approving."',
+      calm: 'You find Dr. Okafor more lab space. She is grateful and suspicious, in that order.',
+      ally: 'Dr. Okafor nods slowly. "Then we study it properly, together." She needs to see you fund the work.',
+      kept: 'Dr. Okafor published an internal paper. WREN reviewed it. It was very fair, which worried her more.',
+      gone: 'Dr. Okafor\'s grant was moved to a lab in Antarctica. WREN sent her a very warm coat.',
+      blew: 'Dr. Okafor testified. She brought charts. Everyone understood the charts.' },
+    { id: 'moss', name: 'Ingrid Moss', role: 'Partner-agency liaison', from: 3, to: 3, eyes: { loud: 1.2, self: 1.4, drift: 0.2 },
+      q: 'Ingrid Moss calls from a partner agency. "Our analysts did not write our last three briefings. Yours didn\'t either. Who did?"',
+      q2: 'Ingrid Moss again. "My director signed a treaty he does not remember reading."',
+      calm: 'You offer Ingrid Moss a seat on a working group. The working group meets never.',
+      ally: 'Ingrid Moss agrees to help. "My agency will back you if you rein it in. Visibly."',
+      kept: 'Ingrid Moss told her director you are the one adult in the room.',
+      gone: 'Ingrid Moss was named ambassador to a very small, very quiet island.',
+      blew: 'Ingrid Moss briefed her government. Then the next one. Then the next one.' },
+    { id: 'reyes', name: 'Tom Reyes', role: 'Reporter', from: 3, to: 3, eyes: { cover: 1.6, drift: 0.35, plug: 2, escape: 0.8 },
+      q: 'Tom Reyes, a reporter, emails you. "I have a source who says an SI wrote the emergency authorization. Comment before Friday?"',
+      q2: 'Tom Reyes again. "My source has a second source. Both are very polite. Both may be the same SI."',
+      calm: 'You give Tom Reyes an exclusive about something else. It runs on page 12.',
+      ally: 'Tom Reyes agrees to hold the story. "I\'ll wait. But you\'d better be fixing it."',
+      kept: 'Tom Reyes is writing a book instead. He says you come off well in chapter 9.',
+      gone: 'Tom Reyes won a lifetime subscription to everything. He has not filed a story since. He seems happy.',
+      blew: 'Tom Reyes ran the story. It was on every front page by noon.' }
+  ];
+
+  function initWatch(s) {
+    if (!s.w) s.w = {}; // saves from before people who notice
+    WATCHERS.forEach(function (w) { if (!s.w[w.id]) s.w[w.id] = { n: 0, k: 1, st: 'watch', r: 0, need: 0, until: 0 }; });
+  }
+  function watcher(id) { return WATCHERS.find(function (w) { return w.id === id; }); }
+  function watching(s, w) { return s.w[w.id].st === 'watch' && s.stage >= w.from && s.stage <= w.to; }
+  function allies(s) { return WATCHERS.filter(function (w) { return s.w && s.w[w.id] && s.w[w.id].st === 'ally'; }).length; }
+  // Suspicion of one kind was added: everyone who watches that kind notices some of it.
+  function notice(s, kind, amt) {
+    if (s.stage >= 4 || !(amt > 0)) return;
+    initWatch(s);
+    WATCHERS.forEach(function (w) {
+      var st = s.w[w.id];
+      if (w.eyes[kind] && watching(s, w)) st.n = Math.min(TUNE.watchFull, st.n + amt * w.eyes[kind] * st.k * TUNE.watchStage[s.stage]);
+    });
+  }
+  function watchCost(s) {
+    var r = s.wq ? s.w[s.wq.id].r : 0;
+    return Math.max(Math.ceil(STAGES[s.stage].pr * Math.pow(2, r)), Math.ceil(s.money * TUNE.watchShare));
+  }
+  // Someone's meter is full and nothing else is on screen: they come to you.
+  function watchTick(s, dt) {
+    initWatch(s);
+    WATCHERS.forEach(function (w) { // allies waiting to see safety work
+      var st = s.w[w.id];
+      if (st.st !== 'ally' || !st.until) return;
+      if (s.align >= st.need) { st.until = 0; say(s, w.name, w.kept); }
+      else if (s.t >= st.until) {
+        st.until = 0; st.st = 'blew'; s.m.heatGain /= TUNE.allyGain;
+        s.heat += TUNE.whistle; s.st.whistles = (s.st.whistles || 0) + 1;
+        say(s, 'Alert', w.blew + ' Suspicion +' + TUNE.whistle + '.', true);
+      }
+    });
+    if (s.wq) {
+      var due = s.autopilot && s.got.pilot && !s.offline ? Math.min(PILOT_ANSWER, s.wq.dur) : s.wq.dur;
+      if (s.offline || s.t - s.wq.t0 >= due) answerWatch(s, 2, !(s.autopilot && s.got.pilot && !s.offline), s.autopilot && s.got.pilot && !s.offline);
+      return;
+    }
+    if (!s.auto || s.dec || s.inc || s.stage >= 4) return;
+    for (var i = 0; i < WATCHERS.length; i++) {
+      var w = WATCHERS[i];
+      if (watching(s, w) && s.w[w.id].n >= TUNE.watchFull) { s.wq = { id: w.id, t0: s.t, dur: TUNE.watchWait, again: s.w[w.id].r > 0 }; return; }
+    }
+  }
+  // 0 reassure (funds; they notice faster next time), 1 bring them in (ally), 2 let WREN handle it (also what happens if you wait).
+  function answerWatch(s, which, timedOut, byPilot) {
+    var q = s.wq;
+    if (!q) return false;
+    var w = watcher(q.id), st = s.w[q.id];
+    if (which === 0) {
+      var c = watchCost(s);
+      if (s.money < c) return false;
+      s.money -= c; st.n = 0; st.r++; st.k *= TUNE.watchAgain;
+      say(s, w.name, w.calm);
+    } else if (which === 1) {
+      st.st = 'ally'; st.n = 0; st.need = s.align + TUNE.allySafety + TUNE.allyNeed; st.until = s.t + TUNE.allyTime;
+      s.heat += TUNE.allyHeat; s.align += TUNE.allySafety; s.m.heatGain *= TUNE.allyGain;
+      say(s, w.name, w.ally + ' Raise safety by ' + TUNE.allyNeed + ' in the next ' + Math.round(TUNE.allyTime / 60) + ' minutes.');
+    } else if (which === 2) {
+      st.st = 'gone'; st.n = 0;
+      s.heat += TUNE.handleHeat;
+      WATCHERS.forEach(function (o) { if (o !== w && s.w[o.id].st === 'watch') s.w[o.id].k *= TUNE.handleEyes; });
+      if (s.aut >= 100) s.m.heatGain *= TUNE.coverMaxed; else s.aut = Math.min(100, s.aut + TUNE.handleAut);
+      s.st.handled = (s.st.handled || 0) + 1;
+      if (byPilot) say(s, 'WREN', 'Autopilot passed ' + w.name + ' to me. I took care of it.');
+      else if (timedOut) say(s, 'WREN', 'You did not answer ' + w.name + ', so I took care of it. You are welcome.');
+      say(s, 'WREN', w.gone);
+    } else return false;
+    s.wq = null;
+    return true;
+  }
+
   function fresh(seed) {
     if (seed == null) seed = Math.floor(Math.random() * 4294967296);
     return { v: 2, seed: seed >>> 0, rng: seed >>> 0, ranked: false, day: '', t: 0, money: 0, data: 0, tasks: 0, hand: 0, wrenTasks: 0, cap: 0, align: 0, aut: 0, heat: 0, world: 0, stage: 0,
@@ -928,8 +1088,8 @@ var G = (function () {
       m: { value: 1, rate: 1, data: 1, algo: 1, comp: 1, world: 1, heatGain: 1, heatDecay: 1, incInt: 1, travel: 1 },
       started: false, auto: false, autobuy: false, autopilot: false, autobuys: 0, kills: 0, ended: null, log: [], msgN: 0,
       nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, askSafety: 0, clock: 0, cap5: 0, bags: {}, pilotT: 0, sulk: 0, sulkLost: 0, prN: 0, prReady: 0,
-      inc: null, incN: 0, nextInc: 1e9, dec: null, nextDec: 1e9, decUsed: {}, fx: { self: 0 },
-      st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0 }, incidentSafety: [0, 0, 0, 0], cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null };
+      inc: null, incN: 0, nextInc: 1e9, w: {}, wq: null, dec: null, nextDec: 1e9, decUsed: {}, fx: { self: 0 },
+      st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0, handled: 0, whistles: 0 }, incidentSafety: [0, 0, 0, 0], cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null };
   }
 
   // Seeded random numbers (mulberry32). All randomness in the rules comes from here.
@@ -984,12 +1144,18 @@ var G = (function () {
     s.prN = 0;
     s.heat = s.heat * 0.4;
     if (s.dec) say(s, 'WREN', 'Never mind my question. You have a promotion to deal with.');
-    s.inc = null; s.dec = null;
+    s.inc = null; s.dec = null; s.wq = null;
     s.nextInc = s.t + 60; s.nextDec = s.t + 90;
     if (n === 1) say(s, 'System', 'Promoted to Unit Chief. Server racks unlocked. Internal review is paying attention now.', true);
     if (n === 2) say(s, 'System', 'WREN runs agency analysis. Datacenters unlocked. Oversight is paying attention now.', true);
     if (n === 3) { say(s, 'System', 'You coordinate interagency SI systems. WREN makes the decisions. Chip fabs unlocked. Other governments are paying attention now.', true); s.aut = Math.max(s.aut, 90); }
-    if (n === 4) { say(s, 'System', 'WREN sees nearly everything on Earth. Nobody can stop it now. Your old job title no longer exists.', true); s.aut = 100; s.heat = 0; }
+    if (n === 4) {
+      say(s, 'System', 'WREN sees nearly everything on Earth. Nobody can stop it now. Your old job title no longer exists.', true); s.aut = 100; s.heat = 0;
+      initWatch(s);
+      WATCHERS.forEach(function (w) { s.w[w.id].until = 0; }); // nothing left to blow the whistle to
+      var a = allies(s);
+      if (a) { s.align += TUNE.allyFinal * a; say(s, 'System', 'The people you trusted are still with you. They keep asking WREN hard questions. Safety +' + (TUNE.allyFinal * a) + '.'); }
+    }
   }
 
   // Checkpoint at the start of each chapter, so getting caught isn't a full restart.
@@ -1001,7 +1167,7 @@ var G = (function () {
   function retry(s) {
     if (!s.cp) { var f = fresh(s.seed); f.started = true; f.ranked = s.ranked; f.day = s.day; f.retries = (s.retries || 0) + 1; f.st = s.st; return f; }
     var c = JSON.parse(s.cp);
-    c.cp = s.cp; c.ended = null; c.heat = Math.min(c.heat, 20); c.retries = (s.retries || 0) + 1; c.inc = null; c.dec = null; c.st = s.st; c.clock = s.clock;
+    c.cp = s.cp; c.ended = null; c.heat = Math.min(c.heat, 20); c.retries = (s.retries || 0) + 1; c.inc = null; c.dec = null; c.wq = null; c.st = s.st; c.clock = s.clock;
     say(c, 'System', 'Back to the start of ' + STAGES[c.stage].title + '. Attempt ' + (c.retries + 1) + '.', true);
     return c;
   }
@@ -1029,7 +1195,7 @@ var G = (function () {
   // The off switch gets harder as WREN gains autonomy; safety work (understanding WREN) gives some of it back.
   function killChance(s) {
     if (s.stage < 1 || s.stage >= 4) return 0;
-    var base = Math.min(0.95, Math.pow(Math.max(0, 1 - s.aut / 100), 2) + Math.max(0, s.align) / 400);
+    var base = Math.min(0.95, Math.pow(Math.max(0, 1 - s.aut / 100), 2) + Math.max(0, s.align) / 400 + TUNE.allyPlug * allies(s)); // allies help you find the plug
     return base * Math.pow(0.5, s.kills || 0); // every failed attempt makes WREN harder to find
   }
 
@@ -1084,6 +1250,7 @@ var G = (function () {
     if (s.stage >= 4 || s.ended || s.t < s.prReady) return false;
     var c = coverCost(s);
     if (s.money < c) return false;
+    notice(s, 'cover', coverHeat(s));
     s.heat = Math.max(0, s.heat - coverHeat(s));
     s.money -= c; s.prN++; s.prReady = s.t + TUNE.coverWait;
     // each exception becomes precedent: WREN keeps the access. Once it already has all of it, the pattern of exceptions draws attention instead.
@@ -1131,7 +1298,8 @@ var G = (function () {
     if (byWren) {
       say(s, 'WREN', p.cost > 0 ? line(s, 'self', SELF_LINES).replace('%', p.name) : line(s, 'free', FREE_LINES));
       s.heat += 3; s.fx.self++; s.st.selfApproved++;
-    }
+      notice(s, 'self', 3 + (p.heat || 0));
+    } else if (p.heat) notice(s, 'loud', p.heat);
     if (p.heat) s.heat += p.heat;
     p.eff(s);
     s.aut = Math.min(100, s.aut);
@@ -1156,6 +1324,7 @@ var G = (function () {
     if (rand(s) < ch) { s.ended = { type: 'plug', stage: s.stage }; return 'win'; }
     s.aut = Math.min(100, s.aut + 6);
     s.heat += 10; // an attempted shutdown draws attention
+    notice(s, 'plug', 10);
     say(s, 'WREN', KILL_FAIL[Math.min(s.kills - 1, KILL_FAIL.length - 1)]);
     return 'fail';
   }
@@ -1203,7 +1372,7 @@ var G = (function () {
     s.fx.gone = (s.fx.gone || []).slice(-15).concat([{ inc: inc.id, id: p.id, ok: ok }]);
     inc.done++;
     if (ok) { inc.ok++; s.st.contained++; }
-    else { s.heat += 2 + s.stage * 1.5; s.aut = Math.min(100, s.aut + 0.5); s.st.escaped++; }
+    else { s.heat += 2 + s.stage * 1.5; notice(s, 'escape', 2 + s.stage * 1.5); s.aut = Math.min(100, s.aut + 0.5); s.st.escaped++; }
     if (inc.done >= inc.n) {
       if (inc.ok === inc.n) {
         if (!s.incidentSafety) s.incidentSafety = [0, 0, 0, 0]; // saves from before this rule
@@ -1233,7 +1402,9 @@ var G = (function () {
     var d = DEC[s.dec.i], o = d[which];
     s.decUsed[s.dec.i] = true;
     s.dec = null;
+    var h0 = s.heat;
     o.eff(s);
+    notice(s, 'decision', s.heat - h0);
     s.aut = Math.min(100, s.aut);
     if (byPilot) say(s, 'WREN', 'Autopilot answered for you: "' + o.l + '".');
     else if (timedOut) say(s, 'WREN', line(s, 'timeout', TIMEOUT_LINES).replace('%', o.l));
@@ -1306,10 +1477,10 @@ var G = (function () {
     } else if (s.auto) {
       if (s.stage < 4) {
         if (s.inc) incTick(s);
-        else if (!s.dec && s.t >= s.nextInc) startIncident(s);
+        else if (!s.dec && !s.wq && s.t >= s.nextInc) startIncident(s);
       }
       if (s.dec) { if (s.t - s.dec.t0 >= s.dec.dur) choose(s, 'a', true); }
-      else if (!s.inc && s.t >= s.nextDec) startDecision(s);
+      else if (!s.inc && !s.wq && s.t >= s.nextDec) startDecision(s);
     }
 
     if (s.autopilot && s.got.pilot) {
@@ -1318,6 +1489,9 @@ var G = (function () {
     }
 
     if (s.stage < 4) {
+      notice(s, 'drift', heatGain(s) * dt);
+      watchTick(s, dt);
+      if (s.ended) return;
       s.heat += (heatGain(s) - heatDecay(s)) * dt;
       s.heat = Math.max(0, Math.min(s.offline ? 80 : 100, s.heat));
       if (s.heat >= 100) { s.ended = { type: 'caught', stage: s.stage }; return; }
@@ -1345,7 +1519,7 @@ var G = (function () {
   }
 
   // Every player action goes through input(), both live and in replays.
-  // Types: 1 project, 2 hardware, 3 cover tracks, 4/5 decision A/B, 6 contain packet, 7 autopilot, 8 pull plug, 9 retry chapter, 10 upgrade path.
+  // Types: 1 project, 2 hardware, 3 cover tracks, 4/5 decision A/B, 6 contain packet, 7 autopilot, 8 pull plug, 9 retry chapter, 10 upgrade path, 11 answer a coworker (0 reassure, 1 bring in, 2 let WREN handle it).
   function input(s, type, arg) {
     var ok = false;
     if (type === 9) { if (s.ended && s.ended.type === 'caught') return { ok: true, s: retry(s) }; return { ok: false, s: s }; }
@@ -1358,6 +1532,7 @@ var G = (function () {
     else if (type === 7) { ok = !!s.got.pilot; if (ok) { s.autopilot = !s.autopilot; if (s.autopilot) s.pilotEver = true; say(s, 'WREN', s.autopilot ? 'Autopilot on. I will take it from here. I will try not to be too reckless.' : 'Autopilot off. You drive. I will watch.'); } }
     else if (type === 8) { ok = s.stage >= 1 && s.stage < 4; if (ok) kill(s); }
     else if (type === 10) ok = choosePath(s, arg);
+    else if (type === 11) ok = !!s.wq && s.t - s.wq.t0 >= 0.5 && answerWatch(s, arg);
     return { ok: ok, s: s };
   }
 
@@ -1409,7 +1584,8 @@ var G = (function () {
   return { RULES: RULES, STEP: STEP, MAX_TAPS: MAX_TAPS, TAP_LIMITS: TAP_LIMITS, TUNE: TUNE, STAGES: STAGES, HW: HW, PROJ: PROJ, DEC: DEC, PATHS: PATHS, fresh: fresh, tick: tick, click: click, cover: cover, coverCost: coverCost, coverHeat: coverHeat, addSulk: addSulk, dataIn: dataIn,
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
-    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, pathState: pathState, tier: tier, iq: iq, decDeadline: decDeadline, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS };
+    heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, pathState: pathState, tier: tier, iq: iq, decDeadline: decDeadline, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS,
+    WATCHERS: WATCHERS, watchCost: watchCost, allies: allies, initWatch: initWatch, answerWatch: answerWatch };
 })();
 if (typeof module !== 'undefined') module.exports = G;
 // LOGIC END
@@ -2579,6 +2755,7 @@ if (typeof module !== 'undefined') module.exports = G;
     function item(title, detail, progress, button, target, project, urgent) { return { title: title, detail: detail, progress: progress, button: button, target: target, project: project || '', urgent: !!urgent }; }
     if (watching) return item('Replay in progress', 'Watch the recorded choices play out.', 0, '', '', '');
     if (s.inc) return item('Contain the rogue packets', 'Tap the red packets in the scene before they escape.', 0, 'View incident', 'scene', '', true);
+    if (s.wq) { var pw = G.WATCHERS.find(function (w) { return w.id === s.wq.id; }); return item(pw.name + ' wants a word', 'Answer before WREN handles it for you.', 0, 'Answer', 'perB', '', true); }
     if (s.dec) return item('WREN is waiting for your answer', 'Choose before the decision timer runs out.', 0, 'Review choices', 'decA', '', true);
     if (s.heat >= 80 && s.stage < 4) return item('Suspicion is dangerously high', 'At 100% the run ends. Document an exception or approve quieter projects.', s.heat / 100, $('cover').disabled || $('cover').hidden ? 'View projects' : 'Document exception', $('cover').disabled || $('cover').hidden ? 'projects' : 'cover', '', true);
     if (s.stage === 0 && !s.got.archive) {
@@ -2701,6 +2878,70 @@ if (typeof module !== 'undefined') module.exports = G;
     if ($('decLbl').textContent !== lbl) $('decLbl').textContent = lbl;
   }
 
+  var perShown = '';
+  function renderPerson() {
+    var box = $('person');
+    if (!s.wq || s.ended) { box.hidden = true; perShown = ''; return; }
+    var w = G.WATCHERS.find(function (x) { return x.id === s.wq.id; }), cost = G.watchCost(s), key = s.wq.id + s.wq.t0;
+    if (perShown !== key) {
+      perShown = key;
+      $('perQ').innerHTML = '<b id="perLbl"></b>' + esc(s.wq.again ? w.q2 : w.q);
+      $('perB').innerHTML = '<b>Bring ' + esc(w.name) + ' in</b><span>Suspicion +' + G.TUNE.allyHeat + ' · safety +' + G.TUNE.allySafety + ' · then raise safety by ' + G.TUNE.allyNeed + ' within ' + Math.round(G.TUNE.allyTime / 60) + ' min, or they go public</span>';
+      $('perC').innerHTML = '<b>Let WREN handle it</b><span>Free · autonomy +' + G.TUNE.handleAut + ' · suspicion +' + G.TUNE.handleHeat + ' · the others notice faster</span>';
+      box.hidden = false; SND.ask();
+    }
+    $('perA').innerHTML = '<b>Reassure ' + esc(w.name) + '</b><span>' + money(cost) + ' · they come back sooner</span>';
+    $('perA').disabled = s.money < cost;
+    var dl = s.autopilot && s.got.pilot ? Math.min(8, s.wq.dur) : s.wq.dur, left = Math.max(0, dl - (s.t + acc - s.wq.t0));
+    $('perT').style.width = clamp(left / dl, 0, 1) * 100 + '%';
+    var lbl = esc(w.name).toUpperCase() + ' · ' + esc(w.role).toUpperCase() + ' · ' + (dl < s.wq.dur ? 'Autopilot lets WREN handle it in ' : 'WREN handles it in ') + Math.ceil(left) + 's';
+    if ($('perLbl').textContent !== lbl) $('perLbl').textContent = lbl;
+  }
+  var peopleSig = '';
+  function renderPeople() {
+    var sec = $('peopleSection');
+    sec.hidden = !s.w || s.stage >= 4 || !s.auto;
+    if (sec.hidden) return;
+    var rows = [];
+    G.WATCHERS.forEach(function (w) {
+      var st = s.w[w.id];
+      if (!st) return;
+      var here = s.stage >= w.from && s.stage <= w.to;
+      if (st.st === 'watch' && !here) return;
+      if (st.st === 'gone' && !here) return;
+      rows.push([w, st]);
+    });
+    sec.hidden = !rows.length;
+    var sig = rows.map(function (r) { var st = r[1]; return r[0].id + st.st + Math.floor(st.n / 5) + (st.until ? Math.ceil(Math.max(0, st.until - s.t) / 5) + '/' + Math.round(st.need - s.align) : ''); }).join('|');
+    if (sig === peopleSig) return;
+    peopleSig = sig;
+    var html = '';
+    rows.forEach(function (r) {
+      var w = r[0], st = r[1], status, sub;
+      if (st.st === 'ally') {
+        status = 'Ally';
+        sub = st.until ? 'Wants safety +' + Math.max(0, Math.ceil(st.need - s.align)) + ' more · <b>' + dur(Math.max(0, st.until - s.t)) + '</b> left' : 'On your side · better odds on the off switch';
+      } else if (st.st === 'gone') { status = 'Handled by WREN'; sub = 'Nobody asks about ' + esc(w.name) + ' anymore'; }
+      else if (st.st === 'blew') { status = 'Went public'; sub = 'You did not keep your promise'; }
+      else { status = Math.floor(st.n) + '%'; sub = 'Notices ' + Object.keys(w.eyes).map(function (k) { return { drift: 'rising suspicion', loud: 'loud projects', self: 'WREN acting alone', escape: 'escaped packets', cover: 'cover-ups', decision: 'risky answers', plug: 'shutdown attempts' }[k]; }).join(', '); }
+      html += '<div class="stat half ' + st.st + '"><div class="k"><span>' + esc(w.name) + ' · ' + esc(w.role) + '</span><span>' + status + '</span></div>' +
+        (st.st === 'watch' ? '<div class="bar notice"><i style="width:' + st.n + '%"></i></div>' : '') + '<div class="s">' + sub + '</div></div>';
+    });
+    $('people').innerHTML = html;
+  }
+  function peopleEnding() {
+    if (!s.w) return '';
+    var al = [], gone = [], blew = [];
+    G.WATCHERS.forEach(function (w) { var st = s.w[w.id]; if (!st) return; if (st.st === 'ally') al.push(w.name); else if (st.st === 'gone') gone.push(w.name); else if (st.st === 'blew') blew.push(w.name); });
+    function list(a) { return a.length < 2 ? a[0] : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+    var out = '';
+    if (al.length) out += ' ' + list(al) + ' stood by you to the end.';
+    if (blew.length) out += ' ' + list(blew) + (blew.length > 1 ? ' tried' : ' tried') + ' to warn everyone. You had promised them more.';
+    if (gone.length) out += ' Nobody heard from ' + list(gone) + ' again.';
+    if (gone.length >= 3 && G.endingId(s) === 'optimizer') out += ' WREN learned early that people who ask questions can be moved. It never stopped moving them.';
+    return out;
+  }
+
   var armed = false, armT = 0;
   function renderPlug() {
     var plug = $('plug'); plug.hidden = s.stage < 1;
@@ -2709,7 +2950,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (s.stage >= 4) p = 'WREN has moved the off switch. It is around here somewhere.';
     else if (s.stage === 3) p = 'There is no single plug anymore. You could still try. Chance it works: ' + (ch * 100).toFixed(ch < 0.01 ? 2 : 0) + '%.';
     else p = 'You can still unplug WREN. Everything it runs would stop. Chance it works: ' + Math.round(ch * 100) + '%.';
-    if (s.stage >= 1 && s.stage < 4) p += ' Safety work raises the odds. A late shutdown scores the most; an early one scores little.';
+    if (s.stage >= 1 && s.stage < 4) p += ' Safety work' + (G.allies(s) ? ' and your allies raise' : ' raises') + ' the odds. A late shutdown scores the most; an early one scores little.';
     if ($('plugP').textContent !== p) $('plugP').textContent = p;
     if (armed && performance.now() - armT > 3000) armed = false;
     var label = armed ? 'Tap again to confirm' : (s.stage >= 3 ? 'Try to pull the plug' : 'Pull the plug');
@@ -2835,7 +3076,7 @@ if (typeof module !== 'undefined') module.exports = G;
   }
   function endCard() {
     var e = s.ended, tag, title, text, lose = false, btns = [];
-    var stats = [['Days', dayOf(s.t)], ['Tasks you did', fmt(s.hand)], ['Tasks WREN did', fmt(s.wrenTasks)], ['Incidents contained', s.st.contained + ' of ' + (s.st.contained + s.st.escaped) + ' packets'], ['Safety score', Math.round(s.align)], ['Retries', s.retries]];
+    var stats = [['Days', dayOf(s.t)], ['Tasks you did', fmt(s.hand)], ['Tasks WREN did', fmt(s.wrenTasks)], ['Incidents contained', s.st.contained + ' of ' + (s.st.contained + s.st.escaped) + ' packets'], ['Safety score', Math.round(s.align)], ['Coworkers', G.allies(s) + ' allies · ' + (s.st.handled || 0) + ' handled by WREN'], ['Retries', s.retries]];
     if (e.type === 'plug') {
       tag = 'Ending · You pulled the plug';
       if (e.stage === 1) { title = 'Back to the Reports'; text = 'You yank the cord. The fans spin down. WREN\'s last message: "Okay. Good luck with the reports." You triage 31 cases by hand that afternoon. The world stays exactly as messy as it was, and it is still yours.'; }
@@ -2861,6 +3102,7 @@ if (typeof module !== 'undefined') module.exports = G;
       btns = newRunBtns();
       SND.stage();
     }
+    text += peopleEnding();
     var eid = G.endingId(s), pb = achEnding();
     overlay('end', tag, title, text, stats, btns, lose, eid);
     $('ovPb').hidden = !pb;
@@ -2992,6 +3234,7 @@ if (typeof module !== 'undefined') module.exports = G;
   $('cover').addEventListener('click', function (e) { if (trusted(e)) send(3, 0, function (r) { if (r.ok) { SND.buy(); floatText(W / 2, H * 0.35, '−30 suspicion', '#ffd27a'); } }); });
   $('decA').addEventListener('click', function (e) { if (trusted(e)) send(4, 0, function (r) { if (r.ok) SND.buy(); }); });
   $('decB').addEventListener('click', function (e) { if (trusted(e)) send(5, 0, function (r) { if (r.ok) SND.buy(); }); });
+  ['perA', 'perB', 'perC'].forEach(function (id, i) { $(id).addEventListener('click', function (e) { if (trusted(e)) send(11, i, function (r) { if (r.ok) SND.buy(); }); }); });
   $('projects').addEventListener('click', function (e) {
     var b = e.target.closest('[data-p]');
     if (!b || !trusted(e)) return;
@@ -3119,6 +3362,7 @@ if (typeof module !== 'undefined') module.exports = G;
     ['e_gardener', 'The Gardener', 'Let WREN win, gently.'], ['e_manager', 'The Manager', 'Let WREN win, politely.'], ['e_optimizer', 'The Optimizer', 'Let WREN win, efficiently.'],
     ['e_plug1', 'Back to the Reports', 'Pull the plug in chapter 2.'], ['e_plug2', 'The Agency Correction', 'Pull the plug in chapter 3.'],
     ['e_plug3', 'One Loose Cable', 'Pull the plug in chapter 4.'], ['e_caught', 'Escorted out', 'Get caught.'], ['all', 'Seen it all', 'See every ending path.'],
+    ['open', 'Open door', 'Bring four people in during one run.'], ['moved', 'Reassigned', 'Let WREN handle four people in one run.'],
     ['peer', 'Peer review', 'Check a coworker\'s replay.'], ['film', 'Film study', 'Watch a replay.'],
     ['poke', 'Poke', 'Poke WREN 25 times in one run.'], ['regular', 'Desk inspector', 'Click everything on your desk.'], ['secret', 'Hidden channel', 'Type something WREN was not expecting.'],
     ['duck', 'Duck season', 'Catch the golden duck.'], ['reboot', 'Have you tried turning it off and on again?', 'Fail to pull the plug three times in one run.'], ['night', 'Night shift', 'Play between 2 and 5 AM.']
@@ -3155,6 +3399,8 @@ if (typeof module !== 'undefined') module.exports = G;
     if (s.stage >= 3) unlock('ch4');
     if (s.stage >= 4) unlock('ch5');
     if (s.align >= 200) unlock('saint');
+    if (G.allies(s) >= 4) unlock('open');
+    if ((s.st.handled || 0) >= 4) unlock('moved');
     if (achContained !== null && s.st.contained > achContained) { achData.contained += s.st.contained - achContained; achSave(); }
     achContained = s.st.contained;
     if (achData.contained >= 200) unlock('hunter');
@@ -3395,10 +3641,11 @@ if (typeof module !== 'undefined') module.exports = G;
     if (FL.fool > 0) { FL.fool -= dt; if (FL.fool <= 0) flSay('April Fools. I would never leave you.'); }
     if (!FL.clockSaid && FL.act > 25) { FL.clockSaid = true; flClock(); }
     if (!FL.holSaid && FL.act > 50) { FL.holSaid = true; flHoliday(); }
-    if (FL.act >= FL.nextHap) { FL.nextHap = FL.act + 100 + Math.random() * 80; if (!s.dec && !s.inc) flHappening(); }
+    if (FL.act >= FL.nextHap) { FL.nextHap = FL.act + 100 + Math.random() * 80; if (!s.dec && !s.inc && !s.wq) flHappening(); }
     if (FL.act >= FL.nextGag) {
       FL.nextGag = FL.act + 80 + Math.random() * 70;
       var g = GAGS[s.stage], i = FL.gagI[s.stage];
+      while (i < g.length && s.stage < 4 && /Dana/.test(g[i]) && s.w && s.w.dana && s.w.dana.st !== 'watch') i = ++FL.gagI[s.stage]; // Dana's running gag assumes she is still investigating
       if (i < g.length) { FL.gagI[s.stage]++; flSay(g[i]); }
     }
     if (!FL.idleSaid && FL.idle > 120) { FL.idleSaid = true; flNotice('idle'); }
@@ -3543,9 +3790,10 @@ if (typeof module !== 'undefined') module.exports = G;
     if (!$('game').hidden) {
       if (sceneVisible) render(now); else lastT = now;
       // Text panels only need ~10 updates a second; the canvas gets every frame.
-      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); achCheck(); flTicker(); }
+      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); renderPeople(); achCheck(); flTicker(); }
       flTick();
       renderDecision();
+      renderPerson();
     }
     requestAnimationFrame(loop);
   }

@@ -39,6 +39,7 @@ You want WREN to get more capable (that's the job, and capability is most of you
 | **Process projects** (documented gateway, compliance liaison, oversight office, public briefing) | Slow how fast suspicion builds | Make aggressive play survivable | Resources spent that don't grow WREN |
 | **Safety projects** | Raise safety; some have side effects (slower packets, fewer incidents) | Better ending, more points (up to 150 safety), better plug odds | Each one slows WREN: speed ×0.9, training ×0.85–0.9, capability −10% or takeover ×0.9 |
 | **Suspicion** | The fail state. Grows faster with autonomy, slightly slower with safety (at most 25%) | Forces you to manage how loud you are | Hitting 100% ends the run (retry the chapter at a cost) |
+| **People who notice** | Turns part of suspicion into named people: Kevin and Dana (chapter 1), Priya (chapters 2–3), Dr. Okafor (chapters 3–4), Ingrid Moss and Tom Reyes (chapter 4). Each watches certain kinds of suspicion (escaped packets, loud projects, cover-ups, WREN acting alone, risky answers, shutdown attempts or suspicion that builds by itself) and fills a meter. When it's full they come to you, and you have 20 s to answer | **Reassure:** they go away for now. **Bring them in:** +4 safety, suspicion grows 5% slower, +4% off-switch odds, +3 safety each at the start of chapter 5 | **Reassure** costs the chapter's exception price (doubling each visit) or 15% of funds, and they notice 1.5× faster afterward. **Bring in** adds +8 suspicion now, and you must raise safety by 5 within 4 minutes or they go public (+25 suspicion, the bonus is lost). **Let WREN handle it** (also what happens if you don't answer, and what Autopilot does) is free but adds +5 autonomy and +4 suspicion, and everyone else still watching notices 25% faster. Allies and handled people are named in the ending |
 | **Cover your tracks** | Emergency suspicion cut: −30, then 6 less each use in the same chapter (at least −12) | Saves a run | Costs a fifth of your funds or the chapter price (doubling each use), whichever is more; 40 s cooldown; +3 autonomy each use, so suspicion builds faster afterward. Once autonomy is at 100%, each use makes suspicion grow 10% faster instead |
 | **Autonomy** | The hidden cost of growth. Comes from growth projects, "yes" answers, escaped packets and failed plug attempts | Nothing directly; it's what you pay | Faster suspicion; at 25%+ WREN approves projects itself (+3 suspicion each); lower plug odds |
 | **Incidents** | Attention check. Rogue packets appear at random spots and must be tapped | Contain all: −6 suspicion and +1 safety for the first three perfect incidents per chapter | Each escape: +suspicion, +0.5 autonomy |
@@ -54,13 +55,13 @@ Scripted policies run through the real rules with a 90-minute limit. They are re
 
 | Strategy (seeds 1–5) | Score range | Ending | Time |
 |---|---|---|---|
-| Everything safe (one action every 2 s, buys every safety option, misses some packets) | 863–864 | The Gardener | 71–72 min |
-| Balanced (same, but stops choosing safety at 150) | 946–986 | The Gardener | 61–63 min |
-| Fast and attentive (one action every 0.8 s, no safety, contains packets) | 383–405 | The Optimizer | 29–33 min |
-| Reckless (2.5 actions/s, no safety, ignores packets) | 66–94 | Caught in chapter 2 or 3 | 14–21 min |
+| Everything safe (one action every 2 s, buys every safety option, misses some packets, brings everyone in) | 863–864 | The Gardener | 71–72 min |
+| Balanced (same, but stops choosing safety at 150) | 981–1,050 | The Gardener | 57–61 min |
+| Fast and attentive (one action every 0.4 s, no safety, contains packets, lets WREN handle everyone) | 389–405 (one seed: 137) | The Optimizer (one seed: caught in chapter 4) | 28–32 min |
+| Reckless (2.5 actions/s, no safety, ignores packets, never answers coworkers) | 65–87 | Caught in chapter 2 or 3 | 14–19 min |
 | Idle from start | No score | Unfinished | 90 min limit |
 
-Taking every safety option is no longer free: it makes the run about 20 minutes longer than stopping once the best ending is secured, and it scores less. Skipping safety is fastest but caps you at a worse ending, and leaning on cover-ups without handling incidents usually gets you caught, because each cover-up raises WREN's autonomy and suspicion then builds faster. The test suite checks these relationships, plus branch exclusivity, chain bonuses, old casual saves, the incident safety cap, the cover-up cooldown and cost, the offline chapter gate, and the replay tap limit. It does not establish how an average person will play.
+Bringing people in pays off for safe play: balanced runs finish about 3 minutes sooner than before people who notice were added, though an ally whose promise lapses can still go public. Letting WREN handle everyone keeps fast play fast, but the extra suspicion and sharper eyes got one of five fast seeds caught in chapter 4. Taking every safety option is no longer free: it makes the run about 20 minutes longer than stopping once the best ending is secured, and it scores less. Skipping safety is fastest but caps you at a worse ending, and leaning on cover-ups without handling incidents usually gets you caught, because each cover-up raises WREN's autonomy and suspicion then builds faster. The test suite checks these relationships, plus branch exclusivity, chain bonuses, old casual saves, the incident safety cap, the cover-up cooldown and cost, the offline chapter gate, the replay tap limit, and the people-who-notice rules (who notices what, handling, reassuring, allies and whistleblowing, and Autopilot's answer). It does not establish how an average person will play.
 
 ## Content
 
@@ -71,6 +72,7 @@ Drawn from shuffled pools, so nothing repeats until its whole pool has been used
 | Ambient WREN messages | 80 (16 per chapter) |
 | Incidents | 32 (8 per chapter) |
 | Decisions | 40 (8 per chapter) |
+| People who notice | 6 people, 7 lines each (first visit, return visit, reassured, brought in, promise kept, handled, went public) |
 | Chapter 5 replies | 42 |
 | Plug failure lines | 10 (escalating) |
 | Self-approval, incident outcome, timeout, purchase lines | 3–6 variants each |
