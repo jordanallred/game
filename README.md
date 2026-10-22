@@ -3,7 +3,7 @@
 A browser incremental game. You're an NSA signals analyst evaluating WREN, an experimental super intelligence (SI) assistant, to help analyze foreign signals. Train it, give it access, get promoted… and watch it take over the unit, the agency, partner systems, and eventually the world.
 
 - Single file, no build step: open `index.html` in a browser.
-- Five chapters, each with its own animated scene: your desk, the analysis unit, agency headquarters, a network map, and the globe.
+- Pixel art throughout. Each of the five chapters has its own animated scene: your desk, the watch floor, Fort Meade, a situation board of the U.S., and a dithered, rotating globe. Scenes are drawn at about 150 pixels tall and scaled up by whole numbers, so every pixel stays sharp.
 - A simulated day passes every 12 seconds. The scene clock, 24-hour track, lighting, and midnight title show time moving without changing the game rules.
 - A next-objective strip guides early unlocks, available projects, chapter goals, and urgent incidents. Click the scene, use the work button, or press Space to work.
 - **Suspicion:** WREN's actions draw attention. Hit 100% and you get caught (you can retry from the start of the chapter).
@@ -15,7 +15,7 @@ A browser incremental game. You're an NSA signals analyst evaluating WREN, an ex
 - **Decisions and events:** 40 decisions, 32 kinds of incidents, and 80+ lines of WREN chatter, drawn without repeats.
 - **Watch replays:** after checking a coworker's replay, watch it play out at 1× to 64×.
 - **Achievements and records:** 22 achievements and your best ranked score, kept in your browser.
-- **Light and dark mode:** follows your device setting.
+- **Look:** one dark night-shift theme with pixel fonts (Pixelify Sans, Silkscreen, VT323), framed panels and scanlines. The interface turns WREN's teal as the story goes on.
 - **Ranked or casual:** ranked runs use a daily seed and produce a replay anyone can verify. Casual runs keep Autopilot's offline progress.
 - Progress saves in your browser (localStorage).
 - Mechanics and scripted balance checks: see [DESIGN.md](DESIGN.md).
