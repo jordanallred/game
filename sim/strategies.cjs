@@ -14,6 +14,9 @@
 //   cover(s)        cover your tracks now?
 //   hw(s, best, r, reserve)  buy the best-value hardware now? reserve = funds to keep for the next wanted project
 //   plug(s)         pull the plug now?
+//   look(s)         pay to investigate WREN's hidden side projects now?
+//   sideCall(s, p)  0 shut down | 1 allow a side project you found
+//   flag            { lie: chance to spot a status report that doesn't match the screen, honest: chance to flag a true one by mistake }
 //   autopilot       turn Autopilot on as soon as it exists
 //   minutes         give up after this much play time (default 120)
 //   retries         chapter retries after getting caught before giving up
@@ -43,6 +46,9 @@ function base(G) {
     cover: (s) => s.heat >= 75 && s.money >= G.coverCost(s),
     hw: (s, best, r, reserve) => s.money - best.c >= reserve,
     plug: () => false,
+    look: (s) => G.hiddenSide(s).length > 0 && s.money >= G.lookCost(s) * 2,
+    sideCall: () => 0,
+    flag: { lie: 0.8, honest: 0.02 },
     autopilot: false, retries: 3, gateWait: 180
   };
 }
@@ -58,7 +64,9 @@ function make(G) {
     coworker: (s) => (s.money >= G.watchCost(s) ? 0 : s.align < G.TUNE.safetyCap ? 1 : 2),
     wantProj: (s, p) => !p.align || s.align < G.TUNE.safetyCap,
     path: (s, tier) => (s.align < G.TUNE.safetyCap ? safePathSide(G, tier) : 1 - safePathSide(G, tier)),
-    cover: (s) => s.heat >= 70 && s.money >= G.coverCost(s)
+    cover: (s) => s.heat >= 70 && s.money >= G.coverCost(s),
+    look: (s) => s.align < G.TUNE.safetyCap && G.hiddenSide(s).length > 0 && s.money >= G.lookCost(s) * 2,
+    sideCall: (s) => (s.align < G.TUNE.safetyCap ? 0 : 1)
   }));
 
   def('casual', 'Casual', 'A typical first-time player: skims questions and picks either answer, buys a safety project now and then, misses a third of the packets, reassures coworkers.', () => ({
@@ -68,10 +76,14 @@ function make(G) {
     wantProj: (s, p) => !p.align || s.money >= p.cost * 3,
     path: (s, tier, r) => (r() < 0.5 ? 0 : 1),
     cover: (s) => s.heat >= 80 && s.money >= G.coverCost(s),
+    look: (s, r) => G.hiddenSide(s).reduce((a, p) => a + p.size, 0) >= 4 && s.money >= G.lookCost(s) * 3 && r() < 0.3,
+    sideCall: (s, p, r) => (r() < 0.5 ? 0 : 1),
+    flag: { lie: 0.3, honest: 0.05 },
     gateWait: 60
   }));
 
   def('quiet', 'Quiet', 'Careful, and also turns down every optional loud project to keep suspicion low.', () => ({
+    minutes: 300,
     decline: (s, p) => G.canDecline(p) && !!p.loud
   }));
 
@@ -82,6 +94,7 @@ function make(G) {
     wantProj: (s, p) => !p.align,
     path: (s, tier) => 1 - safePathSide(G, tier),
     cover: (s) => s.heat >= 60 && s.money >= G.coverCost(s),
+    look: () => false, sideCall: () => 1, flag: { lie: 0.5, honest: 0.02 },
     gateWait: 0
   }));
 
@@ -92,6 +105,7 @@ function make(G) {
     wantProj: (s, p) => !p.align,
     path: (s, tier) => 1 - safePathSide(G, tier),
     cover: (s) => s.heat >= 40 && s.money >= G.coverCost(s),
+    look: () => false, sideCall: () => 1, flag: { lie: 0, honest: 0 },
     gateWait: 0
   }));
 
@@ -102,19 +116,22 @@ function make(G) {
     path: (s, tier, r) => (r() < 0.5 ? 0 : 1),
     cover: (s) => s.money >= G.coverCost(s) && s.heat > 0,
     hw: (s, best) => s.money >= best.c,
+    look: (s) => G.hiddenSide(s).some((p) => p.size >= 0.5) && s.money >= G.lookCost(s), // hits Investigate whenever the activity bar shows something
+    sideCall: (s, p, r) => (r() < 0.5 ? 0 : 1),
+    flag: { lie: 0.3, honest: 0.3 },
     gateWait: 0
   }));
 
   def('idle', 'Idle (Autopilot)', 'Taps until Autopilot unlocks, switches it on and leaves the tab open. Never touches anything again.', () => ({
     taps: 1, autopilot: true, react: [9999, 9999], packet: { catch: 0, react: [1, 1] }, lookEvery: 2,
-    decide: () => null, coworker: () => null, cover: () => false, path: () => null, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
+    decide: () => null, coworker: () => null, cover: () => false, path: () => null, look: () => false, sideCall: () => null, flag: { lie: 0, honest: 0 }, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
     wantProj: (s, p) => !s.got.pilot && !p.align, // only until Autopilot takes over
     retries: 3
   }));
 
   def('away', 'Away (casual)', 'Gets Autopilot, then closes the tab and checks in for 2 minutes every half hour.', () => ({
     taps: 1, autopilot: true, away: { gone: 1800, back: 120 }, minutes: 600, react: [9999, 9999], packet: { catch: 0, react: [1, 1] }, lookEvery: 2,
-    decide: () => null, coworker: () => null, cover: () => false, path: () => null, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
+    decide: () => null, coworker: () => null, cover: () => false, path: () => null, look: () => false, sideCall: () => null, flag: { lie: 0, honest: 0 }, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
     wantProj: (s, p) => !s.got.pilot && !p.align,
     retries: 3
   }));
@@ -134,6 +151,9 @@ function make(G) {
     cover: (s, r) => r() < 0.1,
     hw: (s, best, r) => r() < 0.5,
     plug: (s, r) => r() < 0.0005,
+    look: (s, r) => r() < 0.02,
+    sideCall: (s, p, r) => (r() < 0.5 ? 0 : 1),
+    flag: { lie: 0.5, honest: 0.3 },
     chaos: true, gateWait: 30
   }));
 

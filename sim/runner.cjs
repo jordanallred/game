@@ -17,7 +17,7 @@ function hashName(str) { let h = 2166136261; for (const c of str) h = Math.imul(
 
 function newRecord() {
   return {
-    events: [], samples: [], buys: {}, declines: [], paths: [], decisions: [], coworkers: [], plugs: [], refused: [], problems: [],
+    events: [], samples: [], flags: [], sides: [], buys: {}, declines: [], paths: [], decisions: [], coworkers: [], plugs: [], refused: [], problems: [],
     chapters: [{ stage: 0, t: 0 }], caught: [], retries: 0,
     time: { sulk: 0, danger: 0, waiting: 0, dataLimited: [0, 0, 0, 0, 0], chapter: [0, 0, 0, 0, 0], gateLocked: [0, 0, 0, 0, 0], gateMoney: [0, 0, 0, 0, 0], idleMoney: [0, 0, 0, 0, 0] },
     longest: { noProgress: 0, noProgressAt: null, waiting: 0, waitingAt: null },
@@ -33,7 +33,7 @@ function createRun(G, strategy, seed, opts = {}) {
     s,
     bot: { rng: mulberry(hashName(strategy.name) ^ seed), nextLook: 0, tapAcc: 0, pk: {}, offered: {}, dec: null, wq: null, lastProgress: 0, waitStart: null, gateSince: null, awayUntil: 0, backUntil: 0, lastSample: -1 },
     rec: opts.light ? null : newRecord(),
-    done: false, limit: (opts.minutes || strategy.minutes || 120) * 60
+    done: false, limit: (opts.minutes || strategy.minutes || 180) * 60
   };
   return run;
 }
@@ -142,6 +142,21 @@ function botStep(run) {
     if (s.ended) return;
   }
 
+  // Status reports: check each one against the screen (a lie hides a side project)
+  for (const m of s.log) {
+    if (!m.chk || m.id <= (bot.lastMsg || 0)) continue;
+    const lie = !!(s.lie && s.lie.msg === m.id);
+    bot.flags = bot.flags || {};
+    bot.flags[m.id] = { go: r() < (lie ? P.flag.lie : P.flag.honest), at: t + Math.max(1, between(bot, P.react)) };
+  }
+  if (s.log.length) bot.lastMsg = Math.max(bot.lastMsg || 0, s.log[0].id);
+  for (const id of Object.keys(bot.flags || {})) {
+    const f = bot.flags[id];
+    if (t < f.at) continue;
+    delete bot.flags[id];
+    if (f.go && act(run, 15, +id, P.chaos ? null : 'flag status report') && run.rec) run.rec.flags.push({ t: +s.clock.toFixed(1), lie: !!s.lie });
+  }
+
   // Shop
   if (t >= bot.nextLook) {
     bot.nextLook = t + P.lookEvery * (0.7 + r() * 0.6);
@@ -159,6 +174,14 @@ function shop(run, r) {
     let side = P.path(s, tier, r);
     side = choicePoint(run, 'path', tier, [0, 1], side);
     if (side === 0 || side === 1) { if (act(run, 10, tier * 2 + side, 'upgrade path')) { if (run.rec) run.rec.paths.push({ t: +s.clock.toFixed(1), tier, side }); progress(run); } }
+  }
+  // side projects: investigate, then shut down or allow what you found
+  if (s.stage < 4 && s.auto && G.hiddenSide && P.look(s, r) && s.money >= G.lookCost(s)) act(run, 13, 0, P.chaos ? null : 'investigate');
+  for (const p of (s.sp || [])) {
+    if (!p.found || p.done) continue;
+    let call = P.sideCall(s, p, r);
+    call = choicePoint(run, 'side', G.SIDE[p.i].kind, [0, 1], call);
+    if (call === 0 || call === 1) { if (act(run, 14, p.id * 2 + call, 'decide side project') && run.rec) run.rec.sides.push({ t: +s.clock.toFixed(1), kind: G.SIDE[p.i].kind, size: Math.round(p.size), call }); }
   }
   // turn projects down
   G.PROJ.forEach((p, i) => {

@@ -14,7 +14,7 @@ test('every simulated player gets through a run without breaking the rules', () 
   const runs = Object.values(S).map((P) => { const { sum, rec } = play(G, P, 1); return { label: P.label, blurb: P.blurb, sum, rec }; });
   const bugs = analyze(G, { runs }).findings.filter((f) => f.sev === 'bug');
   assert.deepEqual(bugs.map((b) => b.title + ': ' + b.detail + ' ' + b.evidence.join(' ')), []);
-  for (const r of runs) assert.ok(r.sum.ending || r.sum.minutes >= 119, r.label + ' stopped early without an ending');
+  for (const r of runs) assert.ok(r.sum.ending || r.sum.minutes >= 179, r.label + ' stopped early without an ending');
 });
 
 test('the simulated players reach the expected kinds of endings', () => {
