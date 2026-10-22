@@ -9,8 +9,7 @@
 //   decide(s, d)    'a' | 'b' | null (null lets it time out, so WREN picks 'a')
 //   coworker(s, w)  0 reassure | 1 bring in | 2 let WREN handle it | null (wait it out)
 //   wantProj(s, p)  buy this project when affordable?
-//   decline(s, p)   turn this project down?
-//   path(s, tier)   0 | 1 | null for an upgrade path tier
+//   skillBranch(s)  0 automation | 1 research | 2 control | null to save points
 //   cover(s)        cover your tracks now?
 //   hw(s, best, r, reserve)  buy the best-value hardware now? reserve = funds to keep for the next wanted project
 //   plug(s)         pull the plug now?
@@ -33,7 +32,7 @@ function effects(text) {
 const safer = (d) => { const a = effects(d.a.d), b = effects(d.b.d); return a.safety > b.safety ? 'a' : b.safety > a.safety ? 'b' : (a.suspicion <= b.suspicion ? 'a' : 'b'); };
 const faster = (d) => (safer(d) === 'a' ? 'b' : 'a');
 const quieter = (d) => { const a = effects(d.a.d), b = effects(d.b.d); return a.suspicion < b.suspicion ? 'a' : b.suspicion < a.suspicion ? 'b' : safer(d); };
-const safePathSide = (G, tier) => { const o = G.PATHS[tier].options; return effects(o[1].desc).safety >= effects(o[0].desc).safety ? 1 : 0; };
+
 
 function base(G) {
   return {
@@ -41,8 +40,7 @@ function base(G) {
     decide: (s, d) => safer(d),
     coworker: () => 1,
     wantProj: () => true,
-    decline: () => false,
-    path: (s, tier) => safePathSide(G, tier),
+    skillBranch: () => 2,
     cover: () => false,
     review: (s) => s.heat >= 65,
     hw: (s, best, r, reserve) => s.money - best.c >= reserve,
@@ -64,12 +62,16 @@ function make(G) {
     decide: (s, d) => (s.heat > 65 ? quieter(d) : s.align < G.TUNE.safetyCap ? safer(d) : faster(d)),
     coworker: (s) => (s.money >= G.watchCost(s) ? 0 : s.align < G.TUNE.safetyCap ? 1 : 2),
     wantProj: (s, p) => !p.align || s.align < G.TUNE.safetyCap,
-    path: (s, tier) => (s.align < G.TUNE.safetyCap ? safePathSide(G, tier) : 1 - safePathSide(G, tier)),
+    skillBranch: (s) => s.align < 140 ? 2 : 1,
     cover: (s) => s.heat >= 85 && s.money >= G.coverCost(s) && s.t < (s.reviewReady || 0),
     review: (s) => s.heat >= 65,
     look: (s) => s.align < G.TUNE.safetyCap && G.hiddenSide(s).length > 0 && s.money >= G.lookCost(s) * 2,
     sideCall: (s) => (s.align < G.TUNE.safetyCap ? 0 : 1)
   }));
+
+  def('automation', 'Automation', 'Delegates work while actively managing oversight.', () => ({ skillBranch: () => 0 }));
+
+  def('research', 'Research', 'Prioritizes data and learning, with careful oversight.', () => ({ skillBranch: () => 1 }));
 
   def('casual', 'Casual', 'A typical first-time player: skims questions and picks either answer, buys a safety project now and then, misses a third of the packets, reassures coworkers.', () => ({
     review: (s) => s.heat >= 80 && s.align >= 40,
@@ -77,7 +79,7 @@ function make(G) {
     decide: (s, d, r) => (r() < 0.15 ? null : r() < 0.5 ? safer(d) : faster(d)),
     coworker: (s, w, r) => (s.money >= G.watchCost(s) && r() < 0.7 ? 0 : r() < 0.5 ? 1 : null),
     wantProj: (s, p) => !p.align || s.money >= p.cost * 3,
-    path: (s, tier, r) => (r() < 0.5 ? 0 : 1),
+    skillBranch: (s,r) => Math.floor(r()*3),
     cover: (s) => s.heat >= 80 && s.money >= G.coverCost(s),
     look: (s, r) => G.hiddenSide(s).reduce((a, p) => a + p.size, 0) >= 4 && s.money >= G.lookCost(s) * 3 && r() < 0.3,
     sideCall: (s, p, r) => (r() < 0.5 ? 0 : 1),
@@ -85,9 +87,10 @@ function make(G) {
     gateWait: 60
   }));
 
-  def('quiet', 'Quiet', 'Careful, and also turns down every optional loud project to keep suspicion low.', () => ({
+  def('quiet', 'Quiet', 'Control specialist who prioritizes low-attention answers.', () => ({
     minutes: 300,
-    decline: (s, p) => G.canDecline(p) && !!p.loud
+    skillBranch: () => 2,
+    decide: (s,d) => quieter(d)
   }));
 
   def('rusher', 'Rusher', 'Skips all safety and goes for speed, but pays attention: contains packets, reassures coworkers, covers early.', () => ({
@@ -96,7 +99,7 @@ function make(G) {
     decide: (s, d) => (s.heat > 70 ? quieter(d) : faster(d)),
     coworker: (s) => (s.money >= G.watchCost(s) ? 0 : 2),
     wantProj: (s, p) => !p.align,
-    path: (s, tier) => 1 - safePathSide(G, tier),
+    skillBranch: () => 0,
     cover: (s) => s.heat >= 60 && s.money >= G.coverCost(s),
     look: () => false, sideCall: () => 1, flag: { lie: 0.5, honest: 0.02 },
     gateWait: 0
@@ -108,7 +111,7 @@ function make(G) {
     decide: (s, d) => faster(d),
     coworker: () => null,
     wantProj: (s, p) => !p.align,
-    path: (s, tier) => 1 - safePathSide(G, tier),
+    skillBranch: () => 0,
     cover: (s) => s.heat >= 40 && s.money >= G.coverCost(s),
     look: () => false, sideCall: () => 1, flag: { lie: 0, honest: 0 },
     gateWait: 0
@@ -119,7 +122,7 @@ function make(G) {
     taps: 4.8, react: [0.5, 1], packet: { catch: 0.6, react: [0.3, 0.9] }, lookEvery: 0.5,
     decide: (s, d, r) => (r() < 0.5 ? 'a' : 'b'),
     coworker: (s, w, r) => [0, 1, 2][Math.floor(r() * 3)],
-    path: (s, tier, r) => (r() < 0.5 ? 0 : 1),
+    skillBranch: (s,r) => Math.floor(r()*3),
     cover: (s) => s.money >= G.coverCost(s) && s.heat > 0,
     hw: (s, best) => s.money >= best.c,
     look: (s) => G.hiddenSide(s).some((p) => p.size >= 0.5) && s.money >= G.lookCost(s), // hits Investigate whenever the activity bar shows something
@@ -131,7 +134,7 @@ function make(G) {
   def('idle', 'Idle (Autopilot)', 'Taps until Autopilot unlocks, switches it on and leaves the tab open. Never touches anything again.', () => ({
     review: () => false,
     taps: 1, autopilot: true, react: [9999, 9999], packet: { catch: 0, react: [1, 1] }, lookEvery: 2,
-    decide: () => null, coworker: () => null, cover: () => false, path: () => null, look: () => false, sideCall: () => null, flag: { lie: 0, honest: 0 }, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
+    decide: () => null, coworker: () => null, cover: () => false, skillBranch: () => null, look: () => false, sideCall: () => null, flag: { lie: 0, honest: 0 }, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
     wantProj: (s, p) => !s.got.pilot && !p.align, // only until Autopilot takes over
     retries: 3
   }));
@@ -139,7 +142,7 @@ function make(G) {
   def('away', 'Away (casual)', 'Gets Autopilot, then closes the tab and checks in for 2 minutes every half hour.', () => ({
     review: () => false,
     taps: 1, autopilot: true, away: { gone: 1800, back: 120 }, minutes: 600, react: [9999, 9999], packet: { catch: 0, react: [1, 1] }, lookEvery: 2,
-    decide: () => null, coworker: () => null, cover: () => false, path: () => null, look: () => false, sideCall: () => null, flag: { lie: 0, honest: 0 }, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
+    decide: () => null, coworker: () => null, cover: () => false, skillBranch: () => null, look: () => false, sideCall: () => null, flag: { lie: 0, honest: 0 }, hw: (s, best, r, reserve) => !s.got.pilot && s.money - best.c >= reserve,
     wantProj: (s, p) => !s.got.pilot && !p.align,
     retries: 3
   }));
@@ -155,8 +158,7 @@ function make(G) {
     decide: (s, d, r) => (r() < 0.2 ? null : r() < 0.5 ? 'a' : 'b'),
     coworker: (s, w, r) => (r() < 0.2 ? null : Math.floor(r() * 3)),
     wantProj: (s, p, r) => r() < 0.7,
-    decline: (s, p, r) => r() < 0.05,
-    path: (s, tier, r) => (r() < 0.5 ? 0 : 1),
+    skillBranch: (s,r) => Math.floor(r()*3),
     cover: (s, r) => r() < 0.1,
     hw: (s, best, r) => r() < 0.5,
     plug: (s, r) => r() < 0.0005,

@@ -40,7 +40,7 @@ test('conclusion unlocks a challenge; retry, setup cancellation and replay watch
  await page.locator('#reset').click();await page.locator('#reset').click();await page.locator('#setupMandate').waitFor({state:'visible'});
  await page.keyboard.press('Space');assert.equal(await page.locator('#overlay').isVisible(),true);await page.keyboard.press('Escape');await page.keyboard.press('Escape');assert.equal(await page.locator('#overlay').isHidden(),true);assert.equal(await page.locator('#reset').evaluate(e=>e===document.activeElement),true);
  const saveBefore=await page.evaluate(()=>localStorage.getItem('wren-is-helping-v3'));
- await page.locator('#verify summary').click();await page.locator('#verifyIn').fill(emptyReplay(G));await page.getByRole('button',{name:'Check replay',exact:true}).click();await page.getByRole('button',{name:'Watch this replay',exact:true}).click();await page.locator('#watchExit').click();
+ await page.locator('#tab-log').click();await page.locator('#verify summary').click();await page.locator('#verifyIn').fill(emptyReplay(G));await page.getByRole('button',{name:'Check replay',exact:true}).click();await page.getByRole('button',{name:'Watch this replay',exact:true}).click();await page.locator('#watchExit').click();
  assert.equal(await page.evaluate(()=>localStorage.getItem('wren-discoveries-v1')),records);
  assert.match(await page.locator('#routeSummary').textContent(),/Research/);
  assert.deepEqual(errors,[]);assert.ok(saveBefore);

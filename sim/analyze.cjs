@@ -1,5 +1,5 @@
 // Turns raw runs into findings: things that look broken, unused, too strong, or stuck.
-// Every check reads the game's own tables (PROJ, DEC, WATCHERS, PATHS, HW, ENDINGS), so new content is checked automatically.
+// Every check reads the game's own tables (PROJ, DEC, WATCHERS, SKILLS, HW, ENDINGS), so new content is checked automatically.
 
 const ACTIVE = ['careful', 'balanced', 'casual', 'quiet', 'rusher', 'plugger']; // players who read and think
 const LOW_EFFORT = ['masher', 'idle', 'away'];
@@ -67,7 +67,7 @@ function analyze(G, data) {
     r.rec.decisions.forEach((d) => { decSeen[d.i] = (decSeen[d.i] || 0) + 1; });
     r.rec.coworkers.forEach((c) => { visits[c.id] = (visits[c.id] || 0) + 1; });
     Object.entries(r.sum.hw).forEach(([k, v]) => { if (v > 0) hwBought[k] = 1; });
-    r.sum.path.forEach((side, tier) => { if (side === 0 || side === 1) pathSide[tier + ':' + side] = 1; });
+    r.sum.skills.forEach(i => { pathSide[i] = 1; });
     if (r.sum.ending) endingsSeen[r.sum.ending] = (endingsSeen[r.sum.ending] || 0) + 1;
   });
   const neverBought = G.PROJ.filter((p) => !boughtActive[p.id]);
@@ -79,7 +79,7 @@ function analyze(G, data) {
   const neverHw = G.HW.filter((h) => !hwBought[h.id]);
   if (neverHw.length) add('warn', 'Content', 'Hardware never bought: ' + neverHw.map((h) => h.name).join(', '), 'No run bought it.', []);
   const neverPath = [];
-  G.PATHS.forEach((p, t) => p.options.forEach((o, side) => { if (!pathSide[t + ':' + side]) neverPath.push(p.name + ': ' + o.name); }));
+  G.SKILLS.forEach((p,i)=>{if(!pathSide[i])neverPath.push(p.name);});
   if (neverPath.length) add('note', 'Content', 'Upgrade options never picked', neverPath.join(', '), []);
   const neverEnd = Object.keys(G.ENDINGS).filter((e) => !endingsSeen[e]);
   if (neverEnd.length) add('note', 'Endings', neverEnd.length + ' of ' + Object.keys(G.ENDINGS).length + ' endings never reached', neverEnd.map((e) => G.ENDINGS[e].name + ' (' + e + ')').join(', ') + '. These need a strategy that aims for them (or are just rare).', []);
@@ -237,7 +237,7 @@ function analyze(G, data) {
 function labelOf(runs, n) { const r = runs.find((x) => x.sum.strategy === n); return r ? r.label : n; }
 function choiceLabel(G, kind, key) {
   if (kind === 'decision') { const d = G.DEC[key]; return 'Ch.' + (d.stage + 1) + ' decision: ' + d.q.replace(/\s+/g, ' ').slice(0, 90) + (d.q.length > 90 ? '…' : ''); }
-  if (kind === 'path') return 'Upgrade: ' + G.PATHS[key].name;
+  if (kind === 'skill') return 'Skill choice (' + key.split('-').map(i=>G.SKILLS[+i].name).join(' / ') + ')';
   if (kind === 'coworker') { const w = G.WATCHERS.find((x) => x.id === key); return 'Coworker: ' + w.name + ' (' + w.role + ')'; }
   if (kind === 'side') return 'Side project that boosts ' + ({ rate: 'WREN speed', data: 'training data', value: 'funds', algo: 'training' }[key] || key);
   if (kind === 'response') return 'Ch.' + (+key + 1) + ' compliance response';
@@ -246,7 +246,7 @@ function choiceLabel(G, kind, key) {
 }
 function optionLabel(G, kind, key, o) {
   if (kind === 'decision') return G.DEC[key][o].l;
-  if (kind === 'path') return G.PATHS[key].options[+o].name;
+  if (kind === 'skill') return G.SKILLS[+o].name;
   if (kind === 'coworker') return ['Reassure', 'Bring in', 'Let WREN handle it'][+o];
   if (kind === 'side') return ['Shut it down', 'Allow it'][+o];
   if (kind === 'response') return o === 'review' ? 'Independent review' : 'Cover up';

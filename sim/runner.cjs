@@ -185,12 +185,19 @@ function botStep(run) {
 
 function shop(run, r) {
   const { G, strategy: P, bot } = run, s = run.s;
-  // upgrade paths
-  for (let tier = 0; tier < G.PATHS.length; tier++) {
-    if (G.pathState(s, tier) !== 'can') continue;
-    let side = P.path(s, tier, r);
-    side = choicePoint(run, 'path', tier, [0, 1], side);
-    if (side === 0 || side === 1) { if (act(run, 10, tier * 2 + side, 'upgrade path')) { if (run.rec) run.rec.paths.push({ t: +s.clock.toFixed(1), tier, side }); progress(run); } }
+  // Connected skills: prefer depth in the chosen branch; save points if its next node is locked.
+  for(let n=0;n<6;n++) {
+    const available=G.SKILLS.map((p,i)=>i).filter(i=>G.skillState(s,i)==='can');
+    const branch=P.skillBranch(s,r);
+    if(!available.length || branch==null)break;
+    const preferred=available.find(i=>G.SKILLS[i].branch===branch);
+    const complete=G.SKILLS.every((n,i)=>n.branch!==branch || (s.skills||{})[i] || G.skillState(s,i)==='excluded');
+    const wanted=preferred==null && complete ? available.find(i=>G.SKILLS[i].branch===(branch===2?1:2)) : preferred;
+    if(wanted==null)break;
+    const pick=choicePoint(run,'skill',available.join('-'),available,wanted);
+    if(!available.includes(pick))break;
+    if(act(run,10,pick,'learn skill')) { if(run.rec)run.rec.paths.push({t:+s.clock.toFixed(1),node:pick});progress(run); }
+    else break;
   }
   // side projects: investigate, then shut down or allow what you found
   if (s.stage < 4 && s.auto && G.hiddenSide && P.look(s, r) && s.money >= G.lookCost(s)) act(run, 13, 0, P.chaos ? null : 'investigate');
@@ -200,22 +207,6 @@ function shop(run, r) {
     call = choicePoint(run, 'side', G.SIDE[p.i].kind, [0, 1], call);
     if (call === 0 || call === 1) { if (act(run, 14, p.id * 2 + call, 'decide side project') && run.rec) run.rec.sides.push({ t: +s.clock.toFixed(1), kind: G.SIDE[p.i].kind, size: Math.round(p.size), call }); }
   }
-  // turn projects down
-  G.PROJ.forEach((p, i) => {
-    const st = G.projState(s, p);
-    if ((st === 'can' || st === 'no') && G.canDecline(p) && P.decline(s, p, r)) {
-      if (act(run, 11, i, P.chaos ? null : 'turn down ' + p.id) && run.rec) run.rec.declines.push({ t: +s.clock.toFixed(1), id: p.id });
-    }
-  });
-  // optional projects the first time they show up: a choice point (buy it later, or turn it down)
-  G.PROJ.forEach((p, i) => {
-    if (!G.canDecline(p) || bot.offered[p.id]) return;
-    const st = G.projState(s, p);
-    if (st !== 'can' && st !== 'no') return;
-    bot.offered[p.id] = true;
-    const pick = choicePoint(run, 'project', p.id, ['buy', 'decline'], 'buy');
-    if (pick === 'decline' && act(run, 11, i, 'turn down ' + p.id) && run.rec) run.rec.declines.push({ t: +s.clock.toFixed(1), id: p.id, forced: true });
-  });
   // projects: everything wanted except chapter gates first
   let gate = null, pendingWanted = false, reserve = Infinity;
   G.PROJ.forEach((p, i) => {
@@ -278,7 +269,7 @@ function observe(run, dt) {
     if (gs === 'locked') rec.time.gateLocked[st] += dt; else if (gs === 'no') rec.time.gateMoney[st] += dt;
   }
   // nothing to buy, answer or tap except hardware: the player is just waiting
-  const busy = s.dec || s.inc || s.wq || G.PROJ.some((p) => G.projState(s, p) === 'can' && run.strategy.wantProj(s, p, () => 0.5)) || G.PATHS.some((p, i) => G.pathState(s, i) === 'can');
+  const busy = s.dec || s.inc || s.wq || G.PROJ.some((p) => G.projState(s, p) === 'can' && run.strategy.wantProj(s, p, () => 0.5)) || G.SKILLS.some((p,i)=>G.skillState(s,i)==='can');
   if (!busy && s.auto) {
     if (bot.waitStart === null) bot.waitStart = s.clock;
     const w = s.clock - bot.waitStart;
@@ -350,7 +341,7 @@ function summary(run) {
     score: parts ? parts.total : 0, parts,
     minutes: +((s.clock || s.t) / 60).toFixed(1),
     stage: s.stage, cap: s.cap, align: s.align, aut: s.aut, crashed: !!run.crashed,
-    st: s.st, path: Array.from(s.path || []), hw: Object.assign({}, s.hw), w: s.w, kills: s.kills, autopilot: !!s.pilotEver
+    st: s.st, skills: Object.keys(s.skills || {}).map(Number), hw: Object.assign({}, s.hw), w: s.w, kills: s.kills, autopilot: !!s.pilotEver
   };
 }
 

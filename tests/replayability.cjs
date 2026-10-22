@@ -21,7 +21,7 @@ test('mandates and complications change real resources and costs',()=>{
  const loaded=JSON.parse(JSON.stringify(r));assert.equal(loaded.m.algo,1.2);
 });
 module.exports={fresh,setup};
-function qualified(id){const s=fresh();s.stage=id==='control'?3:2;s.cap=750;s.align=110;s.heat=0;s.got.interp=s.got.redteam=true;s.revealed=3;s.researchShut=3;s.st.shut=3;s.path=[1,1,1];G.initWatch(s);Object.values(s.w).slice(0,3).forEach(w=>{w.st='ally';w.until=0;});return s;}
+function qualified(id){const s=fresh();s.stage=id==='control'?3:2;s.cap=750;s.align=110;s.heat=0;s.got.interp=s.got.redteam=true;s.revealed=3;s.researchShut=3;s.st.shut=3;s.skills={8:true,9:true};G.initWatch(s);Object.values(s.w).slice(0,3).forEach(w=>{w.st='ally';w.until=0;});return s;}
 test('objectives require genuine conditions and stable hold periods',()=>{
  assert.equal(typeof G.routeStatus,'function');
  for(const [id,seconds] of [['operations',90],['research',0],['control',60]]){

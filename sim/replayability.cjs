@@ -29,7 +29,7 @@ else{
  function finish(){
  const groups={};for(const r of rows){const key=[r.mandate,r.target||r.policy,r.complication].join('/');const g=groups[key]||={wins:0,total:0,minutes:[],scores:[]};g.total++;if(r.target&&r.ending===r.target){g.wins++;g.minutes.push(r.minutes);g.scores.push(r.score);}}
  const median=a=>a.length?a.sort((a,b)=>a-b)[Math.floor(a.length/2)]:null;
- const report={rules:'R16',runs:rows.length,groups:Object.fromEntries(Object.entries(groups).map(([k,g])=>[k,{wins:g.wins,total:g.total,medianMinutes:median(g.minutes),medianScore:median(g.scores)}])),rows};
+ const report={rules:loadGame().RULES,runs:rows.length,groups:Object.fromEntries(Object.entries(groups).map(([k,g])=>[k,{wins:g.wins,total:g.total,medianMinutes:median(g.minutes),medianScore:median(g.scores)}])),rows};
  const output=path.join(__dirname,'out/replayability.json');fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify(report,null,2));
  console.log(JSON.stringify({runs:rows.length,groups:report.groups,replays:rows.filter(x=>x.replay!==null&&x.replay!==undefined).map(x=>[x.mandate,x.target,x.replay])},null,2));
  if(rows.some(r=>r.error||r.crashed||r.replay===false)||Object.values(groups).some((g,i)=>Object.keys(groups)[i].split('/')[1].match(/^(operations|research|control)$/)&&g.wins===0))process.exitCode=1;
