@@ -28,7 +28,10 @@ test('perfect incident safety bonuses stop at three per chapter', () => {
   assert.equal(state.align, 4);
 });
 
-function play(seed, careful, pathSide = null) {
+// opts.packets: contain rogue packets (defaults to careful). opts.safeUntil: pick safety only while the safety score is below this.
+function play(seed, careful, pathSide = null, opts = {}) {
+  const packets = opts.packets ?? careful;
+  const safeUntil = opts.safeUntil ?? (careful ? Infinity : -Infinity);
   let state = G.fresh(seed);
   state.started = true;
   let manualActions = 0;
@@ -42,22 +45,23 @@ function play(seed, careful, pathSide = null) {
   ];
   for (let step = 0; step < 54000 && !state.ended; step++) {
     if (step % (careful ? 20 : 4) === 0) { G.click(state); manualActions++; }
-    if (careful && state.inc) {
+    const wantSafe = state.align < safeUntil;
+    if (packets && state.inc) {
       for (const packet of [...state.inc.pk]) {
         if (packet.id % 4 !== 0 && state.t - packet.born >= 1.4) G.input(state, 6, packet.id);
       }
     }
-    if (state.dec && state.t - state.dec.t0 >= 0.6) G.input(state, careful ? 5 : 4, 0);
+    if (state.dec && state.t - state.dec.t0 >= 0.6) G.input(state, wantSafe ? 5 : 4, 0);
     if (state.heat > 58 && state.money >= G.coverCost(state)) G.input(state, 3, 0);
     if (step % 10 === 0) {
       if (pathSide !== null) {
         for (let tier = 0; tier < G.PATHS.length; tier++) {
-          if (G.pathState(state, tier) === 'can') G.input(state, 10, tier * 2 + pathSide);
+          if (G.pathState(state, tier) === 'can') G.input(state, 10, tier * 2 + (pathSide === 'auto' ? (wantSafe ? 1 : 0) : pathSide));
         }
       }
       for (const id of priorities) {
         const project = G.PROJ.find(p => p.id === id);
-        if (project && (careful || !project.align) && G.projState(state, project) === 'can') G.buyProj(state, id, false);
+        if (project && (wantSafe || !project.align) && G.projState(state, project) === 'can') G.buyProj(state, id, false);
       }
       const hardware = G.bestHw(state);
       if (hardware && state.money >= hardware.c * 3) G.buyHw(state, hardware.h.id);
@@ -79,13 +83,44 @@ test('careful play can reach the best ending with moderate tapping and missed in
   }
 });
 
-test('reckless play reaches a worse ending despite faster progress', () => {
+test('fast play that skips safety finishes sooner with a worse ending', () => {
   for (const seed of [1, 2, 3]) {
-    const result = play(seed, false);
+    const result = play(seed, false, null, { packets: true });
     assert.equal(result.state.ended?.type, 'takeover');
-    assert.equal(G.endingId(result.state), 'optimizer');
+    assert.notEqual(G.endingId(result.state), 'gardener');
     assert.deepEqual(result.chapters, [0, 1, 2, 3, 4]);
+    assert.ok(result.state.t < play(seed, true).state.t);
   }
+});
+
+test('rushing while ignoring incidents can get you caught', () => {
+  const caught = [1, 2, 3].filter(seed => play(seed, false).state.ended?.type === 'caught');
+  assert.ok(caught.length > 0, 'cover-ups alone should not carry a careless run');
+});
+
+test('buying every safety option scores less than stopping once the best ending is secured', () => {
+  for (const seed of [1, 2, 3]) {
+    const everything = play(seed, true);
+    const enough = play(seed, true, 'auto', { safeUntil: 150 });
+    assert.equal(G.endingId(enough.state), 'gardener');
+    assert.ok(enough.state.t < everything.state.t, 'safety work slows WREN down');
+    assert.ok(G.score(enough.state) > G.score(everything.state));
+  }
+});
+
+test('covering your tracks has a cooldown, scales with funds and hands WREN autonomy', () => {
+  const state = G.fresh(9);
+  state.started = true;
+  state.auto = true;
+  state.heat = 80;
+  state.money = 10000;
+  assert.equal(G.coverCost(state), 2000, 'costs a fifth of funds when that beats the base price');
+  assert.equal(G.input(state, 3, 0).ok, true);
+  assert.equal(state.heat, 50);
+  assert.equal(state.aut, G.TUNE.coverAut);
+  assert.equal(state.money, 8000);
+  for (let i = 0; i < (G.TUNE.coverWait - 1) * 10; i++) G.tick(state, 0.1);
+  assert.equal(G.input(state, 3, 0).ok, false, 'still cooling down');
 });
 
 test('offline autopilot cannot end a run or cross a chapter gate', () => {
@@ -148,7 +183,7 @@ test('safety route works in old casual saves without a path field', () => {
 });
 
 test('both full upgrade routes can finish without trivializing suspicion', () => {
-  const fast = play(2, false, 0);
+  const fast = play(2, false, 0, { packets: true });
   const safe = play(2, true, 1);
   assert.equal(fast.state.ended?.type, 'takeover');
   assert.equal(safe.state.ended?.type, 'takeover');

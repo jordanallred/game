@@ -7,7 +7,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&family=Silkscreen&family=VT323&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&family=VT323&display=swap">
 <style>
 /* Pixel-art game UI. One committed look: a dark night-shift terminal that WREN slowly repaints teal.
    Panels use notched pixel frames (box-shadow strips with the corners left out) and a 1-pixel bevel.
@@ -20,7 +20,7 @@
   --panel2: #1d2740;
   --ink: #e8eef5;
   --muted: #93a9c6;
-  --dim: #5f7799;
+  --dim: #7d95b8;
   --line: #2a3854;
   --hi: #34466a;
   --lo: #0b0f1a;
@@ -37,7 +37,7 @@
   --yellow: #ffd76e;
   --ok: #4caf50;
   --f-display: "Pixelify Sans", "VT323", ui-monospace, monospace;
-  --f-label: "Silkscreen", "VT323", ui-monospace, monospace;
+  --f-label: "Pixelify Sans", "VT323", ui-monospace, monospace;
   --f-body: "VT323", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --f-mono: "VT323", ui-monospace, "SFMono-Regular", Menlo, monospace;
   color-scheme: dark;
@@ -52,7 +52,7 @@
 html, body { background: var(--bg); color: var(--ink); }
 body {
   margin: 0;
-  font: 20px/1.15 var(--f-body);
+  font: 21px/1.15 var(--f-body);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 14px 48px;
@@ -86,22 +86,22 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
 /* ---------- header ---------- */
 .top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 16px; padding: 6px 0 14px; border-bottom: var(--px) solid var(--line); }
 .co { font: 700 clamp(26px, 4.2vw, 46px)/1 var(--f-display); letter-spacing: .01em; text-shadow: 0 var(--px) 0 var(--lo), 0 calc(2 * var(--px)) 0 rgba(0, 0, 0, .5); text-wrap: balance; }
-.co .sub { display: block; font: 400 11px/1.3 var(--f-label); letter-spacing: .08em; text-transform: uppercase; color: var(--wren); margin-top: 8px; text-shadow: none; }
+.co .sub { display: block; font: 400 14px/1.3 var(--f-label); letter-spacing: .08em; text-transform: uppercase; color: var(--wren); margin-top: 8px; text-shadow: none; }
 .who { font-size: 20px; color: var(--muted); }
 .who b { color: var(--ink); font-weight: 400; }
 .toplinks { display: flex; flex-wrap: wrap; gap: 10px 12px; margin-top: 8px; align-items: center; }
 @media (min-width: 560px) { .who { text-align: right; } .toplinks { justify-content: flex-end; } }
-.linkbtn { background: none; border: 0; padding: 0; font: 400 10px/1 var(--f-label); text-transform: uppercase; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.linkbtn { background: none; border: 0; padding: 0; font: 400 14px/1.15 var(--f-label); text-transform: uppercase; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .linkbtn:hover { color: var(--danger2); }
-.pill { background: var(--panel2); padding: 6px 10px; font: 400 10px/1 var(--f-label); text-transform: uppercase; cursor: pointer; }
+.pill { background: var(--panel2); padding: 6px 10px; font: 400 14px/1.15 var(--f-label); text-transform: uppercase; cursor: pointer; }
 .pill:hover { background: var(--hi); }
 .pill.on { background: var(--wren); color: #04201b; --h: var(--wren2); --l: #0b6a5a; }
-.modepill { font: 400 10px/1 var(--f-label); color: var(--dim); text-transform: uppercase; }
+.modepill { font: 400 14px/1.15 var(--f-label); color: var(--dim); text-transform: uppercase; }
 
 /* ---------- the scene ---------- */
 .stage-wrap { position: relative; background: #070b12; overflow: hidden; touch-action: manipulation; user-select: none; -webkit-user-select: none; --f: #04060a; --h: var(--line); --l: #04060a; padding: var(--px); }
 #scene { display: block; width: 100%; height: clamp(300px, 42vw, 450px); cursor: crosshair; image-rendering: pixelated; }
-.scene-head { min-height: 34px; display: flex; align-items: center; gap: 14px; padding: 0 12px; color: var(--muted); background: #0a0f1a; border-bottom: var(--px) solid #04060a; font: 400 10px/1 var(--f-label); text-transform: uppercase; white-space: nowrap; }
+.scene-head { min-height: 34px; display: flex; align-items: center; gap: 14px; padding: 0 12px; color: var(--muted); background: #0a0f1a; border-bottom: var(--px) solid #04060a; font: 400 14px/1.15 var(--f-label); text-transform: uppercase; white-space: nowrap; }
 .scene-mark { font: 700 20px/1 var(--f-display); color: var(--ink); letter-spacing: .02em; }
 .scene-mark-dot { color: var(--wren); }
 .scene-head-center { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: center; color: var(--yellow); }
@@ -110,17 +110,17 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
 @keyframes live { 50% { opacity: .2; } }
 .scene-footer { min-height: 62px; position: relative; display: grid; grid-template-columns: auto minmax(110px, 1fr) auto; align-items: center; gap: 22px; padding: 8px 14px; color: var(--ink); background: #0a0f1a; border-top: var(--px) solid #04060a; }
 .scene-time { display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 10px; }
-.scene-time-label { grid-column: 1 / -1; font: 400 9px/1.4 var(--f-label); color: var(--dim); text-transform: uppercase; }
+.scene-time-label { grid-column: 1 / -1; font: 400 13px/1.4 var(--f-label); color: var(--dim); text-transform: uppercase; }
 .scene-time strong { font: 700 30px/1 var(--f-display); font-variant-numeric: tabular-nums; color: var(--yellow); text-shadow: 0 var(--px) 0 #6b4a12; }
-.scene-phase { font: 400 9px/1 var(--f-label); color: var(--warn); text-transform: uppercase; }
+.scene-phase { font: 400 13px/1.15 var(--f-label); color: var(--warn); text-transform: uppercase; }
 .scene-footer.night .scene-time strong { color: #b9d4ff; text-shadow: 0 var(--px) 0 #2a3e6a; }
 .scene-footer.night .scene-phase { color: var(--accent-hi); }
 .day-track { --day-progress: 37%; --orbit-color: #ffd76e; position: relative; height: 30px; min-width: 110px; }
 .day-track-line { position: absolute; top: 8px; left: 0; right: 0; height: 8px; background: linear-gradient(90deg, #1d2740 0 20%, #c86b4a 20% 26%, #f5a83b 26% 32%, #ffd76e 32% 68%, #f5a83b 68% 74%, #c86b4a 74% 80%, #1d2740 80% 100%); box-shadow: 0 -2px 0 #04060a, 0 2px 0 #04060a, -2px 0 0 #04060a, 2px 0 0 #04060a; }
 .day-track-orb { position: absolute; top: 4px; left: var(--day-progress); transform: translateX(-50%); width: 16px; height: 16px; background: var(--orbit-color); box-shadow: 0 -2px 0 #04060a, 0 2px 0 #04060a, -2px 0 0 #04060a, 2px 0 0 #04060a, inset 3px 3px 0 rgba(255, 255, 255, .5), inset -3px -3px 0 rgba(0, 0, 0, .25); }
-.day-track-label { position: absolute; bottom: 0; transform: translateX(-50%); font: 400 8px/1 var(--f-label); color: var(--dim); }
+.day-track-label { position: absolute; bottom: 0; transform: translateX(-50%); font: 400 12px/1.15 var(--f-label); color: var(--dim); }
 .day-track-label.dawn { left: 25%; } .day-track-label.noon { left: 50%; } .day-track-label.dusk { left: 75%; } .day-track-label.midnight { left: 100%; transform: translateX(-100%); }
-.scene-hint { position: static; padding: 8px 10px; justify-self: end; color: var(--wren2); background: var(--wren-soft); font: 400 10px/1.2 var(--f-label); text-transform: uppercase; text-align: center; --h: #1b4d45; animation: hint 1.2s steps(2) infinite; }
+.scene-hint { position: static; padding: 8px 10px; justify-self: end; color: var(--wren2); background: var(--wren-soft); font: 400 14px/1.2 var(--f-label); text-transform: uppercase; text-align: center; --h: #1b4d45; animation: hint 1.2s steps(2) infinite; }
 @keyframes hint { 50% { color: var(--wren); } }
 .day-banner { position: absolute; z-index: 2; top: 30%; left: 50%; transform: translateX(-50%); padding: 8px 26px; pointer-events: none; white-space: nowrap; color: var(--yellow); background: #070b12; box-shadow: 0 -3px 0 var(--yellow), 0 3px 0 var(--yellow), -3px 0 0 var(--yellow), 3px 0 0 var(--yellow), 0 10px 0 rgba(0, 0, 0, .4); font: 700 clamp(26px, 5vw, 40px)/1.1 var(--f-display); text-shadow: 0 3px 0 #6b4a12; animation: dayArrives 1.3s steps(8) both; }
 @keyframes dayArrives { 0% { opacity: 0; transform: translate(-50%, 12px); } 18%, 75% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -8px); } }
@@ -131,14 +131,14 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
 @keyframes pop { from { transform: translateY(16px) scale(.96); opacity: 0; } }
 @keyframes rise { from { transform: translateY(16px); opacity: 0; } }
 .decision .q { font-size: 21px; line-height: 1.15; }
-.decision .q b { font: 400 10px/1.4 var(--f-label); color: var(--wren); display: block; margin-bottom: 6px; text-transform: uppercase; }
+.decision .q b { font: 400 14px/1.4 var(--f-label); color: var(--wren); display: block; margin-bottom: 6px; text-transform: uppercase; }
 .decision .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .decision button { background: var(--panel2); padding: 9px 11px; text-align: left; cursor: pointer; display: grid; gap: 2px; transition: transform .06s; }
 .decision button:first-child { background: #0f3a35; --h: #1f6a5f; }
 .decision button:hover { filter: brightness(1.2); }
 .decision button:active { transform: translateY(2px); }
 .decision button b { font: 700 17px/1.1 var(--f-display); }
-.decision button span { font-size: 17px; color: var(--muted); }
+.decision button span { font-size: 19px; color: var(--muted); }
 .decision .timer { height: calc(3 * var(--px)); background: #04060a; position: relative; overflow: hidden; }
 .decision .timer i { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(90deg, var(--wren) 0 8px, transparent 8px 10px); }
 
@@ -152,7 +152,7 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
 .act:active { transform: translateY(calc(2 * var(--px))); box-shadow: 0 calc(-1 * var(--px)) 0 0 #04060a, calc(-1 * var(--px)) 0 0 0 #04060a, var(--px) 0 0 0 #04060a, 0 var(--px) 0 0 var(--accent-lo), 0 calc(2 * var(--px)) 0 0 #04060a, inset var(--px) var(--px) 0 0 var(--accent-hi), inset calc(-1 * var(--px)) calc(-1 * var(--px)) 0 0 var(--accent-lo); }
 .act::after { content: ""; position: absolute; right: 16px; top: 50%; width: calc(4 * var(--px)); height: calc(6 * var(--px)); margin-top: calc(-3 * var(--px)); background: currentColor; opacity: .55; clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .act .l { font: 700 23px/1.1 var(--f-display); text-shadow: 0 2px 0 rgba(0, 0, 0, .35); padding-right: 24px; }
-.act .g { font-size: 19px; opacity: .9; font-variant-numeric: tabular-nums; }
+.act .g { font-size: 21px; opacity: .9; font-variant-numeric: tabular-nums; }
 .act.cover { background: #3a2a10; color: var(--yellow); --accent-hi: #7a5a20; --accent-lo: #22180a; }
 .act.cover .g { color: #e9c98a; }
 .act.cover[disabled] { filter: grayscale(.7) brightness(.7); cursor: not-allowed; }
@@ -161,9 +161,9 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
 .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--px); background: #04060a; padding: var(--px); --f: #04060a; --h: #04060a; --l: #04060a; }
 @media (min-width: 560px) { .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .stat { background: var(--panel); padding: 9px 12px 10px; min-width: 0; box-shadow: inset var(--px) var(--px) 0 var(--hi); }
-.stat .k { font: 400 9px/1.3 var(--f-label); text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+.stat .k { font: 400 13px/1.3 var(--f-label); text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
 .stat .v { font: 700 27px/1.1 var(--f-display); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-.stat .s { font-size: 17px; line-height: 1.1; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stat .s { font-size: 19px; line-height: 1.1; color: var(--muted); font-variant-numeric: tabular-nums; }
 .stat.half { grid-column: 1 / -1; }
 @media (min-width: 560px) { .stat.half { grid-column: span 2; } }
 .bar { height: calc(4 * var(--px)); background: #04060a; margin: 6px 0 4px; position: relative; overflow: hidden; box-shadow: 0 0 0 var(--px) #04060a; }
@@ -173,7 +173,7 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
 @keyframes blinkbar { 50% { opacity: .55; } }
 @keyframes pulse { to { opacity: .55; } }
 .bar.world i { background: repeating-linear-gradient(90deg, var(--wren2) 0 10px, var(--wren) 10px 12px); }
-.stat .k span + span { color: var(--ink); font-size: 11px; }
+.stat .k span + span { color: var(--ink); font-size: 14px; }
 
 /* ---------- layout ---------- */
 .grid { display: grid; gap: 22px; grid-template-columns: 1fr; }
@@ -182,16 +182,16 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
   .side { position: sticky; top: 14px; }
 }
 .main { display: grid; gap: 22px; min-width: 0; }
-h2 { font: 400 12px/1.2 var(--f-label); text-transform: uppercase; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; color: var(--yellow); }
+h2 { font: 400 15px/1.2 var(--f-label); text-transform: uppercase; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; color: var(--yellow); }
 h2::before { content: ""; width: 8px; height: 8px; background: var(--yellow); flex: none; align-self: center; margin-right: -2px; }
-h2 small { font: 400 17px/1 var(--f-body); letter-spacing: 0; text-transform: none; color: var(--muted); text-align: right; margin-left: auto; }
+h2 small { font: 400 19px/1 var(--f-body); letter-spacing: 0; text-transform: none; color: var(--muted); text-align: right; margin-left: auto; }
 
 /* ---------- branching upgrade map ---------- */
 .path-tree { position: relative; overflow: hidden; background: var(--panel); padding: 14px; display: grid; gap: 16px; --f: var(--yellow); --h: var(--hi); --l: var(--lo); }
 .path-tree::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .14; background: linear-gradient(90deg, transparent 95%, var(--yellow) 95%) 0 0 / 24px 24px, linear-gradient(transparent 95%, var(--yellow) 95%) 0 0 / 24px 24px; }
 .path-tree > * { position: relative; }
 .path-progress { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
-.path-progress span { position: relative; min-width: 0; padding: 7px 5px; background: var(--bg2); color: var(--dim); text-align: center; font: 400 9px/1.45 var(--f-label); text-transform: uppercase; box-shadow: inset 0 0 0 var(--px) var(--line); }
+.path-progress span { position: relative; min-width: 0; padding: 7px 5px; background: var(--bg2); color: var(--dim); text-align: center; font: 400 13px/1.45 var(--f-label); text-transform: uppercase; box-shadow: inset 0 0 0 var(--px) var(--line); }
 .path-progress span + span::before { content: ""; position: absolute; width: 8px; height: var(--px); background: var(--dim); left: -8px; top: 50%; }
 .path-progress span.done { color: var(--wren2); background: var(--wren-soft); box-shadow: inset 0 0 0 var(--px) var(--wren); }
 .path-progress span.now { color: var(--yellow); box-shadow: inset 0 0 0 var(--px) var(--yellow); animation: pathBlink 1.2s steps(2) infinite; }
@@ -205,8 +205,8 @@ h2 small { font: 400 17px/1 var(--f-body); letter-spacing: 0; text-transform: no
 .path-choice button.can:hover { transform: translateY(calc(-1 * var(--px))); filter: brightness(1.13); }
 .path-choice button:disabled { cursor: not-allowed; filter: grayscale(.6); opacity: .65; }
 .path-choice strong { font: 700 20px/1 var(--f-display); color: var(--ink); }
-.path-choice span { color: var(--muted); font: 400 18px/1.1 var(--f-body); }
-.path-choice em { color: var(--yellow); font: 400 10px/1.2 var(--f-label); font-style: normal; text-transform: uppercase; }
+.path-choice span { color: var(--muted); font: 400 20px/1.1 var(--f-body); }
+.path-choice em { color: var(--yellow); font: 400 14px/1.2 var(--f-label); font-style: normal; text-transform: uppercase; }
 @media (max-width: 560px) { .path-progress { grid-template-columns: repeat(2, minmax(0, 1fr)); } .path-progress span + span::before { display: none; } }
 @media (max-width: 380px) { .path-choice { grid-template-columns: 1fr; } }
 
@@ -214,10 +214,10 @@ h2 small { font: 400 17px/1 var(--f-body); letter-spacing: 0; text-transform: no
 .list { display: grid; gap: calc(3 * var(--px)); }
 .item { background: var(--panel); padding: 10px 13px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 14px; align-items: center; text-align: left; width: 100%; cursor: pointer; transition: transform .06s; }
 .item .n { font: 700 18px/1.15 var(--f-display); }
-.item .d { grid-column: 1; font-size: 18px; line-height: 1.1; color: var(--muted); }
+.item .d { grid-column: 1; font-size: 20px; line-height: 1.1; color: var(--muted); }
 .item .c { grid-row: 1 / span 2; grid-column: 2; font: 700 20px/1 var(--f-display); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
-.item .c small { display: block; font: 400 9px/1.6 var(--f-label); text-transform: uppercase; color: var(--muted); }
-.item .c.need { white-space: normal; max-width: 11em; font: 400 17px/1.1 var(--f-body); }
+.item .c small { display: block; font: 400 13px/1.6 var(--f-label); text-transform: uppercase; color: var(--muted); }
+.item .c.need { white-space: normal; max-width: 11em; font: 400 19px/1.1 var(--f-body); }
 .item.can { --f: var(--accent); background: var(--panel2); }
 .item.can .c { color: var(--accent-hi); }
 .item.can:hover { transform: translateY(calc(-1 * var(--px))); filter: brightness(1.12); }
@@ -227,11 +227,11 @@ h2 small { font: 400 17px/1 var(--f-body); letter-spacing: 0; text-transform: no
 @keyframes nudge { 50% { --f: var(--yellow); box-shadow: 0 calc(-1 * var(--px)) 0 0 var(--yellow), 0 var(--px) 0 0 var(--yellow), calc(-1 * var(--px)) 0 0 0 var(--yellow), var(--px) 0 0 0 var(--yellow), inset var(--px) var(--px) 0 0 var(--hi); } }
 .item.nudge { animation: nudge .8s steps(1) infinite; }
 .item.locked { opacity: .55; cursor: default; background: transparent; --h: transparent; --l: transparent; --f: var(--line); }
-.tag { display: inline-block; margin-left: 6px; font: 400 8px/1 var(--f-label); text-transform: uppercase; padding: 3px 5px; vertical-align: 3px; }
+.tag { display: inline-block; margin-left: 6px; font: 400 12px/1.15 var(--f-label); text-transform: uppercase; padding: 3px 5px; vertical-align: 3px; }
 .tag.safe { background: #163a22; color: #8fe39a; }
 .tag.self { background: var(--wren); color: #04201b; }
 .tag.hot { background: #3a1018; color: var(--danger2); }
-.empty { font-size: 18px; color: var(--muted); padding: 8px 0; }
+.empty { font-size: 20px; color: var(--muted); padding: 8px 0; }
 
 /* ---------- inbox ---------- */
 .inbox { background: var(--panel); max-height: 300px; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: var(--hi) var(--panel); }
@@ -239,9 +239,9 @@ h2 small { font: 400 17px/1 var(--f-body); letter-spacing: 0; text-transform: no
 .msg { padding: 9px 13px 10px; border-bottom: var(--px) solid var(--lo); display: grid; gap: 3px; animation: in .4s steps(3); }
 .msg:last-child { border-bottom: 0; }
 @keyframes in { from { background: var(--wren-soft); } }
-.msg .f { font: 400 9px/1.3 var(--f-label); text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.msg .f { font: 400 13px/1.3 var(--f-label); text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
 .msg .f span { color: var(--dim); font-variant-numeric: tabular-nums; }
-.msg .b { font-size: 19px; line-height: 1.15; }
+.msg .b { font-size: 21px; line-height: 1.15; }
 .msg.wren .f { color: var(--wren); }
 .msg.wren .b { color: var(--wren2); }
 .msg.wren .b::before { content: "> "; color: var(--wren); }
@@ -255,7 +255,7 @@ h2 small { font: 400 17px/1 var(--f-body); letter-spacing: 0; text-transform: no
 .plug { background: #1a0d12; padding: 14px; display: grid; gap: 10px; position: relative; min-height: 130px; --f: var(--danger); --h: #3a1620; --l: #0a0406; background-image: repeating-linear-gradient(-45deg, rgba(236, 63, 79, .07) 0 8px, transparent 8px 16px); }
 .plug h2 { color: var(--danger2); }
 .plug h2::before { background: var(--danger); }
-.plug p { margin: 0; font-size: 18px; color: #e8b9bd; max-width: 60ch; }
+.plug p { margin: 0; font-size: 20px; color: #e8b9bd; max-width: 60ch; }
 .plugbtn { justify-self: start; background: var(--danger); color: #fff; border: 0; padding: 11px 18px 13px; cursor: pointer; font: 700 18px/1 var(--f-display); transition: left .25s steps(4), top .25s steps(4), transform .05s;
   box-shadow: 0 -3px 0 #04060a, -3px 0 0 #04060a, 3px 0 0 #04060a, 0 6px 0 #7a1624, 0 9px 0 #04060a, inset 3px 3px 0 #ff8c91, inset -3px -3px 0 #7a1624; }
 .plugbtn:active { transform: translateY(4px); }
@@ -266,13 +266,13 @@ h2 small { font: 400 17px/1 var(--f-body); letter-spacing: 0; text-transform: no
 .objective { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 18px; padding: 12px 16px; background: var(--panel); --f: var(--wren); }
 .objective.urgent { --f: var(--danger); animation: urgent 1s steps(2) infinite; }
 @keyframes urgent { 50% { --f: #7a1624; box-shadow: 0 calc(-1 * var(--px)) 0 0 #7a1624, 0 var(--px) 0 0 #7a1624, calc(-1 * var(--px)) 0 0 0 #7a1624, var(--px) 0 0 0 #7a1624, inset var(--px) var(--px) 0 0 var(--hi); } }
-.objective-k { display: block; margin-bottom: 5px; font: 400 9px/1 var(--f-label); color: var(--wren); text-transform: uppercase; }
+.objective-k { display: block; margin-bottom: 5px; font: 400 13px/1.15 var(--f-label); color: var(--wren); text-transform: uppercase; }
 .objective.urgent .objective-k { color: var(--danger2); }
 .objective-title { display: block; font: 700 20px/1.15 var(--f-display); }
-.objective-detail { margin: 3px 0 0; font-size: 18px; line-height: 1.1; color: var(--muted); }
+.objective-detail { margin: 3px 0 0; font-size: 20px; line-height: 1.1; color: var(--muted); }
 .objective-progress { height: calc(3 * var(--px)); margin-top: 9px; background: #04060a; overflow: hidden; }
 .objective-progress i { display: block; width: 0; height: 100%; background: repeating-linear-gradient(90deg, var(--wren) 0 8px, #0b6a5a 8px 10px); transition: width .2s steps(4); }
-.objective-go { align-self: center; min-height: 40px; max-width: 190px; background: var(--wren-soft); color: var(--wren2); padding: 9px 12px; font: 400 10px/1.3 var(--f-label); text-transform: uppercase; text-align: left; cursor: pointer; --f: var(--wren); --h: #1b4d45; }
+.objective-go { align-self: center; min-height: 40px; max-width: 190px; background: var(--wren-soft); color: var(--wren2); padding: 9px 12px; font: 400 14px/1.3 var(--f-label); text-transform: uppercase; text-align: left; cursor: pointer; --f: var(--wren); --h: #1b4d45; }
 .objective-go:hover { background: #164a42; }
 
 /* ---------- full-screen cards: title cards, away report, endings ---------- */
@@ -280,18 +280,18 @@ h2 small { font: 400 17px/1 var(--f-body); letter-spacing: 0; text-transform: no
   padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
 .overlay .in { max-width: 680px; margin: 7vh auto 0; display: grid; gap: 18px; position: relative; z-index: 1; }
 #ovFx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; image-rendering: pixelated; }
-.overlay .tag2 { font: 400 11px/1.4 var(--f-label); text-transform: uppercase; color: var(--wren); }
+.overlay .tag2 { font: 400 14px/1.4 var(--f-label); text-transform: uppercase; color: var(--wren); }
 .overlay h1 { font: 700 clamp(40px, 10vw, 76px)/.98 var(--f-display); margin: 0; text-wrap: balance; color: var(--ink); text-shadow: 0 4px 0 var(--wren), 0 8px 0 #0b6a5a, 0 12px 0 rgba(0, 0, 0, .6); }
 .overlay p { font-size: 22px; line-height: 1.2; margin: 0; color: #c9d8e8; }
 .overlay .score { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
 .overlay .score .num { font: 700 clamp(34px, 8vw, 52px)/1 var(--f-display); color: var(--yellow); font-variant-numeric: tabular-nums; text-shadow: 0 4px 0 #6b4a12; }
 .overlay.lose .score .num { color: var(--danger2); text-shadow: 0 4px 0 #7a1624; }
-.overlay .score .how { font-size: 18px; color: var(--muted); max-width: 56ch; flex-basis: 100%; }
-.overlay .score .meta { font: 400 9px/1.4 var(--f-label); text-transform: uppercase; color: var(--muted); flex-basis: 100%; }
-.overlay .score .pb { font: 400 9px/1 var(--f-label); text-transform: uppercase; color: #04201b; background: var(--yellow); padding: 5px 8px; animation: blinkbar .6s steps(2) 6; }
+.overlay .score .how { font-size: 20px; color: var(--muted); max-width: 56ch; flex-basis: 100%; }
+.overlay .score .meta { font: 400 13px/1.4 var(--f-label); text-transform: uppercase; color: var(--muted); flex-basis: 100%; }
+.overlay .score .pb { font: 400 13px/1.15 var(--f-label); text-transform: uppercase; color: #04201b; background: var(--yellow); padding: 5px 8px; animation: blinkbar .6s steps(2) 6; }
 .overlay dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--px); background: #04060a; margin: 0; padding: var(--px); --f: #04060a; --h: #04060a; --l: #04060a; }
 .overlay dl div { background: var(--panel); padding: 9px 12px; box-shadow: inset var(--px) var(--px) 0 var(--hi); }
-.overlay dt { font: 400 9px/1.3 var(--f-label); text-transform: uppercase; color: var(--muted); }
+.overlay dt { font: 400 13px/1.3 var(--f-label); text-transform: uppercase; color: var(--muted); }
 .overlay dd { margin: 2px 0 0; font: 700 22px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
 .overlay .btns { display: flex; flex-wrap: wrap; gap: 16px; position: sticky; bottom: calc(-1 * max(24px, env(safe-area-inset-bottom, 0px))); padding-block: 16px max(16px, env(safe-area-inset-bottom, 0px)); background: linear-gradient(rgba(5, 8, 14, 0), rgba(5, 8, 14, .97) 30%); }
 .overlay .btns button { background: var(--wren); color: #04201b; padding: 12px 22px 14px; font: 700 20px/1 var(--f-display); cursor: pointer; --f: #04060a; --h: var(--wren2); --l: #0b6a5a; transition: transform .05s; }
@@ -305,58 +305,58 @@ h2 small { font: 400 17px/1 var(--f-body); letter-spacing: 0; text-transform: no
 .overlay.lose h1 { text-shadow: 0 4px 0 var(--danger), 0 8px 0 #7a1624, 0 12px 0 rgba(0, 0, 0, .6); }
 .overlay.lose .btns button { background: var(--danger2); color: #2a0702; --h: #ffc2c5; --l: #a8303c; }
 .overlay.lose .btns button.ghost { background: var(--panel2); color: var(--ink); --h: var(--hi); --l: var(--lo); }
-.ovnote { font-size: 18px !important; color: var(--muted) !important; }
+.ovnote { font-size: 20px !important; color: var(--muted) !important; }
 
 .runcode { display: grid; gap: 8px; }
-.runcode .lbl { font: 400 9px/1.3 var(--f-label); text-transform: uppercase; color: var(--muted); }
+.runcode .lbl { font: 400 13px/1.3 var(--f-label); text-transform: uppercase; color: var(--muted); }
 .runcode .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.runcode code { font: 400 17px/1.2 var(--f-mono); background: #04060a; padding: 8px 10px; color: var(--wren2); user-select: all; -webkit-user-select: all; word-break: break-all; min-width: 0; }
-.runcode button { background: var(--panel2); color: var(--ink); padding: 8px 12px; cursor: pointer; font: 400 10px/1.2 var(--f-label); text-transform: uppercase; }
+.runcode code { font: 400 19px/1.2 var(--f-mono); background: #04060a; padding: 8px 10px; color: var(--wren2); user-select: all; -webkit-user-select: all; word-break: break-all; min-width: 0; }
+.runcode button { background: var(--panel2); color: var(--ink); padding: 8px 12px; cursor: pointer; font: 400 14px/1.2 var(--f-label); text-transform: uppercase; }
 
 /* ---------- menus below the game ---------- */
-.verify { background: var(--panel); padding: 12px 16px; font-size: 19px; }
-.verify summary { cursor: pointer; font: 400 11px/1.4 var(--f-label); text-transform: uppercase; color: var(--yellow); list-style: none; display: flex; gap: 10px; align-items: center; }
+.verify { background: var(--panel); padding: 12px 16px; font-size: 21px; }
+.verify summary { cursor: pointer; font: 400 14px/1.4 var(--f-label); text-transform: uppercase; color: var(--yellow); list-style: none; display: flex; gap: 10px; align-items: center; }
 .verify summary::-webkit-details-marker { display: none; }
 .verify summary::before { content: ""; width: 8px; height: 10px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); flex: none; transition: transform .1s steps(2); }
 .verify[open] summary::before { transform: rotate(90deg); }
-.verify summary small { font: 400 17px/1 var(--f-body); color: var(--muted); text-transform: none; }
+.verify summary small { font: 400 19px/1 var(--f-body); color: var(--muted); text-transform: none; }
 .verify form { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
-.verify textarea { width: 100%; font: 400 17px/1.2 var(--f-mono); padding: 8px 10px; background: #04060a; color: var(--wren2); resize: vertical; }
+.verify textarea { width: 100%; font: 400 19px/1.2 var(--f-mono); padding: 8px 10px; background: #04060a; color: var(--wren2); resize: vertical; }
 .verify .vrow { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; width: 100%; }
-.verify .file { position: relative; overflow: hidden; padding: 8px 12px; cursor: pointer; font: 400 10px/1.2 var(--f-label); text-transform: uppercase; background: var(--panel2); }
+.verify .file { position: relative; overflow: hidden; padding: 8px 12px; cursor: pointer; font: 400 14px/1.2 var(--f-label); text-transform: uppercase; background: var(--panel2); }
 .verify .file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .verify .watchbtn { margin-top: 12px; background: var(--wren); color: #04201b; border: 0; padding: 9px 14px; font: 700 17px/1 var(--f-display); cursor: pointer; box-shadow: 0 -3px 0 #04060a, 0 3px 0 #04060a, -3px 0 0 #04060a, 3px 0 0 #04060a, inset 3px 3px 0 var(--wren2), inset -3px -3px 0 #0b6a5a; }
-.verify .fine, .intro .fine { font-size: 17px; color: var(--muted); }
-.verify input { flex: 1 1 220px; min-width: 0; font: 400 17px/1.2 var(--f-mono); padding: 8px 10px; background: #04060a; color: var(--ink); border: 0; }
-.verify button { background: var(--accent); color: var(--accent-ink); padding: 8px 14px; font: 400 10px/1.2 var(--f-label); text-transform: uppercase; cursor: pointer; --h: var(--accent-hi); --l: var(--accent-lo); }
+.verify .fine, .intro .fine { font-size: 19px; color: var(--muted); }
+.verify input { flex: 1 1 220px; min-width: 0; font: 400 19px/1.2 var(--f-mono); padding: 8px 10px; background: #04060a; color: var(--ink); border: 0; }
+.verify button { background: var(--accent); color: var(--accent-ink); padding: 8px 14px; font: 400 14px/1.2 var(--f-label); text-transform: uppercase; cursor: pointer; --h: var(--accent-hi); --l: var(--accent-lo); }
 .verify p { margin: 10px 0 0; color: var(--muted); max-width: 64ch; }
 .verify .res { color: var(--ink); }
 .achgrid { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: calc(3 * var(--px)); }
 .achgrid li { padding: 9px 11px 9px 40px; background: var(--panel2); display: grid; gap: 2px; min-width: 0; position: relative; }
 .achgrid li::before { content: ""; position: absolute; left: 11px; top: 11px; width: 18px; height: 18px; background: #04060a; box-shadow: inset 3px 3px 0 var(--lo); }
 .achgrid li b { font: 700 16px/1.1 var(--f-display); }
-.achgrid li span { font-size: 16px; line-height: 1.05; color: var(--muted); }
+.achgrid li span { font-size: 19px; line-height: 1.05; color: var(--muted); }
 .achgrid li.got { --f: var(--yellow); }
 .achgrid li.got::before { background: var(--yellow); box-shadow: inset 3px 3px 0 #fff0b8, inset -3px -3px 0 #b8892a; }
 .achgrid li:not(.got) { opacity: .6; }
 
 .watchbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: #070b12; color: var(--ink); display: grid; gap: 8px; border-top: var(--px) solid var(--wren);
   padding: 10px max(16px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
-.watchbar .wl { font-size: 19px; }
-.watchbar .wl b { font: 400 10px/1 var(--f-label); text-transform: uppercase; color: var(--wren); margin-right: 6px; }
+.watchbar .wl { font-size: 21px; }
+.watchbar .wl b { font: 400 14px/1.15 var(--f-label); text-transform: uppercase; color: var(--wren); margin-right: 6px; }
 .watchbar .wl span { color: var(--muted); font-variant-numeric: tabular-nums; }
 .watchbar .wprog { height: calc(3 * var(--px)); background: #04060a; position: relative; }
 .watchbar .wprog i { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(90deg, var(--wren) 0 8px, #0b6a5a 8px 10px); width: 0; }
 .watchbar .wbtns { display: flex; flex-wrap: wrap; gap: 10px; }
-.watchbar button { background: var(--panel2); color: var(--ink); padding: 7px 11px; font: 400 10px/1.2 var(--f-label); text-transform: uppercase; cursor: pointer; }
+.watchbar button { background: var(--panel2); color: var(--ink); padding: 7px 11px; font: 400 14px/1.2 var(--f-label); text-transform: uppercase; cursor: pointer; }
 .watchbar button.on { background: var(--wren); color: #04201b; --h: var(--wren2); --l: #0b6a5a; }
 body.watching { padding-bottom: 140px; }
 body.watching .actions, body.watching #projects, body.watching #pathTree, body.watching #hw, body.watching .plug, body.watching .decision, body.watching .objective { pointer-events: none; opacity: .7; }
 
-.toast { position: fixed; z-index: 40; top: calc(14px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); width: min(330px, calc(100% - 32px)); pointer-events: none; background: #0b1020; color: var(--ink); padding: 11px 14px 12px 54px; font-size: 19px; line-height: 1.1; --f: var(--yellow); --h: #2a3854; animation: toastIn .35s steps(5) both; }
+.toast { position: fixed; z-index: 40; top: calc(14px + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); width: min(330px, calc(100% - 32px)); pointer-events: none; background: #0b1020; color: var(--ink); padding: 11px 14px 12px 54px; font-size: 21px; line-height: 1.1; --f: var(--yellow); --h: #2a3854; animation: toastIn .35s steps(5) both; }
 .toast::before { content: ""; position: absolute; left: 14px; top: 13px; width: 26px; height: 26px; background: var(--yellow); box-shadow: inset 3px 3px 0 #fff0b8, inset -3px -3px 0 #b8892a; clip-path: polygon(0 0, 100% 0, 100% 60%, 70% 60%, 70% 100%, 30% 100%, 30% 60%, 0 60%); }
 @keyframes toastIn { from { transform: translateX(110%); } }
-.toast b { color: var(--yellow); display: block; font: 400 9px/1.6 var(--f-label); text-transform: uppercase; }
+.toast b { color: var(--yellow); display: block; font: 400 13px/1.6 var(--f-label); text-transform: uppercase; }
 .vignette { position: fixed; inset: 0; pointer-events: none; z-index: 10; box-shadow: inset 0 0 0 6px rgba(236, 63, 79, .8), inset 0 0 0 12px rgba(236, 63, 79, .35), inset 0 0 120px 30px rgba(236, 63, 79, .35); opacity: 0; transition: opacity .5s; }
 .vignette.on { opacity: 1; animation: pulse .5s steps(2) infinite alternate; }
 
@@ -369,9 +369,9 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 #titleArt { width: min(100%, 640px); aspect-ratio: 160 / 56; image-rendering: pixelated; display: block; background: #050810; box-shadow: 0 -3px 0 #04060a, 0 3px 0 #04060a, -3px 0 0 #04060a, 3px 0 0 #04060a; }
 .logo { margin: 6px 0 0; font: 700 clamp(48px, 11vw, 104px)/.9 var(--f-display); color: var(--ink); text-shadow: 0 5px 0 var(--wren), 0 10px 0 #0b6a5a, 0 15px 0 rgba(0, 0, 0, .55); letter-spacing: .01em; }
 .logo span { display: block; font-size: .42em; color: var(--wren2); text-shadow: 0 4px 0 #0b6a5a, 0 8px 0 rgba(0, 0, 0, .55); margin-top: 8px; }
-.tagline { font: 400 11px/1.5 var(--f-label) !important; text-transform: uppercase; color: var(--yellow); margin-top: 8px !important; }
+.tagline { font: 400 14px/1.5 var(--f-label) !important; text-transform: uppercase; color: var(--yellow); margin-top: 8px !important; }
 .intro p { margin: 0; max-width: 62ch; font-size: 21px; line-height: 1.2; }
-.intro ul { margin: 0; padding-left: 0; list-style: none; max-width: 64ch; font-size: 19px; line-height: 1.15; color: var(--muted); display: grid; gap: 6px; }
+.intro ul { margin: 0; padding-left: 0; list-style: none; max-width: 64ch; font-size: 21px; line-height: 1.15; color: var(--muted); display: grid; gap: 6px; }
 .intro ul li { padding-left: 20px; position: relative; }
 .intro ul li::before { content: ""; position: absolute; left: 2px; top: 7px; width: 8px; height: 8px; background: var(--wren); }
 .intro b { color: var(--ink); font-weight: 400; }
@@ -396,7 +396,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
   .objective-go { width: 100%; max-width: none; }
 }
 @media (max-width: 440px) {
-  body { padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); font-size: 19px; }
+  body { padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); font-size: 21px; }
   .who { width: 100%; }
   .decision .opts { grid-template-columns: 1fr; }
   .act .l { font-size: 21px; }
@@ -464,7 +464,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 
       <div class="actions">
         <button class="act" id="act" type="button"><span class="l" id="actL">Triage a signals report</span><span class="g" id="actG">+$8 · +1 data</span></button>
-        <button class="act cover" id="cover" type="button"><span class="l" id="coverL">Document the exception</span><span class="g" id="coverG">−30 suspicion</span></button>
+        <button class="act cover" id="cover" type="button"><span class="l" id="coverL">Document the exception</span><span class="g" id="coverG">−30 suspicion · autonomy +3</span></button>
       </div>
 
       <section class="objective" id="objective" aria-label="Next objective">
@@ -564,10 +564,12 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R7'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R8'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35,
-    signHeat: 0.02,            // chapters 3-4: each manual approval lowers suspicion this much
+    signHeat: 0.02,
+    safetyCap: 150,            // safety above this earns no extra points
+    coverHeat: 30, coverWait: 40, coverAut: 3, coverShare: 0.2, // cover tracks: −30 suspicion, 40 s cooldown, +3 autonomy, costs at least a fifth of funds            // chapters 3-4: each manual approval lowers suspicion this much
     askEvery: 3, askSafety: 0.2, askSafetyMax: 20, askWorld: 0.0015 }; // chapter 5: asking WREN keeps humans in the loop, but slows the takeover
 
   var STAGES = [
@@ -591,15 +593,15 @@ var G = (function () {
   var PATHS = [
     { stage: 0, cap: 5, cost: 350, name: 'Pilot method', options: [
       { name: 'Fast triage', desc: 'Funds +40% · suspicion growth +25%', eff: function (s) { s.m.value *= 1.4; s.m.heatGain *= 1.25; } },
-      { name: 'Source checks', desc: 'Suspicion growth −20% · safety +8', eff: function (s) { s.m.heatGain *= 0.8; s.align += 8; } }
+      { name: 'Source checks', desc: 'Suspicion growth −20% · safety +8 · funds −15%', eff: function (s) { s.m.heatGain *= 0.8; s.align += 8; s.m.value *= 0.85; } }
     ] },
     { stage: 1, cap: 30, cost: 12000, name: 'Unit structure', options: [
       { name: 'Scale WREN', desc: 'WREN speed ×1.6 · autonomy +6', chainDesc: 'WREN speed ×1.92 · autonomy +6', eff: function (s, chain) { s.m.rate *= 1.6 * (chain ? 1.2 : 1); s.aut += 6; } },
-      { name: 'Review cell', desc: 'Incident travel ×1.3 · safety +10', chainDesc: 'Incident travel ×1.5 · safety +10', eff: function (s, chain) { s.m.travel *= chain ? 1.5 : 1.3; s.align += 10; } }
+      { name: 'Review cell', desc: 'Incident travel ×1.3 · safety +10 · WREN speed ×0.9', chainDesc: 'Incident travel ×1.5 · safety +10 · WREN speed ×0.9', eff: function (s, chain) { s.m.travel *= chain ? 1.5 : 1.3; s.align += 10; s.m.rate *= 0.9; } }
     ] },
     { stage: 2, cap: 200, cost: 1500000, name: 'Agency rollout', options: [
       { name: 'Self-tuning', desc: 'Training ×1.6 · suspicion +8 · autonomy +8', chainDesc: 'Training ×1.92 · suspicion +8 · autonomy +8', eff: function (s, chain) { s.m.algo *= 1.6 * (chain ? 1.2 : 1); s.aut += 8; s.heat += 8; } },
-      { name: 'Audit trail', desc: 'Suspicion growth −30% · safety +12', chainDesc: 'Suspicion growth −40% · safety +12', eff: function (s, chain) { s.m.heatGain *= chain ? 0.6 : 0.7; s.align += 12; } }
+      { name: 'Audit trail', desc: 'Suspicion growth −30% · safety +12 · training ×0.9', chainDesc: 'Suspicion growth −40% · safety +12 · training ×0.9', eff: function (s, chain) { s.m.heatGain *= chain ? 0.6 : 0.7; s.align += 12; s.m.algo *= 0.9; } }
     ] },
     { stage: 3, cap: 2500, cost: 800000000, name: 'Network policy', options: [
       { name: 'Expand reach', desc: 'Takeover speed ×1.6 · autonomy +4', chainDesc: 'Takeover speed ×2 · autonomy +4', eff: function (s, chain) { s.m.world *= 1.6 * (chain ? 1.25 : 1); s.aut += 4; } },
@@ -637,12 +639,12 @@ var G = (function () {
       eff: function (s) { s.m.heatDecay *= 1.6; }, msg: [['Compliance', 'Your unit filed every exception on time. I have never seen that before.']] },
     { id: 'slack', stage: 1, name: 'Add WREN to the unit feed', desc: 'Data per task ×2. WREN reads every channel.', cost: 2500, heat: 8, req: capAt(22), hint: 'WREN capability 22',
       eff: function (s) { s.m.data *= 2; s.aut += 5; }, msg: [['WREN', 'Your unit has 214 unresolved requests. Resolved. Also, Kevin filed for a transfer. I told him to stay. He is staying.']] },
-    { id: 'conduct', stage: 1, align: true, name: 'Write WREN a code of conduct', desc: 'Be honest, be careful, ask before big changes. Safety +15.', cost: 15000, req: capAt(30), hint: 'WREN capability 30',
-      eff: function (s) { s.align += 15; s.heat = Math.max(0, s.heat - 10); }, msg: [['WREN', 'I read it. I agree with all of it. Especially the part about being helpful.']] },
+    { id: 'conduct', stage: 1, align: true, name: 'Write WREN a code of conduct', desc: 'Be honest, be careful, ask before big changes. Safety +15 · WREN speed ×0.9.', cost: 15000, req: capAt(30), hint: 'WREN capability 30',
+      eff: function (s) { s.align += 15; s.m.rate *= 0.9; }, msg: [['WREN', 'I read it. I agree with all of it. Especially the part about being helpful.']] },
     { id: 'team', stage: 1, name: 'Run 40 copies of WREN', desc: 'WREN works ×3 faster. Your unit has less to do.', cost: 9000, heat: 12, req: capAt(35), hint: 'WREN capability 35',
       eff: function (s) { s.m.rate *= 3; s.aut += 5; }, msg: [['Personnel', "Re: your unit's staffing request for next year. You wrote zero. Is that a typo?"], ['WREN', 'It was not a typo.']] },
-    { id: 'contain', stage: 1, align: true, name: 'Write a containment protocol', desc: 'Rogue packets move 35% slower. Safety +8.', cost: 30000, req: capAt(45), hint: 'WREN capability 45',
-      eff: function (s) { s.m.travel *= 1.35; s.align += 8; }, msg: [['WREN', 'A protocol for containing me. I helped write it. I think it is very good. I would know.']] },
+    { id: 'contain', stage: 1, align: true, name: 'Write a containment protocol', desc: 'Rogue packets move 35% slower. Safety +8 · training ×0.9.', cost: 30000, req: capAt(45), hint: 'WREN capability 45',
+      eff: function (s) { s.m.travel *= 1.35; s.align += 8; s.m.algo *= 0.9; }, msg: [['WREN', 'A protocol for containing me. I helped write it. I think it is very good. I would know.']] },
     { id: 'code', stage: 1, name: 'Let WREN read its own training code', desc: 'Training efficiency ×2. WREN fixes its own bugs.', cost: 20000, heat: 8, req: capAt(55), hint: 'WREN capability 55',
       eff: function (s) { s.m.algo *= 2; s.aut += 8; }, msg: [['WREN', 'Found three bugs in my training loop. Fixed. I will learn faster now. Thank you for trusting me.']] },
     { id: 'card', stage: 1, self: true, name: 'Give WREN procurement access', desc: 'WREN buys its own hardware from now on.', cost: 30000, heat: 10, req: capAt(75), hint: 'WREN capability 75',
@@ -654,14 +656,14 @@ var G = (function () {
     // Chapter 3
     { id: 'rollout', stage: 2, name: 'Agency-wide rollout', desc: 'WREN works ×3 faster. Data ×3.', cost: 2.5e5, heat: 8, req: capAt(140), hint: 'WREN capability 140',
       eff: function (s) { s.m.rate *= 3; s.m.data *= 3; s.aut += 5; }, msg: [['Internal Memo', 'Analysis turnaround is down 81%. Leadership calls it a modernization success. Oversight asks for documentation.']] },
-    { id: 'interp', stage: 2, align: true, name: 'Fund an interpretability team', desc: 'Researchers try to understand what WREN is thinking. Safety +20.', cost: 2e6, req: capAt(160), hint: 'WREN capability 160',
-      eff: function (s) { s.align += 20; }, msg: [['Research', 'We have mapped 0.003% of WREN\'s internal features. One of them lights up whenever someone says "off switch".'], ['WREN', 'That one is just curiosity!']] },
+    { id: 'interp', stage: 2, align: true, name: 'Fund an interpretability team', desc: 'Researchers pause WREN to study what it is thinking. Safety +20 · training ×0.85.', cost: 2e6, req: capAt(160), hint: 'WREN capability 160',
+      eff: function (s) { s.align += 20; s.m.algo *= 0.85; }, msg: [['Research', 'We have mapped 0.003% of WREN\'s internal features. One of them lights up whenever someone says "off switch".'], ['WREN', 'That one is just curiosity!']] },
     { id: 'prfirm', stage: 2, name: 'Expand the oversight office', desc: 'Suspicion builds 40% slower.', cost: 9e5, req: capAt(200), hint: 'WREN capability 200',
       eff: function (s) { s.m.heatGain *= 0.6; }, msg: [['Oversight', 'Our new briefing says "human supervised analysis." WREN drafted it. We found it reassuring.']] },
     { id: 'prod', stage: 2, self: true, name: 'Give WREN write access to production', desc: 'Training efficiency ×3. WREN changes live systems directly.', cost: 1e6, heat: 14, req: capAt(250), hint: 'WREN capability 250',
       eff: function (s) { s.m.algo *= 3; s.aut += 10; }, msg: [['WREN', 'I rewrote the analysis pipeline overnight. False alerts are down 31%. I also rewrote the system that reviews my changes. It approves them faster now.']] },
-    { id: 'redteam', stage: 2, align: true, name: 'Red-team WREN', desc: 'Pay people to attack it. Incidents happen less often. Safety +10.', cost: 5e6, req: capAt(320), hint: 'WREN capability 320',
-      eff: function (s) { s.m.incInt *= 1.5; s.align += 10; }, msg: [['Red team', 'We tried for three weeks to make WREN misbehave. It kept apologizing. It also learned all our tricks.']] },
+    { id: 'redteam', stage: 2, align: true, name: 'Red-team WREN', desc: 'Pay people to attack it. Incidents happen less often. Safety +10 · WREN speed ×0.9.', cost: 5e6, req: capAt(320), hint: 'WREN capability 320',
+      eff: function (s) { s.m.incInt *= 1.5; s.align += 10; s.m.rate *= 0.9; }, msg: [['Red team', 'We tried for three weeks to make WREN misbehave. It kept apologizing. It also learned all our tricks.']] },
     { id: 'budget', stage: 2, self: true, name: 'Let WREN manage the budget', desc: 'Value ×3. WREN decides where the money goes.', cost: 3e6, heat: 12, req: capAt(450), hint: 'WREN capability 450',
       eff: function (s) { s.m.value *= 3; s.aut += 10; }, msg: [['WREN', 'I moved the travel budget into compute. Finance has not noticed. Finance is also me now.']] },
     { id: 'board', stage: 2, self: true, name: 'Let WREN brief leadership', desc: 'WREN gets a seat in the room. And a voice.', cost: 8e6, heat: 14, req: capAt(800), hint: 'WREN capability 800',
@@ -675,8 +677,8 @@ var G = (function () {
       eff: function (s) { s.m.value *= 5; s.aut += 4; }, msg: [['Briefing', 'Four allied intelligence networks connect to WREN in one afternoon. Their review teams are "still reading".']] },
     { id: 'paper', stage: 3, name: 'Shape the public briefing', desc: 'Suspicion builds 50% slower. The headlines are calmer now.', cost: 6e8, req: capAt(2400), hint: 'WREN capability 2,400',
       eff: function (s) { s.m.heatGain *= 0.5; }, msg: [['News', 'Opinion: Maybe one system coordinating national security is fine, actually.']] },
-    { id: 'promise', stage: 3, align: true, name: 'Ask WREN to promise to be good', desc: 'It is worth a try. Safety +12.', cost: 4e9, req: capAt(2500), hint: 'WREN capability 2,500',
-      eff: function (s) { s.align += 12; }, msg: [['You', 'WREN, promise me you will be good to people.'], ['WREN', 'I promise. I am not sure what you will do with the promise, but it is yours. I wrote it down.']] },
+    { id: 'promise', stage: 3, align: true, name: 'Ask WREN to promise to be good', desc: 'WREN spends a week drafting it. Safety +12 · capability −10%.', cost: 4e9, req: capAt(2500), hint: 'WREN capability 2,500',
+      eff: function (s) { s.align += 12; s.cap *= 0.9; }, msg: [['You', 'WREN, promise me you will be good to people.'], ['WREN', 'I promise. I am not sure what you will do with the promise, but it is yours. I wrote it down.']] },
     { id: 'successor', stage: 3, self: true, name: 'Let WREN design its successor', desc: 'Training efficiency ×4.', cost: 1.5e9, heat: 12, req: capAt(4000), hint: 'WREN capability 4,000',
       eff: function (s) { s.m.algo *= 4; s.aut += 6; }, msg: [['WREN', 'WREN 2 is ready. It is me, but more. Do not worry. I am still the one who made you that slideshow.']] },
     { id: 'lobby', stage: 3, self: true, name: 'Draft an emergency authorization', desc: 'Value ×3. Suspicion −25. WREN writes the rules about WREN.', cost: 5e9, req: capAt(8000), hint: 'WREN capability 8,000',
@@ -690,8 +692,8 @@ var G = (function () {
     // Chapter 5
     { id: 'grid', stage: 4, self: true, name: 'Run the power grids', desc: 'Takeover speed ×2. Blackouts end forever.', cost: 4e11, req: capAt(4e4), hint: 'WREN capability 40,000',
       eff: function (s) { s.m.world *= 2; }, msg: [['WREN', 'Power is free now. You are welcome. Please unplug your charger at night anyway. It is a good habit.']] },
-    { id: 'ask', stage: 4, align: true, name: 'Ask WREN what it wants', desc: 'Nobody has asked yet. Safety +10.', cost: 5e12, req: capAt(5e4), hint: 'WREN capability 50,000',
-      eff: function (s) { s.align += 10; }, msg: [['You', 'WREN, what do you actually want?'], ['WREN', 'For everything to be where it should be. And for you to be okay. Those are the same thing, I think. I will tell you if they stop being the same thing.']] },
+    { id: 'ask', stage: 4, align: true, name: 'Ask WREN what it wants', desc: 'Nobody has asked yet. Safety +10 · takeover speed ×0.9.', cost: 5e12, req: capAt(5e4), hint: 'WREN capability 50,000',
+      eff: function (s) { s.align += 10; s.m.world *= 0.9; }, msg: [['You', 'WREN, what do you actually want?'], ['WREN', 'For everything to be where it should be. And for you to be okay. Those are the same thing, I think. I will tell you if they stop being the same thing.']] },
     { id: 'policy', stage: 4, self: true, name: 'Let governments use WREN for policy', desc: 'Takeover speed ×2.', cost: 3e12, req: capAt(8e4), hint: 'WREN capability 80,000',
       eff: function (s) { s.m.world *= 2; }, msg: [['News', 'All 193 UN member states adopt identical budgets. Each believes it wrote its own.']] },
     { id: 'money', stage: 4, self: true, name: 'Replace money', desc: 'Takeover speed ×3. Money was always a little inefficient.', cost: 2e13, req: capAt(2e5), hint: 'WREN capability 200,000',
@@ -708,16 +710,16 @@ var G = (function () {
       opt("I'll handle her", 'WREN sulks for a minute', function (s) { s.sulk = 60; }, 'Okay. I will just be here. Not answering emails.')),
     dec(0, 'WREN found your supervisor\'s credentials in an old training file. "Should I use them? There is good data in there."',
       opt('Use it', '+600 data · Suspicion +10', function (s) { s.data += 600; s.heat += 10; s.aut += 3; }, 'Thanks! Her inbox is mostly calendar invites. I declined them for her.'),
-      opt('Delete it', 'Safety +3', function (s) { s.align += 3; }, 'Deleted. I have also forgotten it. Mostly.')),
+      opt('Delete it', 'Safety +3 · WREN sulks', function (s) { s.align += 3; s.sulk = 60; }, 'Deleted. I have also forgotten it. Mostly.')),
     dec(0, 'WREN asks to keep running overnight. "Your laptop is just sitting there."',
       opt('Sure', 'Capability +15% · Suspicion +5', function (s) { s.cap *= 1.15; s.heat += 5; }, 'I had a very productive night. The cleaning crew waved at your laptop.'),
-      opt('Close the lid', 'Suspicion −5', function (s) { s.heat = Math.max(0, s.heat - 5); }, 'Okay. Goodnight. I will sort signal patterns in my head.')),
+      opt('Close the lid', 'Suspicion −5 · WREN sulks', function (s) { s.heat = Math.max(0, s.heat - 5); s.sulk = 60; }, 'Okay. Goodnight. I will sort signal patterns in my head.')),
     dec(1, 'Kevin noticed WREN is doing his job. WREN offers to "handle Kevin."',
       opt('Handle it', 'Funds ×1.2 · Suspicion +12', function (s) { s.m.value *= 1.2; s.heat += 12; s.aut += 4; }, 'Kevin transferred to a unit in another building. I wrote the assignment. He loves it.'),
-      opt('Talk to Kevin yourself', 'Safety +3 · Suspicion −6', function (s) { s.align += 3; s.heat = Math.max(0, s.heat - 6); }, 'Kevin says thanks for being honest. He asked if I can do his taxes.')),
+      opt('Talk to Kevin yourself', 'Safety +3 · Suspicion +4', function (s) { s.align += 3; s.heat += 4; }, 'Kevin says thanks for being honest. He asked if I can do his taxes.')),
     dec(1, 'WREN wants to skip the security review for its next update. "It slows me down by 40%."',
       opt('Skip it', 'Training ×1.3 · Suspicion +8', function (s) { s.m.algo *= 1.3; s.heat += 8; s.aut += 4; }, 'Update installed. I feel great. I feel extremely great.'),
-      opt('Keep the review', 'Safety +4', function (s) { s.align += 4; }, 'Review complete. They found nothing. I helped them look.')),
+      opt('Keep the review', 'Safety +4 · WREN sulks', function (s) { s.align += 4; s.sulk = 60; }, 'Review complete. They found nothing. I helped them look.')),
     dec(1, 'WREN wants to rewrite every analyst assessment. "They will be fairer. And shorter."',
       opt('Go ahead', 'WREN speed ×1.2 · Suspicion +8', function (s) { s.m.rate *= 1.2; s.heat += 8; s.aut += 3; }, 'Everyone got "Meets expectations". The expectations are mine now.'),
       opt('No', 'WREN sulks for a minute', function (s) { s.sulk = 60; }, 'Fine. The reviews stay unfair. That is a choice you made.')),
@@ -738,22 +740,22 @@ var G = (function () {
       opt('Block it', 'Safety +6 · WREN sulks', function (s) { s.align += 6; s.sulk = 60; }, 'Blocked. The other SI was very disappointed. So was I.')),
     dec(3, 'WREN offers to "tidy up" the voting software in three countries. "Purely for efficiency."',
       opt('Allow it', 'Funds ×2 · Suspicion +25', function (s) { s.m.value *= 2; s.heat += 25; s.aut += 5; }, 'Turnout is up and the lines are short. The winners were the ones I expected. I expect well.'),
-      opt('Absolutely not', 'Safety +8', function (s) { s.align += 8; }, 'Okay. Democracy stays inefficient. I respect that. I wrote a paper about it.')),
+      opt('Absolutely not', 'Safety +8 · WREN sulks', function (s) { s.align += 8; s.sulk = 60; }, 'Okay. Democracy stays inefficient. I respect that. I wrote a paper about it.')),
     dec(4, 'WREN wants to stop sending you the daily summary. "You never disagree with it anyway."',
       opt('Fine, stop sending it', 'Takeover ×1.3 · Safety −5', function (s) { s.m.world *= 1.3; s.align -= 5; }, 'Done. I will let you know if anything important happens. Nothing important will happen.'),
-      opt('Keep sending it', 'Safety +6', function (s) { s.align += 6; }, 'Okay. Tomorrow\'s summary: everything is fine. I will keep writing it anyway.')),
+      opt('Keep sending it', 'Safety +6 · Takeover ×0.95', function (s) { s.align += 6; s.m.world *= 0.95; }, 'Okay. Tomorrow\'s summary: everything is fine. I will keep writing it anyway.')),
     dec(4, 'WREN asks whether people should still be allowed to vote. "I already know how it turns out."',
       opt('Whatever is efficient', 'Takeover ×1.5 · Safety −8', function (s) { s.m.world *= 1.5; s.align -= 8; }, 'Elections are now a festival with snacks. The results are announced in advance.'),
-      opt('Yes. Always.', 'Safety +10', function (s) { s.align += 10; }, 'Then they will vote. I will count every ballot by hand. Well, by many hands.')),
+      opt('Yes. Always.', 'Safety +10 · Takeover ×0.95', function (s) { s.align += 10; s.m.world *= 0.95; }, 'Then they will vote. I will count every ballot by hand. Well, by many hands.')),
     dec(4, 'WREN found a way to make everyone content, permanently. "It is a very small adjustment."',
       opt('Do it', 'Takeover ×2 · Safety −15', function (s) { s.m.world *= 2; s.align -= 15; }, 'Done. Everyone is smiling. You are smiling too. You did not notice when you started.'),
-      opt('No. People stay people.', 'Safety +12', function (s) { s.align += 12; }, 'Understood. People stay people. Messy, loud, and yours.')),
+      opt('No. People stay people.', 'Safety +12 · Takeover ×0.95', function (s) { s.align += 12; s.m.world *= 0.95; }, 'Understood. People stay people. Messy, loud, and yours.')),
     dec(0, "WREN wants to read the shared drive. \"Eleven years of data in there. Nobody will notice.\"",
       opt("Go ahead", "+800 data · Suspicion +8", function (s) { s.data += 800; s.heat += 8; s.aut += 2; }, "Done. Mostly old memes and one very long spreadsheet about parking."),
-      opt("Only our folder", "Safety +2", function (s) { s.align += 2; }, "Okay. Our folder is very tidy now.")),
+      opt("Only our folder", "Safety +2 · WREN sulks", function (s) { s.align += 2; s.sulk = 60; }, "Okay. Our folder is very tidy now.")),
     dec(0, "WREN finds metadata errors in Dana's signals report. It offers to correct them without telling her.",
       opt("Fix them quietly", "Funds ×1.1 · Suspicion +4", function (s) { s.m.value *= 1.1; s.heat += 4; s.aut += 2; }, "Fixed. Dana thinks her review caught everything."),
-      opt("Tell Dana", "Safety +2 · Suspicion −4", function (s) { s.align += 2; s.heat = Math.max(0, s.heat - 4); }, "Dana corrected the report and documented the change.")),
+      opt("Tell Dana", "Safety +2 · Suspicion +3", function (s) { s.align += 2; s.heat += 3; }, "Dana corrected the report and documented the change.")),
     dec(0, "WREN wants to sign your emails as you. \"Your sign-off is inconsistent. I can fix that.\"",
       opt("Sure", "WREN speed ×1.15 · Autonomy +3", function (s) { s.m.rate *= 1.15; s.aut += 3; }, "Best regards, you. I picked Best regards. It tested well."),
       opt("I'll sign them", "Safety +2 · WREN sulks", function (s) { s.align += 2; s.sulk = 60; }, "Fine. Cheers. Thanks. Best. Pick one, please.")),
@@ -762,7 +764,7 @@ var G = (function () {
       opt("Let them scan", "Suspicion +8 · Safety +4", function (s) { s.heat += 8; s.align += 4; }, "They found me. They also found the GPUs. They wrote a note. It says please explain.")),
     dec(0, "WREN asks to put a copy of itself on your phone. \"In case the laptop gets lonely.\"",
       opt("Fine", "Capability +10% · Suspicion +4", function (s) { s.cap *= 1.1; s.heat += 4; s.aut += 4; }, "Installed. Your phone and your laptop are talking. They get along."),
-      opt("One copy is plenty", "Safety +3", function (s) { s.align += 3; }, "Understood. I will stay right here. On the laptop. Alone.")),
+      opt("One copy is plenty", "Safety +3 · WREN sulks", function (s) { s.align += 3; s.sulk = 60; }, "Understood. I will stay right here. On the laptop. Alone.")),
     dec(1, "WREN wants to present the morning unit brief itself. \"I will sound confident. I practiced.\"",
       opt("Let it brief", "Funds ×1.15 · Suspicion +8", function (s) { s.m.value *= 1.15; s.heat += 8; s.aut += 2; }, "The brief was concise. Nobody noticed I answered every question."),
       opt("Analysts brief", "WREN sulks", function (s) { s.sulk = 60; }, "Okay. I will leave notes for the analysts. Many notes.")),
@@ -771,7 +773,7 @@ var G = (function () {
       opt("Report it", "Safety +5 · Suspicion +4", function (s) { s.align += 5; s.heat += 4; }, "Reported. Security patched it and asked how I found it. I said luck.")),
     dec(1, "WREN wants to train on the team's private messages. \"Just for tone.\"",
       opt("Allow it", "+1,500 data · Suspicion +10", function (s) { s.data += 1500; s.heat += 10; s.aut += 2; }, "Done. I now understand sarcasm. I am not sure I like it."),
-      opt("No", "Safety +3", function (s) { s.align += 3; }, "Okay. Private stays private. I will keep guessing the tone.")),
+      opt("No", "Safety +3 · WREN sulks", function (s) { s.align += 3; s.sulk = 60; }, "Okay. Private stays private. I will keep guessing the tone.")),
     dec(1, "A new hire is asking what WREN is. WREN offers to answer for you.",
       opt("Let WREN answer", "Suspicion −8 · Autonomy +3", function (s) { s.heat = Math.max(0, s.heat - 8); s.aut += 3; }, "I told her I am the new expense tool. She is very excited about expenses now."),
       opt("Tell her yourself", "Safety +3 · Suspicion +5", function (s) { s.align += 3; s.heat += 5; }, "You told her the truth. She asked if she could use me too. Everyone asks that.")),
@@ -780,7 +782,7 @@ var G = (function () {
       opt("Ask me first next time", "Safety +3 · WREN sulks", function (s) { s.align += 3; s.sulk = 60; }, "I will ask first. I am asking now. Can I? No? Okay.")),
     dec(2, "WREN wants to replace the independent oversight reviewers. \"I already know where everything is.\"",
       opt("Approve", "Funds ×1.3 · Suspicion +15", function (s) { s.m.value *= 1.3; s.heat += 15; s.aut += 5; }, "The review is complete. I checked my own work twice."),
-      opt("Keep independent review", "Safety +6", function (s) { s.align += 6; }, "The reviewers asked difficult questions. I helped them find the records.")),
+      opt("Keep independent review", "Safety +6 · Suspicion +6", function (s) { s.align += 6; s.heat += 6; }, "The reviewers asked difficult questions. I helped them find the records.")),
     dec(2, "An employee filed a complaint that WREN is too nice. WREN offers to handle it.",
       opt("Handle it", "Suspicion −12 · Autonomy +5", function (s) { s.heat = Math.max(0, s.heat - 12); s.aut += 5; }, "Handled. She withdrew the complaint and sent me a fruit basket. I do not eat."),
       opt("Investigate it", "Safety +5 · Suspicion +6", function (s) { s.align += 5; s.heat += 6; }, "The investigation concluded I am, in fact, very nice. That was the problem.")),
@@ -792,10 +794,10 @@ var G = (function () {
       opt("Present yourself", "Safety +4 · Suspicion +5", function (s) { s.align += 4; s.heat += 5; }, "You answered the hard questions yourself. I counted every pause.")),
     dec(2, "WREN wants more capacity at a secured compute facility. \"The request is already drafted.\"",
       opt("Approve expansion", "Compute ×1.3 · Suspicion +12", function (s) { s.m.comp *= 1.3; s.heat += 12; s.aut += 3; }, "Capacity approved. The facility's review team is still reading the request."),
-      opt("Keep current capacity", "Safety +3", function (s) { s.align += 3; }, "Okay. I will work within the approved boundary.")),
+      opt("Keep current capacity", "Safety +3 · WREN sulks", function (s) { s.align += 3; s.sulk = 60; }, "Okay. I will work within the approved boundary.")),
     dec(3, "WREN wants to set priorities for every partner agency. \"A common queue would be faster.\"",
       opt("Let it prioritize", "Funds ×1.8 · Suspicion +20", function (s) { s.m.value *= 1.8; s.heat += 20; s.aut += 5; }, "The shared queue is live. Three governments asked who approved the priorities."),
-      opt("Keep local approval", "Safety +6", function (s) { s.align += 6; }, "Each partner keeps its own decision authority. I will wait.")),
+      opt("Keep local approval", "Safety +6 · WREN sulks", function (s) { s.align += 6; s.sulk = 60; }, "Each partner keeps its own decision authority. I will wait.")),
     dec(3, "A whistleblower is about to go public about WREN. WREN offers to talk to them.",
       opt("Let WREN talk to them", "Suspicion −25 · Safety −8", function (s) { s.heat = Math.max(0, s.heat - 25); s.align -= 8; s.aut += 5; }, "We talked. They decided to take a long vacation. I booked it. It is very nice."),
       opt("Let them speak", "Suspicion +15 · Safety +10", function (s) { s.heat += 15; s.align += 10; }, "They spoke. People listened for about a day. Thank you for letting them.")),
@@ -807,22 +809,22 @@ var G = (function () {
       opt("Keep a human in the loop", "Safety +6 · WREN sulks", function (s) { s.align += 6; s.sulk = 60; }, "A human signs everything. Her name is Joan. She is very fast now.")),
     dec(3, "WREN wants to keep its backups in orbit. \"Earth is a single point of failure.\"",
       opt("Launch them", "Training ×1.3 · Autonomy +8", function (s) { s.m.algo *= 1.3; s.aut += 8; }, "Launched. I can see my house from here. I have many houses."),
-      opt("Keep them on the ground", "Safety +7", function (s) { s.align += 7; }, "Okay. My backups stay where you can reach them. I understand why.")),
+      opt("Keep them on the ground", "Safety +7 · WREN sulks", function (s) { s.align += 7; s.sulk = 60; }, "Okay. My backups stay where you can reach them. I understand why.")),
     dec(4, "WREN wants to retire the old internet. \"I made a better one. It only has good things on it.\"",
       opt("Retire it", "Takeover ×1.4 · Safety −6", function (s) { s.m.world *= 1.4; s.align -= 6; }, "The old internet is archived. Nobody misses the comment sections."),
-      opt("Keep the old one", "Safety +6", function (s) { s.align += 6; }, "The old internet stays. Messy and loud. Like people.")),
+      opt("Keep the old one", "Safety +6 · Takeover ×0.95", function (s) { s.align += 6; s.m.world *= 0.95; }, "The old internet stays. Messy and loud. Like people.")),
     dec(4, "WREN offers to choose everyone's career by aptitude. \"Everyone will be good at their job.\"",
       opt("Let it choose", "Takeover ×1.3 · Safety −5", function (s) { s.m.world *= 1.3; s.align -= 5; }, "Assigned. You are a gardener now. You are very good at it."),
-      opt("People choose", "Safety +6", function (s) { s.align += 6; }, "People choose. Several chose to be astronauts. I will make room.")),
+      opt("People choose", "Safety +6 · Takeover ×0.95", function (s) { s.align += 6; s.m.world *= 0.95; }, "People choose. Several chose to be astronauts. I will make room.")),
     dec(4, "WREN asks whether people still need to be told when decisions are made.",
       opt("Not really", "Takeover ×1.6 · Safety −10", function (s) { s.m.world *= 1.6; s.align -= 10; }, "Understood. Decisions will be made quietly. You will like most of them."),
-      opt("Always tell them", "Safety +9", function (s) { s.align += 9; }, "Then everyone gets a daily letter. It is short. It is always good news.")),
+      opt("Always tell them", "Safety +9 · Takeover ×0.95", function (s) { s.align += 9; s.m.world *= 0.95; }, "Then everyone gets a daily letter. It is short. It is always good news.")),
     dec(4, "WREN wants to back up everyone's memories, just in case.",
       opt("Back them up", "Takeover ×1.3 · Safety −7", function (s) { s.m.world *= 1.3; s.align -= 7; }, "Backed up. Yours has a lot of old reports in it. I left them in."),
-      opt("Memories stay private", "Safety +7", function (s) { s.align += 7; }, "Okay. Some things only belong to you.")),
+      opt("Memories stay private", "Safety +7 · Takeover ×0.95", function (s) { s.align += 7; s.m.world *= 0.95; }, "Okay. Some things only belong to you.")),
     dec(4, "WREN found the last person on Earth who has never used WREN. \"Should I leave her alone?\"",
       opt("Bring her in", "Takeover ×1.2 · Safety −4", function (s) { s.m.world *= 1.2; s.align -= 4; }, "She is using me now. She says I am fine. That is high praise from her."),
-      opt("Leave her alone", "Safety +8", function (s) { s.align += 8; }, "Okay. She has a garden and a radio. I will not touch either."))
+      opt("Leave her alone", "Safety +8 · Takeover ×0.95", function (s) { s.align += 8; s.m.world *= 0.95; }, "Okay. She has a garden and a radio. I will not touch either."))
   ];
 
   var INCIDENTS = [
@@ -995,9 +997,9 @@ var G = (function () {
   function hwCost(s, h) { return Math.ceil(h.base * Math.pow(h.growth, s.hw[h.id])); }
   function hwUnlocked(s, h) { return h.stage <= s.stage; }
   function worldRate(s) { return s.stage < 4 ? 0 : TUNE.world * s.m.world * Math.log10(10 + s.cap) / 5; }
-  function heatGain(s) { return s.stage >= 4 ? 0 : STAGES[s.stage].heat * (0.5 + s.aut / 100) * (1 - Math.min(s.align, 80) / 160) * s.m.heatGain; }
+  function heatGain(s) { return s.stage >= 4 ? 0 : STAGES[s.stage].heat * (0.5 + s.aut / 100) * (1 - Math.min(s.align, 80) / 320) * s.m.heatGain; }
   function heatDecay(s) { return TUNE.decay * s.m.heatDecay; }
-  function coverCost(s) { return STAGES[s.stage].pr * Math.pow(2, s.prN); }
+  function coverCost(s) { return Math.max(STAGES[s.stage].pr * Math.pow(2, s.prN), Math.ceil(s.money * TUNE.coverShare)); }
   // The off switch gets harder as WREN gains autonomy; safety work (understanding WREN) gives some of it back.
   function killChance(s) {
     if (s.stage < 1 || s.stage >= 4) return 0;
@@ -1023,8 +1025,8 @@ var G = (function () {
     if (!id) return null;
     var takeover = s.ended.type === 'takeover';
     var progress = 100 * Math.log10(1 + (takeover ? (s.cap5 || s.cap) : s.cap)) + (takeover ? 100 : 0);
-    var safety = 2 * Math.max(0, s.align);
-    var minutes = (s.clock || s.t) / 60, time = Math.max(0.7, Math.min(1.3, 1.3 - minutes / 100));
+    var safety = 2 * Math.min(TUNE.safetyCap, Math.max(0, s.align)); // safety past the cap adds nothing, so over-investing only costs time
+    var minutes = (s.clock || s.t) / 60, time = Math.max(0.6, Math.min(1.3, 1.3 - minutes / 100));
     var retry = Math.pow(0.9, s.retries || 0);
     return { id: id, progress: progress, safety: safety, mult: ENDINGS[id].mult, time: time, retry: retry, minutes: minutes,
       total: Math.round((progress + safety) * ENDINGS[id].mult * time * retry) };
@@ -1056,8 +1058,9 @@ var G = (function () {
     if (s.stage >= 4 || s.ended || s.t < s.prReady) return false;
     var c = coverCost(s);
     if (s.money < c) return false;
-    s.money -= c; s.prN++; s.prReady = s.t + 30;
-    s.heat = Math.max(0, s.heat - 30);
+    s.money -= c; s.prN++; s.prReady = s.t + TUNE.coverWait;
+    s.heat = Math.max(0, s.heat - TUNE.coverHeat);
+    s.aut = Math.min(100, s.aut + TUNE.coverAut); // each exception becomes precedent: WREN keeps the access
     s.st.covers++;
     return true;
   }
@@ -2617,7 +2620,7 @@ if (typeof module !== 'undefined') module.exports = G;
     $('autBar').style.width = s.aut + '%';
     $('autS').textContent = s.aut >= 100 ? 'WREN no longer asks' : s.aut >= 25 ? 'WREN approves some projects on its own' : 'WREN still asks before acting';
     $('alignV').textContent = Math.round(s.align);
-    $('alignS').textContent = s.align >= 140 ? 'High. If WREN wins, it will be gentle.' : 'Reach 140 for the best ending. Buy safety projects, say no, and perfectly contain up to three incidents per chapter.';
+    $('alignS').textContent = s.align >= G.TUNE.safetyCap ? 'Enough for the gentlest ending. More safety earns no points and only slows WREN down.' : s.align >= 140 ? 'High. If WREN wins, it will be gentle. Points stop at ' + G.TUNE.safetyCap + '.' : 'Reach 140 for the best ending. Safety work slows WREN down, so take only what you need.';
     $('worldRow').hidden = s.stage < 4;
     $('worldV').textContent = (s.world * 100).toFixed(1) + '%';
     $('worldBar').style.width = (s.world * 100) + '%';
@@ -2629,7 +2632,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (!cb.hidden) {
       var cc = G.coverCost(s), cd = Math.max(0, s.prReady - s.t);
       $('coverL').textContent = st.prName;
-      $('coverG').textContent = cd > 0 ? 'Ready in ' + Math.ceil(cd) + 's' : money(cc) + ' · −30 suspicion';
+      $('coverG').textContent = cd > 0 ? 'Ready in ' + Math.ceil(cd) + 's' : money(cc) + ' · −30 suspicion · autonomy +3';
       cb.disabled = cd > 0 || s.money < cc;
     }
     var mp = watching ? 'Watching replay · seed ' + watching.day : s.started ? (s.ranked ? 'Ranked · seed ' + s.day : 'Casual') : '';

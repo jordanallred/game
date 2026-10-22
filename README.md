@@ -15,7 +15,7 @@ A browser incremental game. You're an NSA signals analyst evaluating WREN, an ex
 - **Decisions and events:** 40 decisions, 32 kinds of incidents, and 80+ lines of WREN chatter, drawn without repeats.
 - **Watch replays:** after checking a coworker's replay, watch it play out at 1× to 64×.
 - **Achievements and records:** 22 achievements and your best ranked score, kept in your browser.
-- **Look:** one dark night-shift theme with pixel fonts (Pixelify Sans, Silkscreen, VT323), framed panels and scanlines. The interface turns WREN's teal as the story goes on.
+- **Look:** one dark night-shift theme with pixel fonts (Pixelify Sans, VT323), framed panels and scanlines. The interface turns WREN's teal as the story goes on.
 - **Ranked or casual:** ranked runs use a daily seed and produce a replay anyone can verify. Casual runs keep Autopilot's offline progress.
 - Progress saves in your browser (localStorage).
 - Mechanics and scripted balance checks: see [DESIGN.md](DESIGN.md).
