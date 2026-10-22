@@ -74,3 +74,23 @@ Drawn from shuffled pools, so nothing repeats until its whole pool has been used
 | Chapter 5 replies | 42 |
 | Plug failure lines | 10 (escalating) |
 | Self-approval, incident outcome, timeout, purchase lines | 3–6 variants each |
+
+### Flavor (cosmetic, outside the rules)
+
+Jokes that never touch the game state or the rules' random numbers, so they don't change ranked runs or replays. They live in the UI code (search for `FLAVOR`) and use their own shuffle bags.
+
+| Pool | Size |
+|---|---|
+| Running gags (Kevin, the printer, Dana, Marguerite, the Tulsa fridge, Joan), shown in order per chapter | 29 |
+| Office happenings, with a banner over the scene | 42 (8–10 per chapter) |
+| Rare surprises (about 1 in 12 happenings, each once per run) | 9 |
+| News ticker headlines, plus a few that react to suspicion, sulking, autopilot, autonomy, cover-ups and GPUs | 35 + 6 |
+| Clickable desk items in chapter 1 (mug, clock, poster, door) | 12 |
+| Poking WREN's eye (lines at 3 to 100 pokes) | 8 |
+| Secret words typed anywhere, plus the Konami code | 14 + 1 |
+| WREN noticing you: fast tapping, idle for 2 minutes, coming back to the tab | 4 each |
+| Real clock and holiday lines (once per run) | 7 + 10 |
+| Patch notes when projects finish (35% chance) | 10 |
+| Extra line on the caught screen | 4 |
+
+A golden duck can fly across the scene once per run after four minutes (10% chance each minute); catching it skips that tap and unlocks an achievement. Six silly achievements: Poke, Desk inspector, Hidden channel, Duck season, Have you tried turning it off and on again?, Night shift.
