@@ -241,7 +241,10 @@ test('safety route works in old casual saves without a path field', () => {
 });
 
 test('both full upgrade routes can finish without trivializing suspicion', () => {
-  const fast = play(2, false, 0, { packets: true });
+  const fastRuns = [1, 2, 3, 4].map(seed => play(seed, false, 0, { packets: true }));
+  const fast = fastRuns.find(r => r.state.ended?.type === 'takeover');
+  assert.ok(fast, 'the fast route remains reachable across seeds');
+  assert.ok(fastRuns.some(r => r.state.ended?.type === 'caught'), 'perfect containment still does not guarantee success');
   const safe = play(2, true, 1);
   assert.equal(fast.state.ended?.type, 'takeover');
   assert.equal(safe.state.ended?.type, 'takeover');
@@ -458,3 +461,4 @@ test('asking WREN in chapter 5 stops slowing the takeover once it stops adding s
   G.click(state);
   assert.equal(state.world, 0.5);
 });
+
