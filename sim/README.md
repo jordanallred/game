@@ -43,6 +43,17 @@ Players read the same text the UI shows ("Safety +3 · Suspicion +4", project fl
 - **Resources**: chapters where hardware does nothing (training data runs out), funds piling up, time spent sulking.
 - **Choices**: at every decision, coworker visit, skill pick, compliance response, rival review, ready objective (conclude or keep going) and side project, the run is copied and each answer is played to the end by the same player. Answers that always win, and choices that never change the score, are flagged.
 
+## Decision probe
+
+The playtest only replays decisions that happen to come up, so with two or three samples a decision can look flat (or decisive) by luck. `node sim/decisions.cjs` puts every decision in front of every player: each run pauses at its first decision of each chapter, and for every decision of that chapter the run is copied, answered both ways and played to the end.
+
+```
+node sim/decisions.cjs                                   # careful, balanced, casual, rusher × seeds 1–8 (~80 s on 4 cores)
+node sim/decisions.cjs --seeds 1-4 --players rusher --only 40-44
+```
+
+Each cell is the mean score of WREN's answer ("a") against the safe one ("b"), then how often "a" won, "b" won, or they landed within 2%. Careful and Balanced conclude an objective in chapter 3, so they never see chapters 4–5. A balanced trade-off for one player also shows as flat, so look for decisions where different players prefer different answers.
+
 ## Adding a feature
 
 - New entries in `PROJ`, `DEC`, `WATCHERS`, `SKILLS` or `HW` are picked up automatically.
