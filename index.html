@@ -12,6 +12,13 @@
 /* Pixel-art game UI. One committed look: a dark night-shift terminal that WREN slowly repaints teal.
    Panels use notched pixel frames (box-shadow strips with the corners left out) and a 1-pixel bevel.
    --px is the size of one UI "pixel". */
+/* Pixelify Sans draws 2 and 5 almost alike, so digits, $ and % come from an embedded subset of Jersey 15.
+   Jersey 15: Copyright 2023 The Soft Type Project Authors (https://github.com/scfried/soft-type-jersey),
+   SIL Open Font License 1.1. The weight range stops the browser faking a smeared bold;
+   size-adjust matches its digit height to Pixelify Sans capitals. */
+@font-face { font-family: "WREN Digits"; font-weight: 100 900; font-display: swap; size-adjust: 125%;
+  unicode-range: U+0024-0025, U+0030-0039;
+  src: url(data:font/woff2;base64,d09GMgABAAAAAAPQAA0AAAAACgQAAAOBAAEAQgAAAAAAAAAAAAAAAAAAAAAAAAAAGyAcKgZgADwRCAqKUIk1ATYCJAM0CxwABCAFg3oHIBtqCCieA+7OIoSwiH6ppx/qCLQMGR8Pnsex9v7kZBsmmlSimCaNVBrpUiKSCZko1mhU+P21PfDEVRL78VwSrk1E/rGRAplSWKeRrRWIZHe/BUCxh5xRFEVZsbaLWIhE88VCpgR8h1bxTVRSEJv+JX9C3/hpP1f3JpbEoxiQimjolPbuJjd7iB2iaR6xNNG2hpbAD5UoGpI2SiFFzHTDPdd+LQTZWBa+FAEchWI8I2OlFoQxAP9/AAABHNVIXkhZ5HQL7yCKAg8bVS/3LOhzXQ+wt1Miz9ozxTRawB8dPwlPq2SN/D8HTLE0gl5VrX6Kpbwwgi5m8iGp1U8tRIQgm1UsWXuVxD9Vv/9vE1Yh6p8nAEgCIB+QC1QhoPoBAAwAoBAEQa2sGvUymxkiza2x9NJMKj2EwlAZi3VmFr5U2PACWI0DRC543UucUomNUli6R2aGLOESmYRPDO7AExbiGNyclcanApA9sO/d5lKZWn9FnUSAJCU3u3IDUh67LRNn71qSYfYrBS9Bkuwwph3gPH4ZNy26ZmR3r3Q0K5OzkrbLGhsseSf2diAQ2Kz1WpgiTvBEI4jRihXRXWfWSzopHO14Inhqbk97+zy+7Q6TyQPl4oPfDMOCFX8y6XhuYpEgLaRplhJSuYyKh0R61NOT9KRtFuvbVR8gPGrLuld3UOWAZblKVJxqoMRbntTIB7/FXsdNgU1sSbl9VmdaaC6SeFGwVxnMDis6Dfe+h1jb8WR3xvD8BewW8MDGtxiwv//V+/0JmhSGspeodLlcvr6fFUoabxMExXRr1W5ysmC3FPVrl9dq/jBNSrhi8IPDWb8Feo5Hv20AIIAwNAv3+Yjo+Y0RdgyAl37aM4D3w2Lvb0aOHTP5ABEUAAKf6ry9QYx/E21rp7uT1CJyVSNnHZlgJK6IJKFUPT7V08g8QBIXAgjsR/pYlGU+xMSBB6QhId0jpEjmKaTp9gsZyuNCltk0fkyE0twatndwdbI0t4AhMpFMgbRomI5s2pvBm1eHUtacyuLK1Fh9f5wLW9g7OUNInxI7UGdtAsHcEnuPa4Q3trclOBubidicmpCc0cnBaY4LfYspfZ5SoP4vItE0TM25NoZOJDyRSOKoqKpIc2yx6MPFjXz3Q2W2g92+tLeD2NLoxpszw7cQ+zKwtIPTF1yYK1CHGjiayc1GKGlLPqa5/vfaAQ==) format("woff2"); }
 :root {
   --px: 3px;
   --bg: #0b0e16;
@@ -36,8 +43,8 @@
   --warn: #f5a83b;
   --yellow: #ffd76e;
   --ok: #4caf50;
-  --f-display: "Pixelify Sans", "VT323", ui-monospace, monospace;
-  --f-label: "Pixelify Sans", "VT323", ui-monospace, monospace;
+  --f-display: "WREN Digits", "Pixelify Sans", "VT323", ui-monospace, monospace;
+  --f-label: "WREN Digits", "Pixelify Sans", "VT323", ui-monospace, monospace;
   --f-body: "VT323", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --f-mono: "VT323", ui-monospace, "SFMono-Regular", Menlo, monospace;
   color-scheme: dark;
