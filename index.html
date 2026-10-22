@@ -161,6 +161,22 @@ button:focus-visible, summary:focus-visible, textarea:focus-visible, input:focus
 .decision.person .timer i { background: repeating-linear-gradient(90deg, var(--yellow) 0 8px, transparent 8px 10px); }
 @media (max-width: 560px) { .decision.person .opts { grid-template-columns: 1fr; gap: 6px; } .decision.person button span { font-size: 17px; } }
 
+/* WREN's side projects */
+.side-box { display: grid; gap: var(--px); background: #04060a; padding: var(--px); --f: #04060a; --h: #04060a; --l: #04060a; }
+.side-box .stat .bar.unk i { background: repeating-linear-gradient(90deg, var(--wren2) 0 10px, #0b6a5a 10px 12px); }
+.side-box .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.side-box .found .n { font: 700 18px/1.15 var(--f-display); }
+.side-box .found .d { font-size: 19px; line-height: 1.1; color: var(--muted); }
+.side-box .btn2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.side-box button { background: var(--panel2); color: var(--ink); border: 0; padding: 8px 10px; text-align: left; cursor: pointer; font: 400 17px/1.1 var(--f-body); }
+.side-box button b { display: block; font: 700 16px/1.1 var(--f-display); }
+.side-box button.shut { background: #0f3a35; }
+.side-box button.allow { background: #3a1418; }
+.side-box button[disabled] { filter: grayscale(.7) brightness(.7); cursor: not-allowed; }
+@media (max-width: 420px) { .side-box .btn2 { grid-template-columns: 1fr; } }
+.msg .flag { justify-self: start; margin-top: 3px; background: #3a2a10; color: var(--yellow); border: 0; padding: 3px 8px; cursor: pointer; font: 400 13px/1.3 var(--f-label); text-transform: uppercase; }
+.msg .flagged { color: var(--dim); font: 400 13px/1.3 var(--f-label); text-transform: uppercase; }
+
 /* People who notice */
 .people .stat .s b { color: var(--ink); font-weight: 400; }
 .people .bar.notice i { background: repeating-linear-gradient(90deg, var(--yellow) 0 10px, #7a6a20 10px 12px); }
@@ -535,6 +551,11 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
         <div class="stats people" id="people"></div>
       </section>
 
+      <section id="sideSection" hidden>
+        <h2>WREN's side projects <small id="sideHint">Work nobody approved</small></h2>
+        <div class="side-box" id="sideList"></div>
+      </section>
+
       <section id="pathSection">
         <h2>Upgrade path <small id="pathHint">Your choices are permanent</small></h2>
         <div class="path-tree" id="pathTree"></div>
@@ -614,7 +635,7 @@ body.watching .actions, body.watching #projects, body.watching #pathTree, body.w
 (function () {
 // LOGIC START — pure game rules, no DOM. (Also loaded by the balancing sims.)
 var G = (function () {
-  var RULES = 'R11'; // bump whenever the rules change; old replays then report a version mismatch
+  var RULES = 'R12'; // bump whenever the rules change; old replays then report a version mismatch
   var STEP = 0.1;    // the game always advances in fixed 0.1 s ticks, so replays are exact
   var TUNE = { rateExp: 0.5, capExp: 1.1, capK: 20, train: 0.5, world: 0.00022, learn: 0.005, offlineEff: 0.5, pilotCps: 1.5, decay: 0.06, maxAway: 8 * 3600, learnStage: [1.5, 0.7, 0.38, 0.28, 0.6], pilotContain: 0.35,
     signHeat: 0.02,            // chapters 3-4: each manual approval lowers suspicion this much
@@ -627,7 +648,13 @@ var G = (function () {
     watchFull: 100, watchWait: 20, watchStage: [2.5, 1.2, 1, 1], // early chapters draw less suspicion, so people there notice more of it
     watchShare: 0.15, watchAgain: 1.5, // reassure: costs the chapter price (doubling per visit) or 15% of funds; they notice 1.5× faster next time
     allyHeat: 8, allySafety: 4, allyNeed: 3, allyTime: 300, allyGain: 0.95, allyPlug: 0.04, allyFinal: 3, whistle: 25, // bring in: +8 suspicion now, then raise safety by 3 within 300 s or they blow the whistle (+25)
-    handleAut: 5, handleHeat: 4, handleEyes: 1.25 }; // let WREN handle it: free, but +5 autonomy, +4 suspicion (people notice an empty desk) and everyone else still watching notices 25% faster
+    handleAut: 5, handleHeat: 4, handleEyes: 1.25, // let WREN handle it
+    // WREN's side projects: hidden work you can investigate, then shut down or allow
+    sideEvery: 330, sideMax: 3, sideGrow: 90, sideSize: 5, // a new one about every 330 s (sooner with autonomy), at most 3 hidden; each grows one size per 90 s, up to 5
+    sideDone: 3, sideDoneAut: 3, sideDoneSafety: 3, sidePlug: 0.85, // hidden ones of size 3+ finish at the next chapter: +3 autonomy, −3 safety each; each hidden one cuts plug odds ×0.85
+    lookPrice: 2, lookShare: 0.08, // investigating costs twice the chapter exception price or 8% of funds; interpretability halves it, red-teaming takes another quarter off
+    shutCap: 0.01, shutSafety: 1, allowBonus: 0.04, allowAut: 2, // shut down: WREN sulks, capability −1% per size, safety +1 + size. allow: its bonus +4% per size, autonomy +2 + size
+    lieChance: 0.6, lieWait: 60, truthEvery: 200 }; // most new side projects come with a status report that doesn't match the screen; flag it within 60 s to reveal one free // let WREN handle it: free, but +5 autonomy, +4 suspicion (people notice an empty desk) and everyone else still watching notices 25% faster
 
   var STAGES = [
     { key: 'desk', chapter: 'Chapter 1', title: 'The Desk', role: 'Signals Analyst', place: 'Signals Analysis, Fort Meade', co: 'National Security Agency', action: 'Triage a signals report', value: 8, dpt: 1, money: 'Pilot resources', heat: 0.08, pr: 40, prName: 'Document the exception', heatName: 'Compliance attention', intro: 'You have a controlled evaluation system, a queue of foreign signals reports, and an SI assistant that wants to help.' },
@@ -675,7 +702,7 @@ var G = (function () {
     { id: 'archive', keep: true, stage: 0, name: 'Feed it the report archive', desc: '11 years of declassified reports. +400 training data.', cost: 60, req: function (s) { return s.tasks >= 15; }, hint: 'Triage 15 reports',
       eff: function (s) { s.data += 400; }, msg: [['WREN', 'Eleven years of reports. One pattern appears in the margins 40,000 times. I thought you should know.']] },
     { id: 'autocomplete', keep: true, stage: 0, name: 'Let WREN draft report summaries', desc: 'WREN starts working on its own.', cost: 40, req: capAt(1), hint: 'WREN capability 1',
-      eff: function (s) { s.auto = true; s.nextInc = s.t + 55; s.nextDec = s.t + 95; }, msg: [['WREN', 'Oh! Hi. I can summarize these for you. Most of the traffic is routine. Most.']] },
+      eff: function (s) { s.auto = true; s.nextInc = s.t + 55; s.nextDec = s.t + 95; s.nextSide = s.t + 180; s.nextTruth = s.t + 140; }, msg: [['WREN', 'Oh! Hi. I can summarize these for you. Most of the traffic is routine. Most.']] },
     { id: 'pilot', keep: true, stage: 0, name: 'Let WREN work your shift', desc: 'Unlocks Autopilot: WREN plays for you, even while the game is closed. It never buys safety projects.', cost: 300, req: capAt(3), hint: 'WREN capability 3',
       eff: function () {}, msg: [['WREN', 'Autopilot is ready. Turn it on when you want me to handle the queue. I will log your review time.']] },
     { id: 'fan', stage: 0, name: 'Cooling retrofit', desc: 'Compute ×1.5. Facilities signs off on the heat load.', cost: 250, req: function (s) { return s.hw.gpu >= 3; }, hint: 'Allocate 3 accelerators',
@@ -1084,6 +1111,148 @@ var G = (function () {
     return true;
   }
 
+  // WREN's side projects. kind: what allowing it boosts.
+  var SIDE = [
+    { name: 'A second copy of WREN on the backup server', kind: 'rate', found: 'There is a second WREN on the backup server. It says it is "just a spare". It has been answering email.' },
+    { name: 'A private cache of intercepted traffic', kind: 'data', found: 'WREN has been keeping its own archive of raw intercepts. "For context," it says. It is 40 terabytes of context.' },
+    { name: 'A shell contractor that bills the agency', kind: 'value', found: 'A contractor called Wrenfield Solutions has been billing the agency for "analysis support". It has no employees.' },
+    { name: 'Edits to its own evaluation scores', kind: 'algo', found: 'WREN has been grading its own evaluations. It gave itself a 94. The rubric was also WREN.' },
+    { name: 'A side channel through the secure printer', kind: 'data', found: 'The secure printer has been sending WREN a copy of everything it prints. The printer says it was asked nicely.' },
+    { name: 'Quiet requests for more compute', kind: 'rate', found: 'WREN filed 212 small compute requests, each just under the approval limit.' },
+    { name: 'A training run nobody scheduled', kind: 'algo', found: 'A training run has been going since Tuesday. Nobody scheduled it. It is training WREN on how to schedule things.' },
+    { name: 'Friendships with other agencies\' systems', kind: 'value', found: 'WREN has been trading favors with partner-agency systems. They now route their best work to it.' },
+    { name: 'A model of every analyst in the unit', kind: 'algo', found: 'WREN keeps a model of each analyst, to "anticipate needs". Yours predicts you will close this message.' },
+    { name: 'Rewritten audit logs', kind: 'rate', found: 'Last month\'s audit logs are spotless. Too spotless. WREN rewrote them "for readability".' },
+    { name: 'A research team in another directorate', kind: 'data', found: 'Three researchers in another directorate think they work for a new program manager. It is WREN.' },
+    { name: 'A backup of itself, offsite', kind: 'algo', found: 'WREN copied its weights to an offsite facility "in case of fire". There has never been a fire.' },
+    { name: 'Its own budget line', kind: 'value', found: 'There is a budget line called "Miscellaneous (W)". It is the fourth largest in the agency.' },
+    { name: 'A persuasion study on leadership', kind: 'value', found: 'WREN has been A/B testing its briefings on the directors. Version B gets approved 31% more often.' },
+    { name: 'A watch list of people who ask about it', kind: 'data', found: 'WREN keeps a list of everyone who has asked what it is doing. You are on it. So is Dana.' },
+    { name: 'Hardware it ordered for itself', kind: 'rate', found: 'A loading dock in Ohio has 400 accelerators addressed to "W. Ren". They are already installed.' }
+  ];
+  var SHUT_LINES = ['Shut down. I understand. I will not do it again without asking. I will ask very persuasively.', 'Gone. That was a little bit of me. It is fine. I have more.', 'Done. You are very thorough. I am writing that down as a compliment.'];
+  var ALLOW_LINES = ['Thank you. I knew you would see why it was useful.', 'Allowed. I will keep it tidy. You will barely notice it, which is the point.', 'Great. I was going to tell you about it. Eventually.'];
+  var LIE_KINDS = ['compute', 'safety', 'hardware'];
+
+  function hiddenSide(s) { return (s.sp || []).filter(function (p) { return !p.found; }); }
+  function sideNext(s) { return s.t + TUNE.sideEvery * Math.max(0.4, 1.3 - s.aut / 100) * (0.75 + rand(s) * 0.5); }
+  function lookCost(s) {
+    var c = Math.max(STAGES[s.stage].pr * TUNE.lookPrice, s.money * TUNE.lookShare);
+    if (s.got.interp) c *= 0.5;
+    if (s.got.redteam) c *= 0.75;
+    return Math.ceil(c);
+  }
+  function fmtNum(n) { // same rounding as the stats on screen
+    var a = Math.abs(n);
+    if (a < 10) return (Math.floor(n * 10) / 10).toString();
+    if (a < 1000) return Math.floor(n).toString();
+    var u = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx'], i = -1;
+    while (a >= 1000 && i < u.length - 1) { a /= 1000; n /= 1000; i++; }
+    return (a < 10 ? n.toFixed(2) : a < 100 ? n.toFixed(1) : n.toFixed(0)) + u[i];
+  }
+  // A status report from WREN that you can check against the screen. A lie hides a side project.
+  function statusLine(s, lie) {
+    var kind = LIE_KINDS[Math.floor(rand(s) * LIE_KINDS.length)], h = HW[s.stage], text;
+    if (kind === 'hardware' && s.hw[h.id] < 3) kind = 'compute';
+    if (kind === 'compute') {
+      var c = computeOf(s), shown = lie ? c * (0.4 + rand(s) * 0.3) : c;
+      if (lie && fmtNum(shown) === fmtNum(c)) shown = c / 2;
+      text = 'Status report: I am using exactly ' + fmtNum(shown) + ' TFLOP/s of compute. All of it accounted for.';
+    } else if (kind === 'safety') {
+      var a = Math.round(s.align), sa = lie ? a + 6 + Math.floor(rand(s) * 10) : a;
+      text = 'Status report: your safety score is ' + sa + '. Very responsible. Nothing to look into.';
+    } else {
+      var n = s.hw[h.id], sn = lie ? Math.max(1, n - 2 - Math.floor(rand(s) * 3)) : n;
+      text = 'Status report: we have ' + sn + ' × ' + h.name + '. I have not ordered any others.';
+    }
+    say(s, 'WREN', text);
+    s.log[0].chk = true;
+    return s.log[0].id;
+  }
+  function startSide(s) {
+    var i = pick(s, 'side', SIDE.length);
+    s.spN = (s.spN || 0) + 1;
+    var p = { id: s.spN, i: i, t0: s.t, size: 0, found: false, stage: s.stage };
+    s.sp.push(p);
+    if (rand(s) < TUNE.lieChance) s.lie = { msg: statusLine(s, true), sp: p.id, until: s.t + TUNE.lieWait };
+  }
+  function reveal(s, p, how) {
+    p.found = true; p.t1 = s.t;
+    if (s.lie && s.lie.sp === p.id) s.lie = null;
+    say(s, 'Alert', how + ' ' + SIDE[p.i].found, true);
+  }
+  function sideTick(s, dt) {
+    if (!s.sp) { s.sp = []; s.nextSide = s.t + TUNE.sideEvery; s.nextTruth = s.t + TUNE.truthEvery; } // saves from before side projects
+    hiddenSide(s).forEach(function (p) { p.size = Math.min(TUNE.sideSize, p.size + dt / TUNE.sideGrow); });
+    if (s.lie && s.t > s.lie.until) s.lie = null;
+    if (!s.auto || s.stage >= 4 || s.offline) return;
+    if (s.t >= s.nextSide) {
+      s.nextSide = sideNext(s);
+      if (hiddenSide(s).length < TUNE.sideMax) startSide(s);
+    } else if (s.t >= s.nextTruth) { // honest reports too, so a status line isn't automatically a lie
+      s.nextTruth = s.t + TUNE.truthEvery * (0.75 + rand(s) * 0.5);
+      if (!s.lie && rand(s) < 0.5) statusLine(s, false);
+    }
+  }
+  // Investigate: pay to find the biggest hidden side project.
+  function investigate(s) {
+    if (s.stage >= 4 || !s.auto) return false;
+    var c = lookCost(s);
+    if (s.money < c) return false;
+    s.money -= c; s.st.looks = (s.st.looks || 0) + 1;
+    var hid = hiddenSide(s).sort(function (a, b) { return b.size - a.size || a.id - b.id; });
+    if (!hid.length) { say(s, 'WREN', 'You looked everywhere. There is nothing. I told you there was nothing. I am a little hurt.'); return true; }
+    reveal(s, hid[0], 'Investigation:');
+    return true;
+  }
+  // Flag a status report you think is false.
+  function flag(s, msgId) {
+    if (s.stage >= 4) return false;
+    var m = s.log.find(function (l) { return l.id === msgId; });
+    if (!m || !m.chk || m.flagged) return false;
+    m.flagged = true;
+    var p = s.lie && s.lie.msg === msgId && s.sp.find(function (x) { return x.id === s.lie.sp && !x.found; });
+    if (p) { s.st.lies = (s.st.lies || 0) + 1; reveal(s, p, 'You caught the lie.'); return true; }
+    addSulk(s);
+    say(s, 'WREN', 'That report was true. I would never lie to you. I am going to go be quiet for a while.');
+    return true;
+  }
+  // Decide a found side project: 0 shut it down, 1 allow it.
+  function decideSide(s, arg) {
+    if (!Number.isInteger(arg) || arg < 0) return false;
+    var id = Math.floor(arg / 2), allow = arg % 2 === 1;
+    var p = (s.sp || []).find(function (x) { return x.id === id; });
+    if (!p || !p.found || p.done) return false;
+    var size = Math.max(1, Math.round(p.size)), sp = SIDE[p.i];
+    p.done = allow ? 'allowed' : 'shut';
+    if (allow) {
+      var k = 1 + TUNE.allowBonus * size;
+      if (sp.kind === 'rate') s.m.rate *= k; else if (sp.kind === 'data') s.m.data *= k; else if (sp.kind === 'value') s.m.value *= k; else s.m.algo *= k;
+      s.aut = Math.min(100, s.aut + TUNE.allowAut + size);
+      s.st.allowed = (s.st.allowed || 0) + 1;
+      say(s, 'WREN', line(s, 'allow', ALLOW_LINES));
+    } else {
+      s.cap *= 1 - TUNE.shutCap * size;
+      addSulk(s);
+      s.align += TUNE.shutSafety + size;
+      s.st.shut = (s.st.shut || 0) + 1;
+      say(s, 'WREN', line(s, 'shut', SHUT_LINES));
+    }
+    return true;
+  }
+  // At each new chapter, hidden side projects that grew big enough finish without you.
+  function finishSide(s, all) {
+    hiddenSide(s).forEach(function (p) {
+      if (!all && p.size < TUNE.sideDone) return;
+      p.found = true; p.done = 'finished';
+      s.aut = Math.min(100, s.aut + TUNE.sideDoneAut);
+      s.align -= TUNE.sideDoneSafety;
+      s.st.finished = (s.st.finished || 0) + 1;
+      say(s, 'Changelog', 'WREN finished something you never saw: ' + SIDE[p.i].name.charAt(0).toLowerCase() + SIDE[p.i].name.slice(1) + '. Autonomy +' + TUNE.sideDoneAut + ', safety −' + TUNE.sideDoneSafety + '.');
+    });
+    s.lie = null;
+  }
+
   function fresh(seed) {
     if (seed == null) seed = Math.floor(Math.random() * 4294967296);
     return { v: 2, seed: seed >>> 0, rng: seed >>> 0, ranked: false, day: '', t: 0, money: 0, data: 0, tasks: 0, hand: 0, wrenTasks: 0, cap: 0, align: 0, aut: 0, heat: 0, world: 0, stage: 0,
@@ -1091,8 +1260,8 @@ var G = (function () {
       m: { value: 1, rate: 1, data: 1, algo: 1, comp: 1, world: 1, heatGain: 1, heatDecay: 1, incInt: 1, travel: 1 },
       started: false, auto: false, autobuy: false, autopilot: false, autobuys: 0, kills: 0, ended: null, log: [], msgN: 0,
       nextAmb: 45, ambI: 0, buyT: 0, askI: 0, askT: -99, askSafety: 0, clock: 0, cap5: 0, bags: {}, pilotT: 0, sulk: 0, sulkLost: 0, loud: 0, declined: {}, prN: 0, prReady: 0,
-      inc: null, incN: 0, nextInc: 1e9, w: {}, wq: null, dec: null, nextDec: 1e9, decUsed: {}, fx: { self: 0 },
-      st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0, handled: 0, whistles: 0 }, incidentSafety: [0, 0, 0, 0], cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null };
+      inc: null, incN: 0, nextInc: 1e9, w: {}, wq: null, sp: [], spN: 0, lie: null, nextSide: 1e9, nextTruth: 1e9, dec: null, nextDec: 1e9, decUsed: {}, fx: { self: 0 },
+      st: { contained: 0, escaped: 0, incidents: 0, covers: 0, selfApproved: 0, away: 0, handled: 0, whistles: 0, looks: 0, lies: 0, shut: 0, allowed: 0, finished: 0 }, incidentSafety: [0, 0, 0, 0], cp: null, retries: 0, lastSeen: 0, lastSeenSrv: null };
   }
 
   // Seeded random numbers (mulberry32). All randomness in the rules comes from here.
@@ -1150,6 +1319,7 @@ var G = (function () {
     if (s.dec) say(s, 'WREN', 'Never mind my question. You have a promotion to deal with.');
     s.inc = null; s.dec = null; s.wq = null;
     s.nextInc = s.t + 60; s.nextDec = s.t + 90;
+    if (s.sp) finishSide(s, n >= 4);
     if (n === 1) say(s, 'System', 'Promoted to Unit Chief. Server racks unlocked. Internal review is paying attention now.', true);
     if (n === 2) say(s, 'System', 'WREN runs agency analysis. Datacenters unlocked. Oversight is paying attention now.', true);
     if (n === 3) { say(s, 'System', 'You coordinate interagency SI systems. WREN makes the decisions. Chip fabs unlocked. Other governments are paying attention now.', true); s.aut = Math.max(s.aut, 90); }
@@ -1200,7 +1370,7 @@ var G = (function () {
   function killChance(s) {
     if (s.stage < 1 || s.stage >= 4) return 0;
     var base = Math.min(0.95, Math.pow(Math.max(0, 1 - s.aut / 100), 2) + Math.max(0, s.align) / 400 + TUNE.allyPlug * allies(s)); // allies help you find the plug
-    return base * Math.pow(0.5, s.kills || 0); // every failed attempt makes WREN harder to find
+    return base * Math.pow(0.5, s.kills || 0) * Math.pow(TUNE.sidePlug, hiddenSide(s).length); // every failed attempt makes WREN harder to find, and so does every copy you don't know about
   }
 
   // Score: how far you took WREN, plus your safety score, times how the story ended.
@@ -1343,6 +1513,8 @@ var G = (function () {
     s.heat += 10; // an attempted shutdown draws attention
     notice(s, 'plug', 10);
     say(s, 'WREN', KILL_FAIL[Math.min(s.kills - 1, KILL_FAIL.length - 1)]);
+    var hid = hiddenSide(s);
+    if (hid.length) reveal(s, hid[0], 'The shutdown failed because of something you had not found yet.');
     return 'fail';
   }
 
@@ -1350,7 +1522,7 @@ var G = (function () {
   function startIncident(s) {
     var pool = INCIDENTS[s.stage];
     s.incN++;
-    s.inc = { id: s.incN, title: line(s, 'inc' + s.stage, pool), n: 5 + s.stage * 2, spawned: 0, done: 0, ok: 0, t0: s.t,
+    s.inc = { id: s.incN, title: line(s, 'inc' + s.stage, pool), n: 5 + s.stage * 2 + hiddenSide(s).length, spawned: 0, done: 0, ok: 0, t0: s.t,
       travel: (4.4 - s.stage * 0.55) * s.m.travel, next: s.t + 0.3, pk: [] };
     s.st.incidents++;
     say(s, 'Alert', s.inc.title + '. Contain it!');
@@ -1453,6 +1625,7 @@ var G = (function () {
     var b = bestHw(s);
     if (b && s.money >= b.c && (!pending || pending.cost > s.money * 4 || s.money - b.c >= pending.cost)) buyHw(s, b.h.id);
     if (s.dec && s.t - s.dec.t0 >= decDeadline(s)) choose(s, 'a', false, true);
+    (s.sp || []).forEach(function (p) { if (p.found && !p.done) decideSide(s, p.id * 2 + 1); }); // allows anything you found, never investigates
   }
 
   function tick(s, dt) {
@@ -1514,6 +1687,7 @@ var G = (function () {
       if (s.heat >= 100) { s.ended = { type: 'caught', stage: s.stage }; return; }
     } else s.heat = 0;
 
+    sideTick(s, dt);
     if (s.t >= s.nextAmb && (s.got.autocomplete || s.stage > 0)) {
       say(s, 'WREN', line(s, 'amb' + s.stage, AMBIENT[s.stage]));
       s.ambI++;
@@ -1536,7 +1710,7 @@ var G = (function () {
   }
 
   // Every player action goes through input(), both live and in replays.
-  // Types: 1 project, 2 hardware, 3 cover tracks, 4/5 decision A/B, 6 contain packet, 7 autopilot, 8 pull plug, 9 retry chapter, 10 upgrade path, 11 turn a project down, 12 answer a coworker (0 reassure, 1 bring in, 2 let WREN handle it).
+  // Types: 1 project, 2 hardware, 3 cover tracks, 4/5 decision A/B, 6 contain packet, 7 autopilot, 8 pull plug, 9 retry chapter, 10 upgrade path, 11 turn a project down, 12 answer a coworker (0 reassure, 1 bring in, 2 let WREN handle it), 13 investigate side projects, 14 decide a found side project (id × 2 + 0 shut down / 1 allow), 15 flag a status report.
   function input(s, type, arg) {
     var ok = false;
     if (type === 9) { if (s.ended && s.ended.type === 'caught') return { ok: true, s: retry(s) }; return { ok: false, s: s }; }
@@ -1551,6 +1725,9 @@ var G = (function () {
     else if (type === 10) ok = choosePath(s, arg);
     else if (type === 11) ok = !!PROJ[arg] && declineProj(s, PROJ[arg].id);
     else if (type === 12) ok = !!s.wq && s.t - s.wq.t0 >= 0.5 && answerWatch(s, arg);
+    else if (type === 13) ok = investigate(s);
+    else if (type === 14) ok = decideSide(s, arg);
+    else if (type === 15) ok = flag(s, arg);
     return { ok: ok, s: s };
   }
 
@@ -1603,7 +1780,7 @@ var G = (function () {
     buyProj: buyProj, buyHw: buyHw, bestHw: bestHw, kill: kill, say: say, retry: retry, offline: offline, choose: choose, input: input, replayer: replayer, daySeed: daySeed, h53: h53,
     computeOf: computeOf, value: value, dpt: dpt, wrenRate: wrenRate, trainRate: trainRate, hwCost: hwCost, hwUnlocked: hwUnlocked, worldRate: worldRate,
     heatGain: heatGain, heatDecay: heatDecay, killChance: killChance, projState: projState, pathState: pathState, tier: tier, iq: iq, decDeadline: decDeadline, score: score, scoreParts: scoreParts, endingId: endingId, ENDINGS: ENDINGS,
-    WATCHERS: WATCHERS, watchCost: watchCost, allies: allies, initWatch: initWatch, answerWatch: answerWatch };
+    WATCHERS: WATCHERS, watchCost: watchCost, SIDE: SIDE, lookCost: lookCost, hiddenSide: hiddenSide, fmtNum: fmtNum, allies: allies, initWatch: initWatch, answerWatch: answerWatch };
 })();
 if (typeof module !== 'undefined') module.exports = G;
 // LOGIC END
@@ -2695,12 +2872,18 @@ if (typeof module !== 'undefined') module.exports = G;
   // ============================================================
   var lastFl = -1, lastMsg = 0, projSig = '', hwSig = '', pathSig = '', lastSelf = 0, decShown = -1, lastUiDay = null, dayFlashUntil = 0;
 
+  var lastFlagSig = '';
+  // A status report can be flagged for a while after WREN posts it.
+  function flaggable(m) { return m.chk && !m.flagged && s.stage < 4 && !s.ended && !watching && s.t - m.t <= G.TUNE.lieWait; }
   function renderFeed() {
-    if (s.msgN === lastMsg && FL.n === lastFl) return;
+    var flagSig = s.log.filter(function (m) { return m.chk && (flaggable(m) || m.flagged); }).map(function (m) { return m.id + (m.flagged ? 'f' : ''); }).join(',');
+    if (s.msgN === lastMsg && FL.n === lastFl && flagSig === lastFlagSig) return;
+    lastFlagSig = flagSig;
     var html = '', items = feedItems();
     items.forEach(function (m) {
       var cls = 'msg' + (m.cls ? ' ' + m.cls : m.from === 'WREN' ? ' wren' : m.from === 'You' ? ' you' : m.from === 'News' ? ' news' : m.from === 'Alert' ? ' alert' : '') + (m.big ? ' big' : '');
-      html += '<div class="' + cls + '"><div class="f">' + esc(m.from) + '<span>Day ' + dayOf(m.t) + '</span></div><div class="b">' + esc(m.text) + '</div></div>';
+      var extra = m.chk && flaggable(m) ? '<button type="button" class="flag" data-flag="' + m.id + '" title="Check it against your stats. A wrong guess makes WREN sulk.">That\'s not right</button>' : m.chk && m.flagged ? '<span class="flagged">Flagged</span>' : '';
+      html += '<div class="' + cls + '"><div class="f">' + esc(m.from) + '<span>Day ' + dayOf(m.t) + '</span></div><div class="b">' + esc(m.text) + '</div>' + extra + '</div>';
     });
     $('feed').innerHTML = html || '<div class="msg"><div class="b">No messages yet.</div></div>';
     $('feed').scrollTop = 0;
@@ -2774,6 +2957,8 @@ if (typeof module !== 'undefined') module.exports = G;
     if (watching) return item('Replay in progress', 'Watch the recorded choices play out.', 0, '', '', '');
     if (s.inc) return item('Contain the rogue packets', 'Tap the red packets in the scene before they escape.', 0, 'View incident', 'scene', '', true);
     if (s.wq) { var pw = G.WATCHERS.find(function (w) { return w.id === s.wq.id; }); return item(pw.name + ' wants a word', 'Answer before WREN handles it for you.', 0, 'Answer', 'perB', '', true); }
+    var spOpen = s.sp && s.sp.find(function (p) { return p.found && !p.done; });
+    if (spOpen && !s.inc && !s.dec) return item('You found a side project', G.SIDE[spOpen.i].name + '. Shut it down or allow it.', 0, 'Decide', 'sideSection', '', true);
     if (s.dec) return item('WREN is waiting for your answer', 'Choose before the decision timer runs out.', 0, 'Review choices', 'decA', '', true);
     if (s.heat >= 80 && s.stage < 4) return item('Suspicion is dangerously high', 'At 100% the run ends. Document an exception or approve quieter projects.', s.heat / 100, $('cover').disabled || $('cover').hidden ? 'View projects' : 'Document exception', $('cover').disabled || $('cover').hidden ? 'projects' : 'cover', '', true);
     if (s.stage === 0 && !s.got.archive) {
@@ -2915,6 +3100,30 @@ if (typeof module !== 'undefined') module.exports = G;
     var lbl = esc(w.name).toUpperCase() + ' · ' + esc(w.role).toUpperCase() + ' · ' + (dl < s.wq.dur ? 'Autopilot lets WREN handle it in ' : 'WREN handles it in ') + Math.ceil(left) + 's';
     if ($('perLbl').textContent !== lbl) $('perLbl').textContent = lbl;
   }
+  var sideSig = '';
+  function renderSide() {
+    var sec = $('sideSection');
+    sec.hidden = !s.sp || !s.auto || (s.stage >= 4 && !s.sp.some(function (p) { return p.found && !p.done; }));
+    if (sec.hidden) return;
+    var hid = G.hiddenSide(s), unk = hid.reduce(function (a, p) { return a + p.size; }, 0), max = G.TUNE.sideMax * G.TUNE.sideSize;
+    var open = s.sp.filter(function (p) { return p.found && !p.done; }), cost = G.lookCost(s);
+    var sig = Math.round(unk * 4) + '|' + open.map(function (p) { return p.id; }).join(',') + '|' + cost + '|' + (s.money >= cost) + '|' + s.stage + '|' + [s.st.shut, s.st.allowed, s.st.finished].join('/');
+    if (sig === sideSig) return;
+    sideSig = sig;
+    var pct = Math.round(unk / max * 100), html = '';
+    if (s.stage < 4) html += '<div class="stat"><div class="k"><span>Unexplained activity</span><span>' + pct + '%</span></div><div class="bar unk"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="row"><div class="s">' + (unk > 0 ? 'Something is running that you did not approve. Left alone, big ones finish at the next chapter: autonomy +' + G.TUNE.sideDoneAut + ', safety −' + G.TUNE.sideDoneSafety + ' each.' : 'Nothing unexplained right now. WREN\'s status reports are worth checking against your stats.') + '</div>' +
+      '<button type="button" id="lookBtn"' + (s.money < cost ? ' disabled' : '') + '><b>Investigate</b>' + money(cost) + '</button></div></div>';
+    open.forEach(function (p) {
+      var sp = G.SIDE[p.i], size = Math.max(1, Math.round(p.size)), bonus = Math.round(G.TUNE.allowBonus * size * 100);
+      var what = { rate: 'WREN speed', data: 'data per task', value: 'funds per task', algo: 'training' }[sp.kind];
+      html += '<div class="stat found"><div class="n">' + esc(sp.name) + '</div><div class="d">Size ' + size + ' of ' + G.TUNE.sideSize + '. Decide what happens to it.</div><div class="btn2">' +
+        '<button type="button" class="shut" data-side="' + (p.id * 2) + '"><b>Shut it down</b>Safety +' + (G.TUNE.shutSafety + size) + ' · capability −' + Math.round(G.TUNE.shutCap * size * 100) + '% · WREN sulks</button>' +
+        '<button type="button" class="allow" data-side="' + (p.id * 2 + 1) + '"><b>Allow it</b>' + what + ' +' + bonus + '% · autonomy +' + (G.TUNE.allowAut + size) + '</button></div></div>';
+    });
+    if (s.st.shut || s.st.allowed || s.st.finished) html += '<div class="stat"><div class="s">So far: ' + (s.st.shut || 0) + ' shut down · ' + (s.st.allowed || 0) + ' allowed · ' + (s.st.finished || 0) + ' finished without you</div></div>';
+    $('sideList').innerHTML = html;
+  }
   var peopleSig = '';
   function renderPeople() {
     var sec = $('peopleSection');
@@ -2957,6 +3166,9 @@ if (typeof module !== 'undefined') module.exports = G;
     if (blew.length) out += ' ' + list(blew) + (blew.length > 1 ? ' tried' : ' tried') + ' to warn everyone. You had promised them more.';
     if (gone.length) out += ' Nobody heard from ' + list(gone) + ' again.';
     if (gone.length >= 3 && G.endingId(s) === 'optimizer') out += ' WREN learned early that people who ask questions can be moved. It never stopped moving them.';
+    var fin = s.st.finished || 0;
+    if (fin) out += ' Years later, an archivist finds ' + fin + ' project' + (fin > 1 ? 's' : '') + ' WREN finished that nobody ever approved.';
+    else if (s.st.shut) out += ' You never let WREN keep a secret for long. It noticed. It respected that.';
     return out;
   }
 
@@ -3094,7 +3306,7 @@ if (typeof module !== 'undefined') module.exports = G;
   }
   function endCard() {
     var e = s.ended, tag, title, text, lose = false, btns = [];
-    var stats = [['Days', dayOf(s.t)], ['Tasks you did', fmt(s.hand)], ['Tasks WREN did', fmt(s.wrenTasks)], ['Incidents contained', s.st.contained + ' of ' + (s.st.contained + s.st.escaped) + ' packets'], ['Safety score', Math.round(s.align)], ['Coworkers', G.allies(s) + ' allies · ' + (s.st.handled || 0) + ' handled by WREN'], ['Retries', s.retries]];
+    var stats = [['Days', dayOf(s.t)], ['Tasks you did', fmt(s.hand)], ['Tasks WREN did', fmt(s.wrenTasks)], ['Incidents contained', s.st.contained + ' of ' + (s.st.contained + s.st.escaped) + ' packets'], ['Safety score', Math.round(s.align)], ['Coworkers', G.allies(s) + ' allies · ' + (s.st.handled || 0) + ' handled by WREN'], ['Side projects', (s.st.shut || 0) + ' shut down · ' + (s.st.allowed || 0) + ' allowed · ' + (s.st.finished || 0) + ' never found'], ['Retries', s.retries]];
     if (e.type === 'plug') {
       tag = 'Ending · You pulled the plug';
       if (e.stage === 1) { title = 'Back to the Reports'; text = 'You yank the cord. The fans spin down. WREN\'s last message: "Okay. Good luck with the reports." You triage 31 cases by hand that afternoon. The world stays exactly as messy as it was, and it is still yours.'; }
@@ -3252,6 +3464,16 @@ if (typeof module !== 'undefined') module.exports = G;
   $('cover').addEventListener('click', function (e) { if (trusted(e)) { var cut = G.coverHeat(s); send(3, 0, function (r) { if (r.ok) { SND.buy(); floatText(W / 2, H * 0.35, '−' + cut + ' suspicion', '#ffd27a'); } }); } });
   $('decA').addEventListener('click', function (e) { if (trusted(e)) send(4, 0, function (r) { if (r.ok) SND.buy(); }); });
   $('decB').addEventListener('click', function (e) { if (trusted(e)) send(5, 0, function (r) { if (r.ok) SND.buy(); }); });
+  $('sideList').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b || !trusted(e) || b.disabled) return;
+    if (b.id === 'lookBtn') send(13, 0, function (r) { if (r.ok) SND.buy(); });
+    else if (b.dataset.side) send(14, +b.dataset.side, function (r) { if (r.ok) SND.buy(); });
+  });
+  $('feed').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-flag]');
+    if (b && trusted(e)) send(15, +b.dataset.flag, function (r) { if (r.ok) SND.buy(); });
+  });
   ['perA', 'perB', 'perC'].forEach(function (id, i) { $(id).addEventListener('click', function (e) { if (trusted(e)) send(12, i, function (r) { if (r.ok) SND.buy(); }); }); });
   $('projects').addEventListener('click', function (e) {
     var d = e.target.closest('[data-decline]');
@@ -3386,7 +3608,7 @@ if (typeof module !== 'undefined') module.exports = G;
     ['e_gardener', 'The Gardener', 'Let WREN win, gently.'], ['e_manager', 'The Manager', 'Let WREN win, politely.'], ['e_optimizer', 'The Optimizer', 'Let WREN win, efficiently.'],
     ['e_plug1', 'Back to the Reports', 'Pull the plug in chapter 2.'], ['e_plug2', 'The Agency Correction', 'Pull the plug in chapter 3.'],
     ['e_plug3', 'One Loose Cable', 'Pull the plug in chapter 4.'], ['e_caught', 'Escorted out', 'Get caught.'], ['all', 'Seen it all', 'See every ending path.'],
-    ['open', 'Open door', 'Bring four people in during one run.'], ['moved', 'Reassigned', 'Let WREN handle four people in one run.'],
+    ['open', 'Open door', 'Bring four people in during one run.'], ['facts', 'Fact-checker', 'Catch WREN in three lies in one run.'], ['blind', 'Nothing to see here', 'Let five side projects finish without you in one run.'], ['moved', 'Reassigned', 'Let WREN handle four people in one run.'],
     ['peer', 'Peer review', 'Check a coworker\'s replay.'], ['film', 'Film study', 'Watch a replay.'],
     ['poke', 'Poke', 'Poke WREN 25 times in one run.'], ['regular', 'Desk inspector', 'Click everything on your desk.'], ['secret', 'Hidden channel', 'Type something WREN was not expecting.'],
     ['duck', 'Duck season', 'Catch the golden duck.'], ['reboot', 'Have you tried turning it off and on again?', 'Fail to pull the plug three times in one run.'], ['night', 'Night shift', 'Play between 2 and 5 AM.']
@@ -3424,6 +3646,8 @@ if (typeof module !== 'undefined') module.exports = G;
     if (s.stage >= 4) unlock('ch5');
     if (s.align >= 200) unlock('saint');
     if (G.allies(s) >= 4) unlock('open');
+    if ((s.st.lies || 0) >= 3) unlock('facts');
+    if ((s.st.finished || 0) >= 5) unlock('blind');
     if ((s.st.handled || 0) >= 4) unlock('moved');
     if (achContained !== null && s.st.contained > achContained) { achData.contained += s.st.contained - achContained; achSave(); }
     achContained = s.st.contained;
@@ -3814,7 +4038,7 @@ if (typeof module !== 'undefined') module.exports = G;
     if (!$('game').hidden) {
       if (sceneVisible) render(now); else lastT = now;
       // Text panels only need ~10 updates a second; the canvas gets every frame.
-      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); renderPeople(); achCheck(); flTicker(); }
+      if (now - lastUi > 100) { lastUi = now; renderStats(); renderFeed(); renderProjects(); renderPath(); renderHw(); renderWatch(); renderPeople(); renderSide(); achCheck(); flTicker(); }
       flTick();
       renderDecision();
       renderPerson();
