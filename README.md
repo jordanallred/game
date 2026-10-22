@@ -33,6 +33,14 @@ The NSA details in the setting come from public sources. NSA describes its forei
 - [NSA oversight and compliance framework](https://www.nsa.gov/Culture/Operating-Authorities/Authorities/)
 - [Executive Order 14434](https://www.govinfo.gov/content/pkg/FR-2026-10-02/html/2026-20321.htm)
 
+## Playing completely offline
+
+Download `index.html` (use **Raw**, then **Save as** on GitHub), and open the saved file in a browser. No server, install, build, or internet connection is needed, including on the first launch. All fonts, pixel art, audio synthesis, and game logic are embedded. Font license notices are included inside the HTML.
+
+Ranked and casual runs, replay export/import/checking, and saves work locally. Daily seeds use your computer's UTC date, and casual away progress uses its clock; keep the clock correct. The page makes no network requests.
+
+Saves and achievements belong to the browser and the page location. Your hosted game's save does not automatically transfer to a downloaded copy. Use the same browser and keep the file at the same path to continue; private browsing or clearing browser data can remove saves.
+
 ## Hosting
 
 It's one static file with no backend. Any static host works:
@@ -44,7 +52,7 @@ It's one static file with no backend. Any static host works:
 
 A static page can't trust anything the player's browser reports, so ranked runs don't report scores. They record inputs.
 
-- **Daily seed.** All randomness comes from a seed derived from the date (taken from the host's `Date` header when available). Everyone playing that day gets the same game, so there's nothing to reroll.
+- **Daily seed.** All randomness comes from a seed derived from the date (UTC, from the computer's clock). Everyone playing that day gets the same game, so there's nothing to reroll.
 - **Fixed ticks.** The game advances in exact 0.1 s steps, and every input goes through one function. Replaying the same inputs reproduces the run exactly.
 - **Replays, not scores.** At the end of a ranked run you get a replay code or `.wren` file (about 5 KB for a 40-minute run). Paste it into "Check a coworker's replay": your browser replays every input with the real rules and shows the result it actually reaches.
 - **Human limits.** Taps are capped at 14 in any second, 420 in any minute, and 3,000 in any ten minutes: a fast human burst, and what a human can keep up. Packets can't be contained less than 0.2 s after they appear, and decisions can't be answered in under 0.5 s. Replays that break any limit, or contain an input that wasn't possible at that moment (buying something unaffordable, for example), are rejected.
@@ -59,3 +67,4 @@ Replays prove that a sequence of inputs reaches the stated result under the publ
 - **Slow motion.** Someone who pauses or slows the game in DevTools gets more time to think and aim. The replay can't see real time.
 - **Seed shopping.** A player can set their clock to a different date to play a different seed. The checker shows each replay's seed date, so compare runs from the same day, and it warns about dates in the future.
 - **Casual runs** can't be verified at all.
+
