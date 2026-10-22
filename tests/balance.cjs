@@ -123,6 +123,45 @@ test('covering your tracks has a cooldown, scales with funds and hands WREN auto
   assert.equal(G.input(state, 3, 0).ok, false, 'still cooling down');
 });
 
+test('each cover-up in a chapter removes less suspicion, and at full autonomy it speeds up suspicion instead', () => {
+  const state = G.fresh(9);
+  state.started = true;
+  state.auto = true;
+  state.money = 1e6;
+  const removed = [];
+  for (let i = 0; i < 5; i++) {
+    state.heat = 90; state.prReady = 0;
+    assert.equal(G.cover(state), true);
+    removed.push(90 - state.heat);
+  }
+  assert.deepEqual(removed, [30, 24, 18, 12, 12]);
+  state.aut = 100; state.heat = 90; state.prReady = 0;
+  const gain = state.m.heatGain;
+  assert.equal(G.cover(state), true);
+  assert.equal(state.aut, 100);
+  assert.ok(Math.abs(state.m.heatGain - gain * G.TUNE.coverMaxed) < 1e-9, 'maxed autonomy makes suspicion grow faster');
+});
+
+test('sulking stacks up to a cap and tracks lost funds', () => {
+  const state = G.fresh(3);
+  state.started = true;
+  state.auto = true;
+  state.cap = 10;
+  G.addSulk(state);
+  for (let i = 0; i < 100; i++) G.tick(state, 0.1);
+  assert.ok(state.sulk > 49 && state.sulk < 51);
+  assert.ok(state.sulkLost > 0, 'lost funds are counted while sulking');
+  G.addSulk(state); G.addSulk(state); G.addSulk(state);
+  assert.equal(state.sulk, G.TUNE.sulkMax);
+});
+
+test('the chapter 1 gate only needs capability', () => {
+  const state = G.fresh(5);
+  state.started = true;
+  state.cap = 18; state.tasks = 0;
+  assert.equal(G.PROJ.find(p => p.id === 'promo').req(state), true);
+});
+
 test('offline autopilot cannot end a run or cross a chapter gate', () => {
   const state = G.fresh(4);
   state.started = true;
