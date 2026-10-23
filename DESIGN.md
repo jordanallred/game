@@ -130,6 +130,7 @@ Jokes that never touch the game state or the rules' random numbers, so they don'
 | Office happenings, with a banner over the scene | 42 (8–10 per chapter) |
 | Rare surprises (about 1 in 12 happenings, each once per run) | 9 |
 | News ticker headlines, plus a few that react to suspicion, sulking, autopilot, autonomy, cover-ups and GPUs | 35 + 6 |
+| Breaking ticker headlines, queued when the player buys hardware (at count milestones) or upgrades, covers up, handles an incident, pulls the plug, turns on autopilot, makes WREN sulk, crosses 50%/80% suspicion, or reaches a new chapter. They show at most once every 20 s and read the run state only | 46 |
 | Clickable desk items in chapter 1 (mug, clock, poster, door) | 12 |
 | Poking WREN's eye (lines at 3 to 100 pokes) | 8 |
 | Secret words typed anywhere, plus the Konami code | 14 + 1 |
@@ -148,4 +149,4 @@ Three new route endings share one score multiplier (1.75 since R18, see below), 
 
 Rival reviews are seeded chapter milestones with at most three appearances. Responses trade budget against capability/time or permanent scrutiny; none awards safety. Gates wait until a pending review is answered. A retry preserves rival history and treats a still-pending review as declined, so it cannot erase its consequence.
 
-Discovery storage is separate from active state and has no influence on replay verification. A checker can reproduce a declared challenge even when the local player has not discovered it. Watching a replay never writes discoveries or scenario records. UI setup/results use the existing overlay; objective details collapse in normal play, and message history lives in the Log tab. The document is the sole game scroll surface. Control objectives count learned Control skills (the R16 skill tree replaced paired path choices).
+Discovery storage is separate from active state and has no influence on replay verification. A checker can reproduce a declared challenge even when the local player has not discovered it. Watching a replay never writes discoveries or scenario records. UI setup/results use the existing overlay; objective details collapse in normal play, and the newest eight messages show in a Live log beside the scene (full history in the Log tab). The document is the sole game scroll surface. Control objectives count learned Control skills (the R16 skill tree replaced paired path choices).
